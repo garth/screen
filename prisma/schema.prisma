@@ -39,18 +39,21 @@ model Session {
 }
 
 model Document {
-  id     String  @id @default(cuid(2))
-  userId String  @map("user_id")
-  name   String
-  type   String
-  public Boolean @default(false)
-  meta   Json
+  id             String  @id @default(cuid(2))
+  userId         String  @map("user_id")
+  name           String
+  type           String
+  baseDocumentId String?
+  public         Boolean @default(false)
+  meta           Json
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz()
 
   user            User             @relation(fields: [userId], references: [id])
+  baseDocument    Document?        @relation("baseDocument", fields: [baseDocumentId], references: [id])
+  childDocuments  Document[]       @relation("baseDocument") @ignore
   documentUpdates DocumentUpdate[]
   documentUsers   DocumentUser[]
 
