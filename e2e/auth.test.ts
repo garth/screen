@@ -62,7 +62,7 @@ test.describe('Authentication', () => {
       password: testUser.password,
     })
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     // Open user menu and click logout
     await page.locator('.user-menu button').click()
@@ -91,7 +91,7 @@ test.describe('Authentication', () => {
     await loginUser(page, { email, password: testUser.password })
 
     // Should redirect to activity page and show logged in state
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
     await expect(page.locator('nav').getByAltText(`${testUser.firstName} ${testUser.lastName}`)).toBeVisible()
   })
 
@@ -165,7 +165,7 @@ test.describe('Authentication', () => {
     await page.getByLabel('Password').fill(testUser.password)
     await page.getByRole('button', { name: 'Log In' }).click()
 
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
   })
 
   test('forgot password shows check email message', async ({ page }) => {
@@ -226,7 +226,7 @@ test.describe('Authentication', () => {
     await page.getByLabel('Password').fill(newPassword)
     await page.getByRole('button', { name: 'Log In' }).click()
 
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
   })
 
   test('reset password with invalid token shows error', async ({ page }) => {

@@ -27,7 +27,7 @@ test.describe('Hocuspocus Collaboration Server', () => {
       password: testUser.password,
     })
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
     return { userId, email }
   }
 
@@ -52,7 +52,7 @@ test.describe('Hocuspocus Collaboration Server', () => {
 
     await loginUser(newPage, { email, password })
     // Wait for redirect after login
-    await newPage.waitForURL('/')
+    await newPage.waitForURL('/presentations')
 
     const cookies = await context.cookies()
     const sessionCookie = cookies.find((c) => c.name === 'auth-session')

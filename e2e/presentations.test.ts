@@ -20,7 +20,7 @@ test.describe('Presentations List', () => {
 
     await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto('/presentations')
     await page.waitForLoadState('networkidle')
@@ -42,7 +42,7 @@ test.describe('Presentations List', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto('/presentations')
     await page.waitForLoadState('networkidle')
@@ -56,7 +56,7 @@ test.describe('Presentations List', () => {
 
     await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto('/presentations')
     await page.waitForLoadState('networkidle')
@@ -92,7 +92,7 @@ test.describe('Presentations List', () => {
 
     // Login as shared user
     await loginUser(page, { email: sharedEmail, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto('/presentations')
     await page.waitForLoadState('networkidle')
@@ -121,7 +121,7 @@ test.describe('Presentation Viewer', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
@@ -144,7 +144,7 @@ test.describe('Presentation Viewer', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
@@ -176,7 +176,7 @@ test.describe('Presentation Viewer', () => {
     await createDocumentUser(page, { documentId: doc.id, userId: reader.id, write: false })
 
     await loginUser(page, { email: readerEmail, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
@@ -250,7 +250,7 @@ test.describe('Presentation Viewer', () => {
       password: testUser.password,
     })
     await loginUser(page, { email: otherEmail, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     // Try to access the presentation
     const response = await page.goto(`/presentation/${doc.id}`)
@@ -289,7 +289,7 @@ test.describe('Presentation Editor', () => {
     await createDocumentUser(page, { documentId: doc.id, userId: reader.id, write: false })
 
     await loginUser(page, { email: readerEmail, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     // Try to access editor
     const response = await page.goto(`/presentation/${doc.id}/edit`)
@@ -310,7 +310,7 @@ test.describe('Presentation Editor', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}/edit`)
     await page.waitForLoadState('networkidle')
@@ -341,7 +341,7 @@ test.describe('Presentation Editor', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}/edit`)
     await page.waitForLoadState('networkidle')
@@ -365,7 +365,7 @@ test.describe('Presentation Editor', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}/edit`)
     await page.waitForLoadState('networkidle')
@@ -398,7 +398,7 @@ test.describe('Presentation Editor', () => {
     await createDocumentUser(page, { documentId: doc.id, userId: writer.id, write: true })
 
     await loginUser(page, { email: writerEmail, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}/edit`)
     await page.waitForLoadState('networkidle')
@@ -437,7 +437,7 @@ test.describe('Presentation Presenter Mode', () => {
     await createDocumentUser(page, { documentId: doc.id, userId: reader.id, write: false })
 
     await loginUser(page, { email: readerEmail, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     // Try to access presenter mode
     const response = await page.goto(`/presentation/${doc.id}/presenter`)
@@ -458,7 +458,7 @@ test.describe('Presentation Presenter Mode', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}/presenter`)
     await page.waitForLoadState('networkidle')
@@ -484,7 +484,7 @@ test.describe('Presentation Presenter Mode', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}/presenter`)
     await page.waitForLoadState('networkidle')
@@ -508,7 +508,7 @@ test.describe('Presentation Presenter Mode', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}/presenter`)
     await page.waitForLoadState('networkidle')
@@ -539,7 +539,7 @@ test.describe('Presentation Presenter Mode', () => {
     await createDocumentUser(page, { documentId: doc.id, userId: writer.id, write: true })
 
     await loginUser(page, { email: writerEmail, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}/presenter`)
     await page.waitForLoadState('networkidle')
@@ -568,7 +568,7 @@ test.describe('Presentation Deletion', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}/edit`)
     await page.waitForLoadState('networkidle')
@@ -609,7 +609,7 @@ test.describe('Presentation Deletion', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}/edit`)
     await page.waitForLoadState('networkidle')
@@ -642,7 +642,7 @@ test.describe('Presentation Deletion', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}/edit`)
     await page.waitForLoadState('networkidle')
@@ -671,7 +671,7 @@ test.describe('Presentation Deletion', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}/edit`)
     await page.waitForLoadState('networkidle')
@@ -704,7 +704,7 @@ test.describe('Presentation Delete API', () => {
 
     await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     const response = await page.request.delete('/api/presentations')
     expect(response.status()).toBe(400)
@@ -715,7 +715,7 @@ test.describe('Presentation Delete API', () => {
 
     await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     const response = await page.request.delete('/api/presentations?id=non-existent-id')
     expect(response.status()).toBe(404)
@@ -734,7 +734,7 @@ test.describe('Presentation Delete API', () => {
 
     await createVerifiedUser(page, { ...testUser, firstName: 'Other', email: otherEmail, password: testUser.password })
     await loginUser(page, { email: otherEmail, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     // Other user tries to delete owner's presentation
     const response = await page.request.delete(`/api/presentations?id=${doc.id}`)
@@ -752,7 +752,7 @@ test.describe('Presentation Delete API', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     const response = await page.request.delete(`/api/presentations?id=${doc.id}`)
     expect(response.status()).toBe(204)

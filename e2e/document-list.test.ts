@@ -14,7 +14,7 @@ test.describe('Document List', () => {
 
       await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
       await loginUser(page, { email, password: testUser.password })
-      await expect(page).toHaveURL('/')
+      await expect(page).toHaveURL('/presentations')
 
       await page.goto('/presentations')
       await page.waitForLoadState('networkidle')
@@ -47,7 +47,7 @@ test.describe('Document List', () => {
 
       await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
       await loginUser(page, { email, password: testUser.password })
-      await expect(page).toHaveURL('/')
+      await expect(page).toHaveURL('/presentations')
 
       // Create presentation via UI
       await page.goto('/presentations')
@@ -91,7 +91,7 @@ test.describe('Document List', () => {
 
       await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
       await loginUser(page, { email, password: testUser.password })
-      await expect(page).toHaveURL('/')
+      await expect(page).toHaveURL('/presentations')
 
       await page.goto('/presentations')
 
@@ -109,7 +109,7 @@ test.describe('Document List', () => {
 
       await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
       await loginUser(page, { email, password: testUser.password })
-      await expect(page).toHaveURL('/')
+      await expect(page).toHaveURL('/presentations')
 
       // Create presentation via UI
       await page.goto('/presentations')

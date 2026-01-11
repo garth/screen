@@ -17,13 +17,13 @@ test.describe('Preferences Page', () => {
       password: testUser.password,
     })
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
     return email
   }
 
   test('redirects to login when not authenticated', async ({ page }) => {
     await page.goto('/preferences')
-    await expect(page).toHaveURL('/login')
+    await expect(page).toHaveURL('/login?redirect=/preferences')
   })
 
   test('shows preferences page when authenticated', async ({ page }) => {
@@ -99,7 +99,7 @@ test.describe('Preferences Page', () => {
     await page.getByLabel('Password').fill(newPassword)
     await page.getByRole('button', { name: 'Log In' }).click()
 
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
   })
 
   test('shows error for incorrect current password', async ({ page }) => {
@@ -196,12 +196,12 @@ test.describe('Preferences Page', () => {
       await page.getByRole('button', { name: 'Delete Account' }).click()
       await page.getByRole('button', { name: 'Delete My Account' }).click()
 
-      // Should redirect to home page
+      // Should redirect to home page (user is logged out after deletion)
       await expect(page).toHaveURL('/')
 
       // Trying to access protected page should redirect to login
       await page.goto('/preferences')
-      await expect(page).toHaveURL('/login')
+      await expect(page).toHaveURL('/login?redirect=/preferences')
 
       // Trying to login with deleted account should fail
       await page.getByLabel('Email').fill(email)

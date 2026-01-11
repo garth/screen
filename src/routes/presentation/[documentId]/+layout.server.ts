@@ -2,7 +2,7 @@ import { error, redirect } from '@sveltejs/kit'
 import type { LayoutServerLoad } from './$types'
 import { db } from '$lib/server/db'
 
-export const load: LayoutServerLoad = async ({ locals, params }) => {
+export const load: LayoutServerLoad = async ({ locals, params, url }) => {
   const document = await db.document.findUnique({
     where: { id: params.documentId, type: 'presentation', deletedAt: null },
     select: {
@@ -30,7 +30,7 @@ export const load: LayoutServerLoad = async ({ locals, params }) => {
 
   // For private documents, require authentication
   if (!document.isPublic && !locals.user) {
-    redirect(303, `/login?redirect=/presentation/${params.documentId}`)
+    redirect(303, `/login?redirect=${url.pathname}`)
   }
 
   if (!canAccess) {

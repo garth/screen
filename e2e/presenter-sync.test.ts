@@ -27,7 +27,7 @@ test.describe('Presenter Awareness Sync', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}/presenter`)
     await page.waitForLoadState('networkidle')
@@ -57,7 +57,7 @@ test.describe('Presenter Awareness Sync', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
@@ -87,7 +87,7 @@ test.describe('Presenter Awareness Sync', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     // Open presenter mode in one tab
     const presenterPage = await context.newPage()
@@ -245,7 +245,7 @@ test.describe('Presenter Access Control', () => {
     await createDocumentUser(page, { documentId: doc.id, userId: reader.id, write: false })
 
     await loginUser(page, { email: readerEmail, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     // Try to access presenter mode
     const response = await page.goto(`/presentation/${doc.id}/presenter`)
@@ -277,7 +277,7 @@ test.describe('Presenter Access Control', () => {
     await createDocumentUser(page, { documentId: doc.id, userId: writer.id, write: true })
 
     await loginUser(page, { email: writerEmail, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}/presenter`)
     await page.waitForLoadState('networkidle')
@@ -309,7 +309,7 @@ test.describe('Presenter Navigation', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
     await page.goto(`/presentation/${doc.id}/presenter`)
     await page.waitForLoadState('networkidle')
     await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
@@ -330,7 +330,7 @@ test.describe('Presenter Navigation', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
     await page.goto(`/presentation/${doc.id}/presenter`)
     await page.waitForLoadState('networkidle')
     await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
@@ -351,7 +351,7 @@ test.describe('Presenter Navigation', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
     await page.goto(`/presentation/${doc.id}/presenter`)
     await page.waitForLoadState('networkidle')
     await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
@@ -382,7 +382,7 @@ test.describe('Viewer UI Elements', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
     await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
@@ -405,7 +405,7 @@ test.describe('Viewer UI Elements', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
     await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
@@ -428,7 +428,7 @@ test.describe('Viewer UI Elements', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
     await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
@@ -459,7 +459,7 @@ test.describe('Viewer UI Elements', () => {
     await createDocumentUser(page, { documentId: doc.id, userId: reader.id, write: false })
 
     await loginUser(page, { email: readerEmail, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
     await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
@@ -489,7 +489,7 @@ test.describe('Document Sync', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
     await page.goto(`/presentation/${doc.id}/presenter`)
     await page.waitForLoadState('networkidle')
     await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
@@ -510,7 +510,7 @@ test.describe('Document Sync', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
     await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
@@ -531,7 +531,7 @@ test.describe('Document Sync', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
     await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })

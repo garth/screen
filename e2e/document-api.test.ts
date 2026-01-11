@@ -17,7 +17,7 @@ test.describe('Document API Integration', () => {
       password: testUser.password,
     })
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
     return { userId, email }
   }
 
@@ -528,7 +528,7 @@ test.describe('Document API Integration', () => {
       const page2 = await context2.newPage()
 
       await loginUser(page2, { email: email2, password: testUser.password })
-      await expect(page2).toHaveURL('/')
+      await expect(page2).toHaveURL('/presentations')
 
       // Navigate to test page and connect
       await page2.goto('/test/documents')

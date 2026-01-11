@@ -29,7 +29,7 @@ test.describe('Offline Editing with IndexedDB', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     // First visit - loads from server and caches to IndexedDB
     await page.goto(`/presentation/${doc.id}`)
@@ -61,7 +61,7 @@ test.describe('Offline Editing with IndexedDB', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}/presenter`)
     await page.waitForLoadState('networkidle')
@@ -95,7 +95,7 @@ test.describe('WebRTC P2P Sync', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     // Open presenter in first tab
     const presenterPage1 = page
@@ -135,7 +135,7 @@ test.describe('WebRTC P2P Sync', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     // Open presenter
     const presenterPage = page
@@ -179,7 +179,7 @@ test.describe('Dual Provider Fallback', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
@@ -201,7 +201,7 @@ test.describe('Dual Provider Fallback', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     await page.goto(`/presentation/${doc.id}/edit`)
     await page.waitForLoadState('networkidle')
@@ -228,7 +228,7 @@ test.describe('Dual Provider Fallback', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/')
+    await expect(page).toHaveURL('/presentations')
 
     // Open presenter
     await page.goto(`/presentation/${doc.id}/presenter`)

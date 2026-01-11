@@ -37,7 +37,7 @@ export const login = form(loginSchema, async ({ email, _password, redirectTo }, 
   const event = getRequestEvent()
   auth.setSessionTokenCookie(event, sessionToken, session.expiresAt)
 
-  // Redirect to specified URL or default to home
-  const safeRedirect = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/'
+  // Redirect to specified URL or default to presentations
+  const safeRedirect = redirectTo && redirectTo.startsWith('/') ? redirectTo : '/presentations'
   redirect(303, safeRedirect)
 })
