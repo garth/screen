@@ -109,6 +109,7 @@
   - images (stored inline)
   - slide divider (behaves like a page break, but forces a new presentation slide to start)
   - quote (including an attribution line)
+  - collaborative editing, reatime cursor positions with usernames
 
 #### Presentation Viewer
 
@@ -119,6 +120,13 @@
 
 * can be accessed via /presentation/[documentId]/presenter
 * uses the same "viewer" component, but with a theme override
+* rich text should automatically be segmented into presentation points
+* segmenting logic:
+  - each line is a segment
+  - each bullet point is a segment
+  - each paragraph or heading is a segment
+  - a picture is a segment
+  - longer text based segments should be split into sentance segments
 * has controls to let the user move forwards or backwards in the presentation points
 * lets the user tap/click on a presentation point to jump to it
 * lets the user scroll to find points to jump to

@@ -6,6 +6,7 @@
   import { EditorView } from 'prosemirror-view'
   import { ySyncPlugin, yCursorPlugin, yUndoPlugin } from 'y-prosemirror'
   import { presentationSchema, createEditorPlugins } from '$lib/editor/setup'
+  import { createSegmentPlugin } from '$lib/editor/segment-plugin'
   import EditorToolbar from './EditorToolbar.svelte'
 
   interface Props {
@@ -24,6 +25,7 @@
     const plugins = [
       ySyncPlugin(doc.content),
       yUndoPlugin(),
+      createSegmentPlugin(presentationSchema),
       ...createEditorPlugins(presentationSchema),
     ]
 
@@ -77,6 +79,50 @@
   .editor-content :global(.ProseMirror) {
     outline: none;
     min-height: 300px;
+  }
+
+  /* Segment boundary indicators - subtle left border */
+  .editor-content :global(.segment-boundary) {
+    position: relative;
+  }
+
+  .editor-content :global(.segment-boundary::before) {
+    content: '';
+    position: absolute;
+    left: -0.75rem;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background-color: rgba(59, 130, 246, 0.15);
+    border-radius: 2px;
+    transition: background-color 0.2s ease;
+  }
+
+  /* More visible on hover */
+  .editor-content :global(.segment-boundary:hover::before) {
+    background-color: rgba(59, 130, 246, 0.4);
+  }
+
+  /* Heading segments get purple tint */
+  .editor-content :global(.segment-boundary[data-segment-type='heading']::before) {
+    background-color: rgba(139, 92, 246, 0.2);
+  }
+
+  .editor-content :global(.segment-boundary[data-segment-type='heading']:hover::before) {
+    background-color: rgba(139, 92, 246, 0.5);
+  }
+
+  /* Sentence segments are inline - subtle background */
+  .editor-content :global(.ProseMirror span[data-sentence]) {
+    position: relative;
+    border-left: 2px solid rgba(59, 130, 246, 0.1);
+    padding-left: 0.25rem;
+    margin-left: 0.125rem;
+  }
+
+  .editor-content :global(.ProseMirror span[data-sentence]:hover) {
+    border-left-color: rgba(59, 130, 246, 0.3);
+    background-color: rgba(59, 130, 246, 0.05);
   }
 
   .editor-content :global(.ProseMirror p) {

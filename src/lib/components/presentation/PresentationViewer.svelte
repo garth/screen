@@ -1,16 +1,37 @@
 <script lang="ts">
   import * as Y from 'yjs'
   import type { ResolvedTheme } from '$lib/utils/theme-resolver'
+  import type { ContentSegment } from '$lib/utils/segment-parser'
 
   interface Props {
     content: Y.XmlFragment | null
     theme: ResolvedTheme
     mode?: 'view' | 'present'
-    currentPoint?: number
-    onPointClick?: (index: number) => void
+    segments?: ContentSegment[]
+    currentSegmentId?: string | null
+    onSegmentClick?: (segmentId: string) => void
   }
 
-  let { content, theme, mode = 'view', currentPoint = 0, onPointClick }: Props = $props()
+  let {
+    content,
+    theme,
+    mode = 'view',
+    segments = [],
+    currentSegmentId = null,
+    onSegmentClick,
+  }: Props = $props()
+
+  let viewerElement: HTMLElement | null = $state(null)
+
+  // Scroll current segment into view when it changes
+  $effect(() => {
+    if (mode !== 'present' || !viewerElement || !currentSegmentId) return
+
+    const segmentEl = viewerElement.querySelector(`[data-segment-id="${currentSegmentId}"]`)
+    if (segmentEl) {
+      segmentEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  })
 
   /**
    * Escape HTML special characters
@@ -25,9 +46,91 @@
   }
 
   /**
+   * Context for tracking segments during HTML rendering
+   */
+  interface SegmentContext {
+    segments: ContentSegment[]
+    segmentIndex: number
+    currentSegmentId: string | null
+    inPresenterMode: boolean
+  }
+
+  /**
+   * Wrap content in a segment div if we're in presenter mode
+   */
+  function wrapWithSegment(html: string, ctx: SegmentContext): string {
+    if (!ctx.inPresenterMode || ctx.segments.length === 0) return html
+
+    const segment = ctx.segments[ctx.segmentIndex]
+    if (!segment) return html
+
+    const isActive = segment.id === ctx.currentSegmentId
+    const activeClass = isActive ? ' segment-active' : ''
+    ctx.segmentIndex++
+
+    return `<div class="segment${activeClass}" data-segment-index="${segment.index}" data-segment-id="${segment.id}">${html}</div>`
+  }
+
+  /**
+   * Check if a paragraph/list-item should be split into sentence segments
+   */
+  function shouldSplitIntoSentences(ctx: SegmentContext, _elementType: string): boolean {
+    if (!ctx.inPresenterMode || ctx.segments.length === 0) return false
+
+    const segment = ctx.segments[ctx.segmentIndex]
+    if (!segment) return false
+
+    // Check if the next few segments are 'sentence' type from this element
+    return segment.type === 'sentence'
+  }
+
+  /**
+   * Render text content split into sentence segments
+   */
+  function renderSentenceSegments(_textHtml: string, ctx: SegmentContext): string {
+    // Find all consecutive sentence segments
+    let html = ''
+
+    while (ctx.segmentIndex < ctx.segments.length && ctx.segments[ctx.segmentIndex].type === 'sentence') {
+      const segment = ctx.segments[ctx.segmentIndex]
+      const isActive = segment.id === ctx.currentSegmentId
+      const activeClass = isActive ? ' segment-active' : ''
+
+      // Get the sentence text from the segment label (it contains the actual sentence)
+      const sentenceHtml = escapeHtml(segment.label)
+
+      html += `<span class="segment${activeClass}" data-segment-index="${segment.index}" data-segment-id="${segment.id}">${sentenceHtml}</span> `
+      ctx.segmentIndex++
+    }
+
+    return html.trim()
+  }
+
+  /**
+   * Extract plain text from XmlElement for matching sentences
+   */
+  function extractPlainText(element: Y.XmlElement | Y.XmlText): string {
+    if (element instanceof Y.XmlText) {
+      return element.toString()
+    }
+    let text = ''
+    element.forEach((child) => {
+      if (child instanceof Y.XmlText) {
+        text += child.toString()
+      } else if (child instanceof Y.XmlElement) {
+        text += extractPlainText(child)
+      }
+    })
+    return text
+  }
+
+  /**
    * Convert XmlFragment/XmlElement to HTML string
    */
-  function xmlToHtml(node: Y.XmlFragment | Y.XmlElement | Y.XmlText | string): string {
+  function xmlToHtml(
+    node: Y.XmlFragment | Y.XmlElement | Y.XmlText | string,
+    ctx?: SegmentContext
+  ): string {
     // Handle string content
     if (typeof node === 'string') {
       return escapeHtml(node)
@@ -65,19 +168,28 @@
     // Handle XmlElement
     if (node instanceof Y.XmlElement) {
       const tagName = node.nodeName.toLowerCase()
-      let children = ''
 
+      // Build children HTML, passing context through
+      let children = ''
       node.forEach((child) => {
-        children += xmlToHtml(child as Y.XmlElement | Y.XmlText | string)
+        children += xmlToHtml(child as Y.XmlElement | Y.XmlText | string, ctx)
       })
 
       switch (tagName) {
-        case 'paragraph':
-          return `<p>${children || '&nbsp;'}</p>`
+        case 'paragraph': {
+          // Check if this paragraph should be split into sentence segments
+          if (ctx && shouldSplitIntoSentences(ctx, 'paragraph')) {
+            const sentenceHtml = renderSentenceSegments(children, ctx)
+            return `<p>${sentenceHtml || '&nbsp;'}</p>`
+          }
+          const html = `<p>${children || '&nbsp;'}</p>`
+          return ctx ? wrapWithSegment(html, ctx) : html
+        }
 
         case 'heading': {
           const level = node.getAttribute('level') || 1
-          return `<h${level}>${children}</h${level}>`
+          const html = `<h${level}>${children}</h${level}>`
+          return ctx ? wrapWithSegment(html, ctx) : html
         }
 
         case 'bullet_list':
@@ -88,21 +200,31 @@
           return start && start !== 1 ? `<ol start="${start}">${children}</ol>` : `<ol>${children}</ol>`
         }
 
-        case 'list_item':
-          return `<li>${children}</li>`
+        case 'list_item': {
+          // Check if this list item should be split into sentence segments
+          if (ctx && shouldSplitIntoSentences(ctx, 'list-item')) {
+            const sentenceHtml = renderSentenceSegments(children, ctx)
+            return `<li>${sentenceHtml}</li>`
+          }
+          const html = `<li>${children}</li>`
+          return ctx ? wrapWithSegment(html, ctx) : html
+        }
 
         case 'image': {
           const src = node.getAttribute('src') || ''
           const alt = node.getAttribute('alt') || ''
           const title = node.getAttribute('title') || ''
-          return `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" title="${escapeHtml(title)}" />`
+          const html = `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" title="${escapeHtml(title)}" />`
+          return ctx ? wrapWithSegment(html, ctx) : html
         }
 
         case 'slide_divider':
           return `<hr class="slide-divider" data-slide-divider="true" />`
 
-        case 'blockquote':
-          return `<blockquote>${children}</blockquote>`
+        case 'blockquote': {
+          const html = `<blockquote>${children}</blockquote>`
+          return ctx ? wrapWithSegment(html, ctx) : html
+        }
 
         case 'attribution':
           return `<cite>${children}</cite>`
@@ -120,7 +242,7 @@
     if (node instanceof Y.XmlFragment) {
       let html = ''
       node.forEach((child) => {
-        html += xmlToHtml(child as Y.XmlElement | Y.XmlText | string)
+        html += xmlToHtml(child as Y.XmlElement | Y.XmlText | string, ctx)
       })
       return html
     }
@@ -128,14 +250,42 @@
     return ''
   }
 
-  const htmlContent = $derived(content ? xmlToHtml(content) : '')
+  const htmlContent = $derived.by(() => {
+    if (!content) return ''
+
+    // Create segment context when in presenter mode with segments
+    if (mode === 'present' && segments.length > 0) {
+      const ctx: SegmentContext = {
+        segments,
+        segmentIndex: 0,
+        currentSegmentId,
+        inPresenterMode: true,
+      }
+      return xmlToHtml(content, ctx)
+    }
+
+    return xmlToHtml(content)
+  })
 </script>
 
+<!-- svelte-ignore a11y_click_events_have_key_events -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
+  bind:this={viewerElement}
   class="presentation-viewer h-full w-full overflow-auto"
   style:font-family={theme.font}
   style:background-color={theme.backgroundColor}
-  style:color={theme.textColor}>
+  style:color={theme.textColor}
+  onclick={(e) => {
+    if (!onSegmentClick) return
+    const target = (e.target as HTMLElement).closest('[data-segment-id]')
+    if (target) {
+      const segmentId = target.getAttribute('data-segment-id')
+      if (segmentId) {
+        onSegmentClick(segmentId)
+      }
+    }
+  }}>
   {#if theme.viewport}
     <div
       class="viewport-container relative mx-auto"
@@ -162,6 +312,33 @@
 </div>
 
 <style>
+  /* Segment highlighting */
+  .presentation-viewer :global(.segment) {
+    transition: background-color 0.2s ease, outline-color 0.2s ease;
+    border-radius: 0.25rem;
+    padding: 0.125rem 0.25rem;
+    margin: -0.125rem -0.25rem;
+  }
+
+  .presentation-viewer :global(.segment-active) {
+    background-color: rgba(59, 130, 246, 0.15);
+    outline: 2px solid rgba(59, 130, 246, 0.5);
+    outline-offset: 2px;
+  }
+
+  /* Sentence segments (inline spans) */
+  .presentation-viewer :global(span.segment) {
+    display: inline;
+    padding: 0.0625rem 0.125rem;
+    margin: 0;
+  }
+
+  .presentation-viewer :global(span.segment-active) {
+    background-color: rgba(59, 130, 246, 0.2);
+    outline: 1px solid rgba(59, 130, 246, 0.4);
+    outline-offset: 1px;
+  }
+
   /* Headings */
   .presentation-viewer :global(h1) {
     font-size: 2.5rem;

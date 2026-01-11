@@ -1,13 +1,22 @@
 <script lang="ts">
-  import type { NavigationPoint } from '$lib/utils/point-parser'
+  import type { ContentSegment } from '$lib/utils/segment-parser'
 
   interface Props {
-    points: NavigationPoint[]
+    segments: ContentSegment[]
     currentIndex: number
     onNavigate: (index: number) => void
+    onNavigateById?: (segmentId: string) => void
   }
 
-  let { points, currentIndex, onNavigate }: Props = $props()
+  let { segments, currentIndex, onNavigate, onNavigateById }: Props = $props()
+
+  function handleSegmentClick(segment: ContentSegment) {
+    if (onNavigateById) {
+      onNavigateById(segment.id)
+    } else {
+      onNavigate(segment.index)
+    }
+  }
 
   function goPrevious() {
     if (currentIndex > 0) {
@@ -16,9 +25,40 @@
   }
 
   function goNext() {
-    if (currentIndex < points.length - 1) {
+    if (currentIndex < segments.length - 1) {
       onNavigate(currentIndex + 1)
     }
+  }
+
+  // Get icon for segment type
+  function getSegmentIcon(type: ContentSegment['type']): string {
+    switch (type) {
+      case 'heading':
+        return 'H'
+      case 'paragraph':
+        return 'P'
+      case 'list-item':
+        return '\u2022' // bullet
+      case 'image':
+        return '\u{1F5BC}' // frame with picture
+      case 'blockquote':
+        return '\u201C' // opening quote
+      case 'sentence':
+        return '\u2026' // ellipsis
+      default:
+        return '\u2022'
+    }
+  }
+
+  // Get indentation level for segment type
+  function getIndentLevel(segment: ContentSegment): number {
+    if (segment.type === 'heading') {
+      return (segment.level ?? 1) - 1
+    }
+    if (segment.type === 'list-item' || segment.type === 'sentence') {
+      return 1
+    }
+    return 0
   }
 </script>
 
@@ -33,28 +73,29 @@
     </button>
 
     <span class="text-gray-400">
-      {currentIndex + 1} / {points.length}
+      {currentIndex + 1} / {segments.length}
     </span>
 
     <button
       onclick={goNext}
-      disabled={currentIndex === points.length - 1}
+      disabled={currentIndex === segments.length - 1}
       class="rounded border border-gray-600 px-4 py-2 text-gray-300 hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50">
       Next &rarr;
     </button>
   </div>
 
-  <!-- Points List -->
+  <!-- Segments List -->
   <div class="max-h-[50vh] overflow-y-auto rounded border border-gray-700 bg-gray-800/50">
-    {#each points as point (point.index)}
+    {#each segments as segment (segment.id)}
       <button
-        onclick={() => onNavigate(point.index)}
-        class="w-full px-3 py-2 text-left transition-colors {point.index === currentIndex
+        onclick={() => handleSegmentClick(segment)}
+        class="w-full px-3 py-2 text-left transition-colors flex items-start gap-2 {segment.index === currentIndex
           ? 'bg-blue-600 text-white'
           : 'text-gray-300 hover:bg-gray-700'}"
-        style:padding-left="{(point.level - 1) * 1 + 0.75}rem">
-        <span class="text-xs text-gray-500 mr-2">{point.index + 1}.</span>
-        {point.label}
+        style:padding-left="{getIndentLevel(segment) * 0.75 + 0.75}rem">
+        <span class="text-xs opacity-60 flex-shrink-0 w-4 text-center">{getSegmentIcon(segment.type)}</span>
+        <span class="text-xs opacity-50 flex-shrink-0">{segment.index + 1}.</span>
+        <span class="truncate">{segment.label}</span>
       </button>
     {/each}
   </div>

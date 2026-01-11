@@ -36,7 +36,7 @@ describe('presentationSchema', () => {
       it('serializes to DOM as p element', () => {
         const paragraph = presentationSchema.nodes.paragraph.create()
         const dom = presentationSchema.nodes.paragraph.spec.toDOM?.(paragraph)
-        expect(dom).toEqual(['p', 0])
+        expect(dom).toEqual(['p', {}, 0])
       })
     })
 
@@ -65,9 +65,9 @@ describe('presentationSchema', () => {
         const h2 = presentationSchema.nodes.heading.create({ level: 2 })
         const h3 = presentationSchema.nodes.heading.create({ level: 3 })
 
-        expect(presentationSchema.nodes.heading.spec.toDOM?.(h1)).toEqual(['h1', 0])
-        expect(presentationSchema.nodes.heading.spec.toDOM?.(h2)).toEqual(['h2', 0])
-        expect(presentationSchema.nodes.heading.spec.toDOM?.(h3)).toEqual(['h3', 0])
+        expect(presentationSchema.nodes.heading.spec.toDOM?.(h1)).toEqual(['h1', {}, 0])
+        expect(presentationSchema.nodes.heading.spec.toDOM?.(h2)).toEqual(['h2', {}, 0])
+        expect(presentationSchema.nodes.heading.spec.toDOM?.(h3)).toEqual(['h3', {}, 0])
       })
     })
 
@@ -123,7 +123,7 @@ describe('presentationSchema', () => {
 
       it('serializes to DOM as li element', () => {
         const item = presentationSchema.nodes.list_item.create()
-        expect(presentationSchema.nodes.list_item.spec.toDOM?.(item)).toEqual(['li', 0])
+        expect(presentationSchema.nodes.list_item.spec.toDOM?.(item)).toEqual(['li', {}, 0])
       })
     })
 
@@ -198,7 +198,7 @@ describe('presentationSchema', () => {
 
       it('serializes to DOM as blockquote element', () => {
         const quote = presentationSchema.nodes.blockquote.create()
-        expect(presentationSchema.nodes.blockquote.spec.toDOM?.(quote)).toEqual(['blockquote', 0])
+        expect(presentationSchema.nodes.blockquote.spec.toDOM?.(quote)).toEqual(['blockquote', {}, 0])
       })
     })
 
@@ -229,6 +229,96 @@ describe('presentationSchema', () => {
       it('serializes to DOM as br element', () => {
         const br = presentationSchema.nodes.hard_break.create()
         expect(presentationSchema.nodes.hard_break.spec.toDOM?.(br)).toEqual(['br'])
+      })
+    })
+
+    describe('sentence', () => {
+      it('is inline', () => {
+        expect(presentationSchema.nodes.sentence.spec.inline).toBe(true)
+      })
+
+      it('is in the inline group', () => {
+        expect(presentationSchema.nodes.sentence.spec.group).toBe('inline')
+      })
+
+      it('can contain text', () => {
+        expect(presentationSchema.nodes.sentence.spec.content).toBe('text*')
+      })
+
+      it('has segmentId attribute', () => {
+        const sentence = presentationSchema.nodes.sentence.create({ segmentId: 'seg-test' })
+        expect(sentence.attrs.segmentId).toBe('seg-test')
+      })
+
+      it('has null segmentId by default', () => {
+        const sentence = presentationSchema.nodes.sentence.create()
+        expect(sentence.attrs.segmentId).toBeNull()
+      })
+
+      it('serializes to DOM as span with data-sentence attribute', () => {
+        const sentence = presentationSchema.nodes.sentence.create()
+        const dom = presentationSchema.nodes.sentence.spec.toDOM?.(sentence)
+        expect(dom).toEqual(['span', { 'data-sentence': 'true' }, 0])
+      })
+
+      it('includes data-segment-id in DOM when segmentId is set', () => {
+        const sentence = presentationSchema.nodes.sentence.create({ segmentId: 'seg-abc123' })
+        const dom = presentationSchema.nodes.sentence.spec.toDOM?.(sentence)
+        expect(dom).toEqual([
+          'span',
+          { 'data-sentence': 'true', 'data-segment-id': 'seg-abc123' },
+          0,
+        ])
+      })
+    })
+
+    describe('segmentId attributes', () => {
+      it('paragraph has segmentId attribute', () => {
+        const para = presentationSchema.nodes.paragraph.create({ segmentId: 'seg-p1' })
+        expect(para.attrs.segmentId).toBe('seg-p1')
+      })
+
+      it('heading has segmentId attribute', () => {
+        const heading = presentationSchema.nodes.heading.create({
+          level: 1,
+          segmentId: 'seg-h1',
+        })
+        expect(heading.attrs.segmentId).toBe('seg-h1')
+      })
+
+      it('list_item has segmentId attribute', () => {
+        const para = presentationSchema.nodes.paragraph.create()
+        const li = presentationSchema.nodes.list_item.create({ segmentId: 'seg-li1' }, para)
+        expect(li.attrs.segmentId).toBe('seg-li1')
+      })
+
+      it('image has segmentId attribute', () => {
+        const img = presentationSchema.nodes.image.create({
+          src: 'test.png',
+          segmentId: 'seg-img1',
+        })
+        expect(img.attrs.segmentId).toBe('seg-img1')
+      })
+
+      it('blockquote has segmentId attribute', () => {
+        const para = presentationSchema.nodes.paragraph.create()
+        const bq = presentationSchema.nodes.blockquote.create({ segmentId: 'seg-bq1' }, para)
+        expect(bq.attrs.segmentId).toBe('seg-bq1')
+      })
+
+      it('paragraph includes data-segment-id in DOM when set', () => {
+        const para = presentationSchema.nodes.paragraph.create({ segmentId: 'seg-para' })
+        const dom = presentationSchema.nodes.paragraph.spec.toDOM?.(para)
+        expect(dom).toEqual(['p', { 'data-segment-id': 'seg-para' }, 0])
+      })
+
+      it('heading includes data-segment-id in DOM when set', () => {
+        const heading = presentationSchema.nodes.heading.create({
+          level: 2,
+          segmentId: 'seg-heading',
+        })
+        const dom = presentationSchema.nodes.heading.spec.toDOM?.(heading)
+        expect(dom).toEqual(['h2', { 'data-segment-id': 'seg-heading' }, 0])
       })
     })
   })

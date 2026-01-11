@@ -5,7 +5,7 @@
   import PresentationViewer from '$lib/components/presentation/PresentationViewer.svelte'
   import PresenterControls from '$lib/components/presentation/PresenterControls.svelte'
   import { resolveTheme, defaultTheme, type ResolvedTheme } from '$lib/utils/theme-resolver'
-  import { parseNavigationPoints, clampPointIndex, type NavigationPoint } from '$lib/utils/point-parser'
+  import { parseContentSegments, clampSegmentIndex, type ContentSegment } from '$lib/utils/segment-parser'
 
   let { data } = $props()
 
@@ -43,22 +43,35 @@
       : defaultTheme,
   )
 
-  // Parse navigation points from content
-  const navigationPoints: NavigationPoint[] = $derived(
-    doc.synced ? parseNavigationPoints(doc.content) : [],
+  // Parse content into segments for navigation
+  const segments: ContentSegment[] = $derived(
+    doc.synced ? parseContentSegments(doc.content) : [],
   )
 
-  // Current navigation point index
-  let currentPointIndex = $state(0)
+  // Track by STABLE segment ID (not index)
+  let currentSegmentId = $state<string | null>(null)
 
-  // Clamp index when points change
+  // Initialize to first segment when segments are available
   $effect(() => {
-    currentPointIndex = clampPointIndex(currentPointIndex, navigationPoints.length)
+    if (segments.length > 0 && !currentSegmentId) {
+      currentSegmentId = segments[0].id
+    }
   })
 
-  // Handle navigation
-  function handleNavigate(index: number) {
-    currentPointIndex = clampPointIndex(index, navigationPoints.length)
+  // Derive current index from ID (for display)
+  const currentSegmentIndex = $derived(
+    segments.findIndex(s => s.id === currentSegmentId)
+  )
+
+  // Handle navigation by index (for keyboard/controls)
+  function handleNavigateByIndex(index: number) {
+    const clampedIndex = clampSegmentIndex(index, segments.length)
+    currentSegmentId = segments[clampedIndex]?.id ?? null
+  }
+
+  // Handle navigation by ID (for clicks)
+  function handleNavigateById(segmentId: string) {
+    currentSegmentId = segmentId
   }
 
   // Keyboard navigation
@@ -67,21 +80,21 @@
       case 'ArrowLeft':
       case 'ArrowUp':
         event.preventDefault()
-        handleNavigate(currentPointIndex - 1)
+        handleNavigateByIndex(currentSegmentIndex - 1)
         break
       case 'ArrowRight':
       case 'ArrowDown':
       case ' ':
         event.preventDefault()
-        handleNavigate(currentPointIndex + 1)
+        handleNavigateByIndex(currentSegmentIndex + 1)
         break
       case 'Home':
         event.preventDefault()
-        handleNavigate(0)
+        handleNavigateByIndex(0)
         break
       case 'End':
         event.preventDefault()
-        handleNavigate(navigationPoints.length - 1)
+        handleNavigateByIndex(segments.length - 1)
         break
       case 'Escape':
         // Could exit fullscreen or go back
@@ -135,8 +148,9 @@
           content={doc.content}
           theme={resolvedTheme}
           mode="present"
-          currentPoint={currentPointIndex}
-          onPointClick={handleNavigate} />
+          {segments}
+          {currentSegmentId}
+          onSegmentClick={handleNavigateById} />
       {:else}
         <div class="flex h-full items-center justify-center">
           <p class="text-gray-500">Loading presentation...</p>
@@ -147,15 +161,16 @@
 
   <!-- Sidebar with Controls -->
   <aside class="w-80 border-l border-gray-700 bg-gray-800 p-4">
-    {#if doc.synced && navigationPoints.length > 0}
+    {#if doc.synced && segments.length > 0}
       <PresenterControls
-        points={navigationPoints}
-        currentIndex={currentPointIndex}
-        onNavigate={handleNavigate} />
+        {segments}
+        currentIndex={currentSegmentIndex}
+        onNavigate={handleNavigateByIndex}
+        onNavigateById={handleNavigateById} />
     {:else if doc.synced}
       <div class="text-center text-gray-500">
-        <p>No navigation points found.</p>
-        <p class="mt-2 text-sm">Add headings to create slides.</p>
+        <p>No content segments found.</p>
+        <p class="mt-2 text-sm">Add content to your presentation.</p>
       </div>
     {:else}
       <div class="text-center text-gray-500">

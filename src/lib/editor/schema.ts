@@ -16,29 +16,104 @@ const nodes: Record<string, NodeSpec> = {
     content: 'block+',
   },
 
-  // Paragraph
+  // Paragraph - contains inline content (sentences are inline nodes)
   paragraph: {
+    attrs: {
+      segmentId: { default: null },
+    },
     content: 'inline*',
     group: 'block',
-    parseDOM: [{ tag: 'p' }],
-    toDOM() {
-      return ['p', 0]
+    parseDOM: [
+      {
+        tag: 'p',
+        getAttrs(dom) {
+          return {
+            segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
+          }
+        },
+      },
+    ],
+    toDOM(node) {
+      const attrs: Record<string, string> = {}
+      if (node.attrs.segmentId) {
+        attrs['data-segment-id'] = node.attrs.segmentId
+      }
+      return ['p', attrs, 0]
+    },
+  },
+
+  // Sentence - represents a single sentence segment within a split paragraph
+  // Inline wrapper that contains text and marks
+  sentence: {
+    attrs: {
+      segmentId: { default: null },
+    },
+    inline: true,
+    content: 'text*',
+    group: 'inline',
+    parseDOM: [
+      {
+        tag: 'span[data-sentence]',
+        getAttrs(dom) {
+          return {
+            segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
+          }
+        },
+      },
+    ],
+    toDOM(node) {
+      const attrs: Record<string, string> = { 'data-sentence': 'true' }
+      if (node.attrs.segmentId) {
+        attrs['data-segment-id'] = node.attrs.segmentId
+      }
+      return ['span', attrs, 0]
     },
   },
 
   // Headings (h1, h2, h3)
   heading: {
-    attrs: { level: { default: 1, validate: 'number' } },
+    attrs: {
+      level: { default: 1, validate: 'number' },
+      segmentId: { default: null },
+    },
     content: 'inline*',
     group: 'block',
     defining: true,
     parseDOM: [
-      { tag: 'h1', attrs: { level: 1 } },
-      { tag: 'h2', attrs: { level: 2 } },
-      { tag: 'h3', attrs: { level: 3 } },
+      {
+        tag: 'h1',
+        getAttrs(dom) {
+          return {
+            level: 1,
+            segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
+          }
+        },
+      },
+      {
+        tag: 'h2',
+        getAttrs(dom) {
+          return {
+            level: 2,
+            segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
+          }
+        },
+      },
+      {
+        tag: 'h3',
+        getAttrs(dom) {
+          return {
+            level: 3,
+            segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
+          }
+        },
+      },
     ],
     toDOM(node) {
-      return ['h' + node.attrs.level, 0]
+      const attrs: Record<string, string> = {}
+      if (node.attrs.segmentId) {
+        attrs['data-segment-id'] = node.attrs.segmentId
+      }
+      return ['h' + node.attrs.level, attrs, 0]
     },
   },
 
@@ -73,10 +148,26 @@ const nodes: Record<string, NodeSpec> = {
 
   // List item
   list_item: {
+    attrs: {
+      segmentId: { default: null },
+    },
     content: 'paragraph block*',
-    parseDOM: [{ tag: 'li' }],
-    toDOM() {
-      return ['li', 0]
+    parseDOM: [
+      {
+        tag: 'li',
+        getAttrs(dom) {
+          return {
+            segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
+          }
+        },
+      },
+    ],
+    toDOM(node) {
+      const attrs: Record<string, string> = {}
+      if (node.attrs.segmentId) {
+        attrs['data-segment-id'] = node.attrs.segmentId
+      }
+      return ['li', attrs, 0]
     },
     defining: true,
   },
@@ -88,6 +179,7 @@ const nodes: Record<string, NodeSpec> = {
       src: { validate: 'string' },
       alt: { default: null, validate: 'string|null' },
       title: { default: null, validate: 'string|null' },
+      segmentId: { default: null },
     },
     group: 'inline',
     draggable: true,
@@ -100,13 +192,18 @@ const nodes: Record<string, NodeSpec> = {
             src: element.getAttribute('src'),
             alt: element.getAttribute('alt'),
             title: element.getAttribute('title'),
+            segmentId: element.getAttribute('data-segment-id'),
           }
         },
       },
     ],
     toDOM(node) {
-      const { src, alt, title } = node.attrs
-      return ['img', { src, alt, title }]
+      const { src, alt, title, segmentId } = node.attrs
+      const attrs: Record<string, string | null> = { src, alt, title }
+      if (segmentId) {
+        attrs['data-segment-id'] = segmentId
+      }
+      return ['img', attrs]
     },
   },
 
@@ -121,12 +218,28 @@ const nodes: Record<string, NodeSpec> = {
 
   // Blockquote with optional attribution
   blockquote: {
+    attrs: {
+      segmentId: { default: null },
+    },
     content: 'block+ attribution?',
     group: 'block',
     defining: true,
-    parseDOM: [{ tag: 'blockquote' }],
-    toDOM() {
-      return ['blockquote', 0]
+    parseDOM: [
+      {
+        tag: 'blockquote',
+        getAttrs(dom) {
+          return {
+            segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
+          }
+        },
+      },
+    ],
+    toDOM(node) {
+      const attrs: Record<string, string> = {}
+      if (node.attrs.segmentId) {
+        attrs['data-segment-id'] = node.attrs.segmentId
+      }
+      return ['blockquote', attrs, 0]
     },
   },
 
