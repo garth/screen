@@ -8,11 +8,32 @@ let lastProviderOptions: {
 } | null = null
 let mockReadOnly = false
 
+// Track WebRTC provider options
+let lastWebrtcOptions: {
+  roomName: string
+  signaling?: string[]
+  filterBcConns?: boolean
+} | null = null
+
+// Mock awareness for WebRTC
+const mockWebrtcAwareness = {
+  setLocalStateField: vi.fn(),
+  getStates: vi.fn(() => new Map()),
+  on: vi.fn(),
+  off: vi.fn(),
+}
+
 // Mock HocuspocusProvider
 vi.mock('@hocuspocus/provider', () => {
   return {
     HocuspocusProvider: class MockHocuspocusProvider {
       destroy = vi.fn()
+      awareness = {
+        setLocalStateField: vi.fn(),
+        getStates: vi.fn(() => new Map()),
+        on: vi.fn(),
+        off: vi.fn(),
+      }
       on = vi.fn((event: string, callback: () => void) => {
         if (event === 'synced') {
           setTimeout(callback, 0)
@@ -33,12 +54,33 @@ vi.mock('@hocuspocus/provider', () => {
   }
 })
 
+// Mock y-webrtc
+vi.mock('y-webrtc', () => {
+  return {
+    WebrtcProvider: class MockWebrtcProvider {
+      roomName: string
+      destroy = vi.fn()
+      awareness = mockWebrtcAwareness
+
+      constructor(roomName: string, _doc: Y.Doc, options?: { signaling?: string[]; filterBcConns?: boolean }) {
+        this.roomName = roomName
+        lastWebrtcOptions = {
+          roomName,
+          signaling: options?.signaling,
+          filterBcConns: options?.filterBcConns,
+        }
+      }
+    },
+  }
+})
+
 import { createBaseDocument, createReactiveMetaProperty } from './base.svelte'
 
 describe('createBaseDocument', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     lastProviderOptions = null
+    lastWebrtcOptions = null
     mockReadOnly = false
   })
 
@@ -159,6 +201,107 @@ describe('createBaseDocument', () => {
 
     expect(providerDestroy).toHaveBeenCalled()
     expect(baseProviderDestroy).toHaveBeenCalled()
+  })
+
+  describe('WebRTC provider', () => {
+    it('creates WebRTC provider for P2P awareness sync', () => {
+      const doc = createBaseDocument({ documentId: 'test-doc' })
+
+      expect(doc.webrtcProvider).not.toBeNull()
+      expect(lastWebrtcOptions).not.toBeNull()
+
+      doc.destroy()
+    })
+
+    it('uses document ID prefixed with "awareness-" for WebRTC room name', () => {
+      const doc = createBaseDocument({ documentId: 'my-presentation-123' })
+
+      expect(lastWebrtcOptions?.roomName).toBe('awareness-my-presentation-123')
+
+      doc.destroy()
+    })
+
+    it('configures WebRTC with default public signaling servers', () => {
+      const doc = createBaseDocument({ documentId: 'test-doc' })
+
+      expect(lastWebrtcOptions?.signaling).toContain('wss://signaling.yjs.dev')
+      expect(lastWebrtcOptions?.signaling).toContain('wss://y-webrtc-signaling-eu.herokuapp.com')
+      expect(lastWebrtcOptions?.signaling).toContain('wss://y-webrtc-signaling-us.herokuapp.com')
+
+      doc.destroy()
+    })
+
+    it('disables BroadcastChannel filtering for WebRTC', () => {
+      const doc = createBaseDocument({ documentId: 'test-doc' })
+
+      expect(lastWebrtcOptions?.filterBcConns).toBe(false)
+
+      doc.destroy()
+    })
+
+    it('sets user awareness on WebRTC provider when user is provided', () => {
+      const doc = createBaseDocument({
+        documentId: 'test-doc',
+        user: { id: 'user-123', name: 'Test User' },
+      })
+
+      expect(mockWebrtcAwareness.setLocalStateField).toHaveBeenCalledWith('user', {
+        name: 'Test User',
+        color: expect.any(String),
+      })
+
+      doc.destroy()
+    })
+
+    it('uses provided user color for WebRTC awareness', () => {
+      const doc = createBaseDocument({
+        documentId: 'test-doc',
+        user: { id: 'user-123', name: 'Test User', color: '#ff0000' },
+      })
+
+      expect(mockWebrtcAwareness.setLocalStateField).toHaveBeenCalledWith('user', {
+        name: 'Test User',
+        color: '#ff0000',
+      })
+
+      doc.destroy()
+    })
+
+    it('generates consistent color from user ID when not provided', () => {
+      const doc1 = createBaseDocument({
+        documentId: 'test-doc-1',
+        user: { id: 'same-user-id', name: 'User 1' },
+      })
+
+      const firstCall = mockWebrtcAwareness.setLocalStateField.mock.calls[0]
+      const firstColor = firstCall[1].color
+
+      doc1.destroy()
+      vi.clearAllMocks()
+
+      const doc2 = createBaseDocument({
+        documentId: 'test-doc-2',
+        user: { id: 'same-user-id', name: 'User 2' },
+      })
+
+      const secondCall = mockWebrtcAwareness.setLocalStateField.mock.calls[0]
+      const secondColor = secondCall[1].color
+
+      // Same user ID should generate same color
+      expect(firstColor).toBe(secondColor)
+
+      doc2.destroy()
+    })
+
+    it('cleans up WebRTC provider on destroy', () => {
+      const doc = createBaseDocument({ documentId: 'test-doc' })
+
+      const webrtcDestroy = doc.webrtcProvider!.destroy as ReturnType<typeof vi.fn>
+
+      doc.destroy()
+
+      expect(webrtcDestroy).toHaveBeenCalled()
+    })
   })
 })
 

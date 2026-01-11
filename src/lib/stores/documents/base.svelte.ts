@@ -1,4 +1,5 @@
 import { HocuspocusProvider } from '@hocuspocus/provider'
+import { WebrtcProvider } from 'y-webrtc'
 import * as Y from 'yjs'
 import type { DocumentOptions, UserInfo } from './types'
 
@@ -33,6 +34,7 @@ export interface BaseDocument {
   readonly baseMeta: Y.Map<unknown> | null
   readonly provider: HocuspocusProvider
   readonly baseProvider: HocuspocusProvider | null
+  readonly webrtcProvider: WebrtcProvider | null
   destroy(): void
 }
 
@@ -86,6 +88,29 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
     })
   }
 
+  // Create WebRTC provider for P2P awareness sync
+  // Uses a separate Y.Doc so only awareness is synced, not document content
+  const webrtcYdoc = new Y.Doc()
+  const webrtcProvider = new WebrtcProvider(
+    `awareness-${options.documentId}`,
+    webrtcYdoc,
+    {
+      // Use default public signaling servers
+      signaling: ['wss://signaling.yjs.dev', 'wss://y-webrtc-signaling-eu.herokuapp.com', 'wss://y-webrtc-signaling-us.herokuapp.com'],
+      // Disable BroadcastChannel filtering to ensure all tabs connect via WebRTC
+      filterBcConns: false,
+    }
+  )
+
+  // Set user awareness on WebRTC provider
+  if (options.user) {
+    const color = options.user.color || generateUserColor(options.user.id)
+    webrtcProvider.awareness.setLocalStateField('user', {
+      name: options.user.name,
+      color,
+    })
+  }
+
   // Meta observation for DB sync with debouncing
   let metaObserverTimeout: ReturnType<typeof setTimeout> | null = null
 
@@ -129,8 +154,13 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
     get baseProvider() {
       return baseProvider
     },
+    get webrtcProvider() {
+      return webrtcProvider
+    },
     destroy() {
       if (metaObserverTimeout) clearTimeout(metaObserverTimeout)
+      webrtcProvider.destroy()
+      webrtcYdoc.destroy()
       baseProvider?.destroy()
       baseYdoc?.destroy()
       provider.destroy()

@@ -1,6 +1,7 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest'
 import type { HocuspocusProvider } from '@hocuspocus/provider'
-import { createPresentationAwareness, type PresenterState } from './awareness.svelte'
+import type { WebrtcProvider } from 'y-webrtc'
+import { createPresentationAwareness, type PresenterState, type DualProviders } from './awareness.svelte'
 
 // Create a mock awareness object
 function createMockAwareness() {
@@ -42,30 +43,49 @@ function createMockAwareness() {
   }
 }
 
-// Create a mock provider
-function createMockProvider(awareness = createMockAwareness()) {
+// Create mock dual providers
+function createMockDualProviders(
+  hocuspocusAwareness = createMockAwareness(),
+  webrtcAwareness = createMockAwareness()
+): { providers: DualProviders; hocuspocusAwareness: ReturnType<typeof createMockAwareness>; webrtcAwareness: ReturnType<typeof createMockAwareness> } {
   return {
-    awareness,
-  } as unknown as HocuspocusProvider
+    providers: {
+      hocuspocus: { awareness: hocuspocusAwareness } as unknown as HocuspocusProvider,
+      webrtc: { awareness: webrtcAwareness } as unknown as WebrtcProvider,
+    },
+    hocuspocusAwareness,
+    webrtcAwareness,
+  }
 }
 
 describe('createPresentationAwareness', () => {
-  let mockAwareness: ReturnType<typeof createMockAwareness>
-  let mockProvider: HocuspocusProvider
+  let hocuspocusAwareness: ReturnType<typeof createMockAwareness>
+  let webrtcAwareness: ReturnType<typeof createMockAwareness>
+  let providers: DualProviders
   let awareness: ReturnType<typeof createPresentationAwareness>
 
   beforeEach(() => {
     vi.clearAllMocks()
-    mockAwareness = createMockAwareness()
-    mockProvider = createMockProvider(mockAwareness)
-    awareness = createPresentationAwareness(mockProvider)
+    const mocks = createMockDualProviders()
+    providers = mocks.providers
+    hocuspocusAwareness = mocks.hocuspocusAwareness
+    webrtcAwareness = mocks.webrtcAwareness
+    awareness = createPresentationAwareness(providers)
   })
 
   describe('setPresenter', () => {
-    it('sets presenter state with segmentId and timestamp', () => {
+    it('sets presenter state on both providers', () => {
       awareness.setPresenter('seg-123')
 
-      expect(mockAwareness.setLocalStateField).toHaveBeenCalledWith(
+      expect(hocuspocusAwareness.setLocalStateField).toHaveBeenCalledWith(
+        'presenter',
+        expect.objectContaining({
+          segmentId: 'seg-123',
+          isPresenting: true,
+          timestamp: expect.any(Number),
+        }),
+      )
+      expect(webrtcAwareness.setLocalStateField).toHaveBeenCalledWith(
         'presenter',
         expect.objectContaining({
           segmentId: 'seg-123',
@@ -75,16 +95,25 @@ describe('createPresentationAwareness', () => {
       )
     })
 
+    it('uses the same timestamp for both providers', () => {
+      awareness.setPresenter('seg-123')
+
+      const hocuspocusCall = hocuspocusAwareness.setLocalStateField.mock.calls[0][1] as PresenterState
+      const webrtcCall = webrtcAwareness.setLocalStateField.mock.calls[0][1] as PresenterState
+
+      expect(hocuspocusCall.timestamp).toBe(webrtcCall.timestamp)
+    })
+
     it('updates timestamp on each call', async () => {
       awareness.setPresenter('seg-1')
-      const firstCall = mockAwareness.setLocalStateField.mock.calls[0][1] as PresenterState
+      const firstCall = hocuspocusAwareness.setLocalStateField.mock.calls[0][1] as PresenterState
       const firstTimestamp = firstCall.timestamp
 
       // Small delay to ensure different timestamp
       await new Promise((resolve) => setTimeout(resolve, 5))
 
       awareness.setPresenter('seg-2')
-      const secondCall = mockAwareness.setLocalStateField.mock.calls[1][1] as PresenterState
+      const secondCall = hocuspocusAwareness.setLocalStateField.mock.calls[1][1] as PresenterState
       const secondTimestamp = secondCall.timestamp
 
       expect(secondTimestamp).toBeGreaterThanOrEqual(firstTimestamp)
@@ -92,41 +121,100 @@ describe('createPresentationAwareness', () => {
   })
 
   describe('clearPresenter', () => {
-    it('clears presenter state by setting to null', () => {
+    it('clears presenter state on both providers', () => {
       awareness.setPresenter('seg-123')
       awareness.clearPresenter()
 
-      expect(mockAwareness.setLocalStateField).toHaveBeenLastCalledWith('presenter', null)
+      expect(hocuspocusAwareness.setLocalStateField).toHaveBeenLastCalledWith('presenter', null)
+      expect(webrtcAwareness.setLocalStateField).toHaveBeenLastCalledWith('presenter', null)
     })
   })
 
   describe('getActivePresenter', () => {
-    it('returns null when no presenter is active', () => {
+    it('returns null when no presenter is active on either provider', () => {
       const result = awareness.getActivePresenter()
 
       expect(result).toBeNull()
     })
 
-    it('returns null when awareness is unavailable', () => {
-      const providerWithoutAwareness = { awareness: null } as unknown as HocuspocusProvider
-      const awarenessWithoutProvider = createPresentationAwareness(providerWithoutAwareness)
+    it('returns null when awareness is unavailable on both providers', () => {
+      const nullProviders: DualProviders = {
+        hocuspocus: { awareness: null } as unknown as HocuspocusProvider,
+        webrtc: { awareness: null } as unknown as WebrtcProvider,
+      }
+      const awarenessWithNullProviders = createPresentationAwareness(nullProviders)
 
-      const result = awarenessWithoutProvider.getActivePresenter()
+      const result = awarenessWithNullProviders.getActivePresenter()
 
       expect(result).toBeNull()
     })
 
-    it('returns the presenter when one is active', () => {
+    it('returns presenter from hocuspocus when only hocuspocus has presenter', () => {
       const presenterState: PresenterState = {
         segmentId: 'seg-abc',
         isPresenting: true,
         timestamp: Date.now(),
       }
-      mockAwareness._simulateRemoteUpdate(1, { presenter: presenterState })
+      hocuspocusAwareness._simulateRemoteUpdate(1, { presenter: presenterState })
 
       const result = awareness.getActivePresenter()
 
       expect(result).toEqual(presenterState)
+    })
+
+    it('returns presenter from webrtc when only webrtc has presenter', () => {
+      const presenterState: PresenterState = {
+        segmentId: 'seg-xyz',
+        isPresenting: true,
+        timestamp: Date.now(),
+      }
+      webrtcAwareness._simulateRemoteUpdate(1, { presenter: presenterState })
+
+      const result = awareness.getActivePresenter()
+
+      expect(result).toEqual(presenterState)
+    })
+
+    it('returns the more recent presenter when both providers have presenters', () => {
+      const olderPresenter: PresenterState = {
+        segmentId: 'seg-old',
+        isPresenting: true,
+        timestamp: 1000,
+      }
+      const newerPresenter: PresenterState = {
+        segmentId: 'seg-new',
+        isPresenting: true,
+        timestamp: 2000,
+      }
+
+      hocuspocusAwareness._simulateRemoteUpdate(1, { presenter: olderPresenter })
+      webrtcAwareness._simulateRemoteUpdate(1, { presenter: newerPresenter })
+
+      const result = awareness.getActivePresenter()
+
+      expect(result).toEqual(newerPresenter)
+      expect(result?.segmentId).toBe('seg-new')
+    })
+
+    it('returns hocuspocus presenter when it is more recent', () => {
+      const olderPresenter: PresenterState = {
+        segmentId: 'seg-webrtc',
+        isPresenting: true,
+        timestamp: 1000,
+      }
+      const newerPresenter: PresenterState = {
+        segmentId: 'seg-hocuspocus',
+        isPresenting: true,
+        timestamp: 2000,
+      }
+
+      webrtcAwareness._simulateRemoteUpdate(1, { presenter: olderPresenter })
+      hocuspocusAwareness._simulateRemoteUpdate(1, { presenter: newerPresenter })
+
+      const result = awareness.getActivePresenter()
+
+      expect(result).toEqual(newerPresenter)
+      expect(result?.segmentId).toBe('seg-hocuspocus')
     })
 
     it('returns the most recent presenter by timestamp when multiple are active', () => {
@@ -141,8 +229,8 @@ describe('createPresentationAwareness', () => {
         timestamp: 2000,
       }
 
-      mockAwareness._simulateRemoteUpdate(1, { presenter: olderPresenter })
-      mockAwareness._simulateRemoteUpdate(2, { presenter: newerPresenter })
+      hocuspocusAwareness._simulateRemoteUpdate(1, { presenter: olderPresenter })
+      hocuspocusAwareness._simulateRemoteUpdate(2, { presenter: newerPresenter })
 
       const result = awareness.getActivePresenter()
 
@@ -162,8 +250,8 @@ describe('createPresentationAwareness', () => {
         timestamp: 1000,
       }
 
-      mockAwareness._simulateRemoteUpdate(1, { presenter: inactivePresenter })
-      mockAwareness._simulateRemoteUpdate(2, { presenter: activePresenter })
+      hocuspocusAwareness._simulateRemoteUpdate(1, { presenter: inactivePresenter })
+      webrtcAwareness._simulateRemoteUpdate(2, { presenter: activePresenter })
 
       const result = awareness.getActivePresenter()
 
@@ -176,7 +264,8 @@ describe('createPresentationAwareness', () => {
         isPresenting: false,
         timestamp: 1000,
       }
-      mockAwareness._simulateRemoteUpdate(1, { presenter: inactivePresenter })
+      hocuspocusAwareness._simulateRemoteUpdate(1, { presenter: inactivePresenter })
+      webrtcAwareness._simulateRemoteUpdate(1, { presenter: inactivePresenter })
 
       const result = awareness.getActivePresenter()
 
@@ -184,7 +273,8 @@ describe('createPresentationAwareness', () => {
     })
 
     it('ignores states without presenter field', () => {
-      mockAwareness._simulateRemoteUpdate(1, { user: { name: 'Test User' } })
+      hocuspocusAwareness._simulateRemoteUpdate(1, { user: { name: 'Test User' } })
+      webrtcAwareness._simulateRemoteUpdate(1, { user: { name: 'Test User' } })
 
       const result = awareness.getActivePresenter()
 
@@ -193,15 +283,16 @@ describe('createPresentationAwareness', () => {
   })
 
   describe('onPresenterChange', () => {
-    it('subscribes to awareness change events', () => {
+    it('subscribes to both providers change events', () => {
       const callback = vi.fn()
 
       awareness.onPresenterChange(callback)
 
-      expect(mockAwareness.on).toHaveBeenCalledWith('change', expect.any(Function))
+      expect(hocuspocusAwareness.on).toHaveBeenCalledWith('change', expect.any(Function))
+      expect(webrtcAwareness.on).toHaveBeenCalledWith('change', expect.any(Function))
     })
 
-    it('calls callback with current presenter when awareness changes', () => {
+    it('calls callback when hocuspocus awareness changes', () => {
       const callback = vi.fn()
       awareness.onPresenterChange(callback)
 
@@ -210,7 +301,21 @@ describe('createPresentationAwareness', () => {
         isPresenting: true,
         timestamp: Date.now(),
       }
-      mockAwareness._simulateRemoteUpdate(1, { presenter: presenterState })
+      hocuspocusAwareness._simulateRemoteUpdate(1, { presenter: presenterState })
+
+      expect(callback).toHaveBeenCalledWith(presenterState)
+    })
+
+    it('calls callback when webrtc awareness changes', () => {
+      const callback = vi.fn()
+      awareness.onPresenterChange(callback)
+
+      const presenterState: PresenterState = {
+        segmentId: 'seg-456',
+        isPresenting: true,
+        timestamp: Date.now(),
+      }
+      webrtcAwareness._simulateRemoteUpdate(1, { presenter: presenterState })
 
       expect(callback).toHaveBeenCalledWith(presenterState)
     })
@@ -220,61 +325,38 @@ describe('createPresentationAwareness', () => {
       awareness.onPresenterChange(callback)
 
       // Simulate a change event with no presenters
-      mockAwareness._simulateRemoteUpdate(1, { user: { name: 'Test' } })
+      hocuspocusAwareness._simulateRemoteUpdate(1, { user: { name: 'Test' } })
 
       expect(callback).toHaveBeenCalledWith(null)
     })
 
-    it('returns unsubscribe function that removes listener', () => {
+    it('returns unsubscribe function that removes listeners from both providers', () => {
       const callback = vi.fn()
       const unsubscribe = awareness.onPresenterChange(callback)
 
       unsubscribe()
 
-      expect(mockAwareness.off).toHaveBeenCalledWith('change', expect.any(Function))
-    })
-
-    it('stops receiving updates after unsubscribe', () => {
-      const callback = vi.fn()
-      const unsubscribe = awareness.onPresenterChange(callback)
-
-      // First update
-      mockAwareness._simulateRemoteUpdate(1, {
-        presenter: { segmentId: 'seg-1', isPresenting: true, timestamp: 1000 },
-      })
-      expect(callback).toHaveBeenCalledTimes(1)
-
-      // Unsubscribe
-      unsubscribe()
-      callback.mockClear()
-
-      // Second update after unsubscribe - callback should not be called
-      // Note: We need to actually remove the listener from the set
-      mockAwareness._simulateRemoteUpdate(1, {
-        presenter: { segmentId: 'seg-2', isPresenting: true, timestamp: 2000 },
-      })
-
-      // The callback was removed, so it shouldn't be called
-      // (This depends on the off implementation actually removing the listener)
+      expect(hocuspocusAwareness.off).toHaveBeenCalledWith('change', expect.any(Function))
+      expect(webrtcAwareness.off).toHaveBeenCalledWith('change', expect.any(Function))
     })
 
     it('handles presenter disconnecting', () => {
       const callback = vi.fn()
       awareness.onPresenterChange(callback)
 
-      // Presenter connects
+      // Presenter connects via webrtc
       const presenterState: PresenterState = {
         segmentId: 'seg-123',
         isPresenting: true,
         timestamp: Date.now(),
       }
-      mockAwareness._simulateRemoteUpdate(1, { presenter: presenterState })
+      webrtcAwareness._simulateRemoteUpdate(1, { presenter: presenterState })
       expect(callback).toHaveBeenLastCalledWith(presenterState)
 
       callback.mockClear()
 
       // Presenter disconnects (state removed)
-      mockAwareness._clearRemote(1)
+      webrtcAwareness._clearRemote(1)
       expect(callback).toHaveBeenLastCalledWith(null)
     })
   })
@@ -284,40 +366,80 @@ describe('createPresentationAwareness', () => {
       const callback = vi.fn()
       awareness.onPresenterChange(callback)
 
-      // Local user becomes presenter
+      // Local user becomes presenter (writes to both)
       awareness.setPresenter('seg-1')
       expect(callback).toHaveBeenCalled()
 
       // Navigate to next segment
       awareness.setPresenter('seg-2')
-      const localState = mockAwareness.states.get(0)?.presenter as PresenterState
-      expect(localState.segmentId).toBe('seg-2')
+      const hocuspocusState = hocuspocusAwareness.states.get(0)?.presenter as PresenterState
+      const webrtcState = webrtcAwareness.states.get(0)?.presenter as PresenterState
+      expect(hocuspocusState.segmentId).toBe('seg-2')
+      expect(webrtcState.segmentId).toBe('seg-2')
 
       // Stop presenting
       awareness.clearPresenter()
-      const clearedState = mockAwareness.states.get(0)?.presenter
-      expect(clearedState).toBeUndefined()
+      const clearedHocuspocus = hocuspocusAwareness.states.get(0)?.presenter
+      const clearedWebrtc = webrtcAwareness.states.get(0)?.presenter
+      expect(clearedHocuspocus).toBeUndefined()
+      expect(clearedWebrtc).toBeUndefined()
     })
 
-    it('handles multiple presenters syncing', () => {
-      // Presenter A starts
-      mockAwareness._simulateRemoteUpdate(1, {
+    it('handles fallback when webrtc is unavailable', () => {
+      // Simulate WebRTC being unavailable
+      const mocks = createMockDualProviders()
+      mocks.providers.webrtc = { awareness: null } as unknown as WebrtcProvider
+      const fallbackAwareness = createPresentationAwareness(mocks.providers)
+
+      // Should still work via Hocuspocus
+      const presenterState: PresenterState = {
+        segmentId: 'seg-fallback',
+        isPresenting: true,
+        timestamp: Date.now(),
+      }
+      mocks.hocuspocusAwareness._simulateRemoteUpdate(1, { presenter: presenterState })
+
+      const result = fallbackAwareness.getActivePresenter()
+      expect(result).toEqual(presenterState)
+    })
+
+    it('handles fallback when hocuspocus is unavailable', () => {
+      // Simulate Hocuspocus being unavailable
+      const mocks = createMockDualProviders()
+      mocks.providers.hocuspocus = { awareness: null } as unknown as HocuspocusProvider
+      const fallbackAwareness = createPresentationAwareness(mocks.providers)
+
+      // Should still work via WebRTC
+      const presenterState: PresenterState = {
+        segmentId: 'seg-p2p',
+        isPresenting: true,
+        timestamp: Date.now(),
+      }
+      mocks.webrtcAwareness._simulateRemoteUpdate(1, { presenter: presenterState })
+
+      const result = fallbackAwareness.getActivePresenter()
+      expect(result).toEqual(presenterState)
+    })
+
+    it('handles multiple presenters syncing across both providers', () => {
+      // Presenter A via Hocuspocus
+      hocuspocusAwareness._simulateRemoteUpdate(1, {
         presenter: { segmentId: 'seg-A1', isPresenting: true, timestamp: 1000 },
       })
 
       let activePresenter = awareness.getActivePresenter()
       expect(activePresenter?.segmentId).toBe('seg-A1')
 
-      // Presenter B navigates (more recent timestamp)
-      mockAwareness._simulateRemoteUpdate(2, {
+      // Presenter B via WebRTC (more recent timestamp)
+      webrtcAwareness._simulateRemoteUpdate(2, {
         presenter: { segmentId: 'seg-B1', isPresenting: true, timestamp: 2000 },
       })
 
       activePresenter = awareness.getActivePresenter()
       expect(activePresenter?.segmentId).toBe('seg-B1')
 
-      // Presenter A navigates again (even more recent)
-      mockAwareness._simulateRemoteUpdate(1, {
+      // Presenter A navigates again via Hocuspocus (even more recent)
+      hocuspocusAwareness._simulateRemoteUpdate(1, {
         presenter: { segmentId: 'seg-A2', isPresenting: true, timestamp: 3000 },
       })
 

@@ -279,3 +279,249 @@ test.describe('Presenter Access Control', () => {
     await expect(page.locator('header h1')).toContainText('Collaborative Presenter', { timeout: 10000 })
   })
 })
+
+test.describe('Presenter Navigation', () => {
+  const testUser = {
+    firstName: 'Nav',
+    lastName: 'Test',
+    password: 'password123',
+  }
+
+  test('presenter shows sidebar with controls', async ({ page }) => {
+    const email = `presenter-nav-${Date.now()}@example.com`
+
+    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: user.id,
+      name: 'Navigation Test',
+      type: 'presentation',
+      meta: { title: 'Navigation Test' },
+    })
+
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/')
+    await page.goto(`/presentation/${doc.id}/presenter`)
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
+
+    // Sidebar should be visible
+    await expect(page.locator('aside')).toBeVisible()
+  })
+
+  test('presenter has keyboard navigation hint', async ({ page }) => {
+    const email = `presenter-hint-${Date.now()}@example.com`
+
+    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: user.id,
+      name: 'Hint Test',
+      type: 'presentation',
+      meta: { title: 'Hint Test' },
+    })
+
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/')
+    await page.goto(`/presentation/${doc.id}/presenter`)
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
+
+    // Keyboard hint should be visible
+    await expect(page.getByText('Use arrow keys to navigate')).toBeVisible()
+  })
+
+  test('presenter has back to editor link', async ({ page }) => {
+    const email = `presenter-back-${Date.now()}@example.com`
+
+    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: user.id,
+      name: 'Back Link Test',
+      type: 'presentation',
+      meta: { title: 'Back Link Test' },
+    })
+
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/')
+    await page.goto(`/presentation/${doc.id}/presenter`)
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
+
+    // Back to Editor link should be visible and correct
+    const backLink = page.getByText('Back to Editor')
+    await expect(backLink).toBeVisible()
+    await expect(backLink).toHaveAttribute('href', `/presentation/${doc.id}/edit`)
+  })
+})
+
+test.describe('Viewer UI Elements', () => {
+  const testUser = {
+    firstName: 'Viewer',
+    lastName: 'UI',
+    password: 'password123',
+  }
+
+  test('viewer shows Edit button for users with write access', async ({ page }) => {
+    const email = `viewer-edit-${Date.now()}@example.com`
+
+    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: user.id,
+      name: 'Edit Button Test',
+      type: 'presentation',
+      meta: { title: 'Edit Button Test' },
+    })
+
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/')
+    await page.goto(`/presentation/${doc.id}`)
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
+
+    // Edit link should be visible for owner
+    const editLink = page.getByRole('link', { name: 'Edit' })
+    await expect(editLink).toBeVisible()
+    await expect(editLink).toHaveAttribute('href', `/presentation/${doc.id}/edit`)
+  })
+
+  test('viewer shows Present button for users with write access', async ({ page }) => {
+    const email = `viewer-present-${Date.now()}@example.com`
+
+    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: user.id,
+      name: 'Present Button Test',
+      type: 'presentation',
+      meta: { title: 'Present Button Test' },
+    })
+
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/')
+    await page.goto(`/presentation/${doc.id}`)
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
+
+    // Present link should be visible for owner
+    const presentLink = page.getByRole('link', { name: 'Present', exact: true })
+    await expect(presentLink).toBeVisible()
+    await expect(presentLink).toHaveAttribute('href', `/presentation/${doc.id}/presenter`)
+  })
+
+  test('viewer shows back link to presentations list', async ({ page }) => {
+    const email = `viewer-back-${Date.now()}@example.com`
+
+    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: user.id,
+      name: 'Back Link Test',
+      type: 'presentation',
+      meta: { title: 'Back Link Test' },
+    })
+
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/')
+    await page.goto(`/presentation/${doc.id}`)
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
+
+    // Back link should be visible
+    const backLink = page.getByRole('link', { name: '← Back' })
+    await expect(backLink).toBeVisible()
+  })
+
+  test('read-only user does not see Edit or Present buttons', async ({ page }) => {
+    const ownerEmail = `viewer-readonly-owner-${Date.now()}@example.com`
+    const readerEmail = `viewer-readonly-reader-${Date.now()}@example.com`
+
+    const owner = await createVerifiedUser(page, { ...testUser, email: ownerEmail, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: owner.id,
+      name: 'Read Only Viewer Test',
+      type: 'presentation',
+      meta: { title: 'Read Only Viewer Test' },
+    })
+
+    const reader = await createVerifiedUser(page, { firstName: 'Reader', lastName: 'Only', email: readerEmail, password: testUser.password })
+    await createDocumentUser(page, { documentId: doc.id, userId: reader.id, write: false })
+
+    await loginUser(page, { email: readerEmail, password: testUser.password })
+    await expect(page).toHaveURL('/')
+    await page.goto(`/presentation/${doc.id}`)
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
+
+    // Edit and Present buttons should NOT be visible for read-only user
+    await expect(page.getByRole('link', { name: 'Edit' })).not.toBeVisible()
+    await expect(page.getByRole('link', { name: 'Present', exact: true })).not.toBeVisible()
+  })
+})
+
+test.describe('Document Sync', () => {
+  const testUser = {
+    firstName: 'Sync',
+    lastName: 'Test',
+    password: 'password123',
+  }
+
+  test('presenter loads document title from server', async ({ page }) => {
+    const email = `sync-title-${Date.now()}@example.com`
+
+    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: user.id,
+      name: 'Server Title Test',
+      type: 'presentation',
+      meta: { title: 'Custom Presentation Title' },
+    })
+
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/')
+    await page.goto(`/presentation/${doc.id}/presenter`)
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
+
+    // Title should show the custom title from meta
+    await expect(page.locator('header h1')).toContainText('Custom Presentation Title', { timeout: 10000 })
+  })
+
+  test('viewer loads document title from server', async ({ page }) => {
+    const email = `sync-viewer-title-${Date.now()}@example.com`
+
+    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: user.id,
+      name: 'Viewer Title Test',
+      type: 'presentation',
+      meta: { title: 'Viewer Custom Title' },
+    })
+
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/')
+    await page.goto(`/presentation/${doc.id}`)
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
+
+    // Title should show the custom title from meta
+    await expect(page.locator('header h1')).toContainText('Viewer Custom Title', { timeout: 10000 })
+  })
+
+  test('page title includes presentation name', async ({ page }) => {
+    const email = `sync-page-title-${Date.now()}@example.com`
+
+    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: user.id,
+      name: 'Page Title Test',
+      type: 'presentation',
+      meta: { title: 'My Awesome Presentation' },
+    })
+
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/')
+    await page.goto(`/presentation/${doc.id}`)
+    await page.waitForLoadState('networkidle')
+    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
+
+    // Browser page title should include presentation name
+    await expect(page).toHaveTitle(/My Awesome Presentation/)
+  })
+})

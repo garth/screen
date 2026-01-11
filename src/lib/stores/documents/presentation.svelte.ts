@@ -36,8 +36,11 @@ export function createPresentationDoc(options: DocumentOptions): PresentationDoc
   // Rich text content (XmlFragment for ProseMirror compatibility)
   const content = base.ydoc.getXmlFragment('content')
 
-  // Shared awareness channel for presenter sync
-  const awareness = createPresentationAwareness(base.provider)
+  // Shared awareness channel for presenter sync via both WebRTC (P2P) and Hocuspocus (server)
+  const awareness = createPresentationAwareness({
+    hocuspocus: base.provider,
+    webrtc: base.webrtcProvider!,
+  })
 
   function assertWritable() {
     if (base.readOnly) {
