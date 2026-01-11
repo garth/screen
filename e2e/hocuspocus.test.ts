@@ -1,5 +1,12 @@
 import { expect, test } from '@playwright/test'
-import { createVerifiedUser, createDocument, createDocumentUser, loginUser } from './helpers'
+import {
+  createVerifiedUser,
+  createDocument,
+  createDocumentUser,
+  loginUser,
+  updateDocument,
+  getDocumentMeta,
+} from './helpers'
 import { HocuspocusProvider } from '@hocuspocus/provider'
 import * as Y from 'yjs'
 import WebSocket from 'ws'
@@ -949,6 +956,645 @@ test.describe('Hocuspocus Collaboration Server', () => {
       })
 
       expect(result.content).toBe('Written by shared user')
+    })
+  })
+
+  test.describe('Base Document Inheritance', () => {
+    test('loads updates from base document', async ({ page }) => {
+      const { userId } = await createAndLoginUser(page)
+      const token = await getSessionToken(page)
+
+      // Create base document with content
+      const baseDoc = await createDocument(page, {
+        userId,
+        name: 'Base Theme',
+        type: 'theme',
+      })
+
+      // Write content to base document
+      await new Promise<void>((resolve) => {
+        const ydoc = new Y.Doc()
+        const provider = createProvider(baseDoc.id, ydoc, token)
+
+        provider.on('synced', () => {
+          const meta = ydoc.getMap('meta')
+          meta.set('font', 'Arial')
+          meta.set('backgroundColor', '#ffffff')
+          setTimeout(() => {
+            provider.destroy()
+            ydoc.destroy()
+            resolve()
+          }, 500)
+        })
+      })
+
+      // Create child document with baseDocumentId
+      const childDoc = await createDocument(page, {
+        userId,
+        name: 'Child Theme',
+        type: 'theme',
+        baseDocumentId: baseDoc.id,
+      })
+
+      // Connect to child document and verify base content is loaded
+      const result = await new Promise<{ font: string; backgroundColor: string }>((resolve) => {
+        const ydoc = new Y.Doc()
+        const provider = createProvider(childDoc.id, ydoc, token)
+
+        provider.on('synced', () => {
+          const meta = ydoc.getMap('meta')
+          setTimeout(() => {
+            const font = meta.get('font') as string
+            const backgroundColor = meta.get('backgroundColor') as string
+            provider.destroy()
+            ydoc.destroy()
+            resolve({ font, backgroundColor })
+          }, 100)
+        })
+      })
+
+      expect(result.font).toBe('Arial')
+      expect(result.backgroundColor).toBe('#ffffff')
+    })
+
+    test('loads multi-level base documents', async ({ page }) => {
+      const { userId } = await createAndLoginUser(page)
+      const token = await getSessionToken(page)
+
+      // Create grandparent document
+      const grandparentDoc = await createDocument(page, {
+        userId,
+        name: 'Grandparent Theme',
+        type: 'theme',
+      })
+
+      await new Promise<void>((resolve) => {
+        const ydoc = new Y.Doc()
+        const provider = createProvider(grandparentDoc.id, ydoc, token)
+
+        provider.on('synced', () => {
+          const meta = ydoc.getMap('meta')
+          meta.set('font', 'Times New Roman')
+          setTimeout(() => {
+            provider.destroy()
+            ydoc.destroy()
+            resolve()
+          }, 500)
+        })
+      })
+
+      // Create parent document based on grandparent
+      const parentDoc = await createDocument(page, {
+        userId,
+        name: 'Parent Theme',
+        type: 'theme',
+        baseDocumentId: grandparentDoc.id,
+      })
+
+      await new Promise<void>((resolve) => {
+        const ydoc = new Y.Doc()
+        const provider = createProvider(parentDoc.id, ydoc, token)
+
+        provider.on('synced', () => {
+          const meta = ydoc.getMap('meta')
+          meta.set('backgroundColor', '#000000')
+          setTimeout(() => {
+            provider.destroy()
+            ydoc.destroy()
+            resolve()
+          }, 500)
+        })
+      })
+
+      // Create child document based on parent
+      const childDoc = await createDocument(page, {
+        userId,
+        name: 'Child Theme',
+        type: 'theme',
+        baseDocumentId: parentDoc.id,
+      })
+
+      // Connect to child and verify all ancestor content is loaded
+      const result = await new Promise<{ font: string; backgroundColor: string }>((resolve) => {
+        const ydoc = new Y.Doc()
+        const provider = createProvider(childDoc.id, ydoc, token)
+
+        provider.on('synced', () => {
+          const meta = ydoc.getMap('meta')
+          setTimeout(() => {
+            const font = meta.get('font') as string
+            const backgroundColor = meta.get('backgroundColor') as string
+            provider.destroy()
+            ydoc.destroy()
+            resolve({ font, backgroundColor })
+          }, 100)
+        })
+      })
+
+      // Should have font from grandparent and backgroundColor from parent
+      expect(result.font).toBe('Times New Roman')
+      expect(result.backgroundColor).toBe('#000000')
+    })
+
+    test('handles cyclic base documents gracefully', async ({ page }) => {
+      const { userId } = await createAndLoginUser(page)
+      const token = await getSessionToken(page)
+
+      // Create two documents
+      const docA = await createDocument(page, {
+        userId,
+        name: 'Doc A',
+        type: 'theme',
+      })
+
+      const docB = await createDocument(page, {
+        userId,
+        name: 'Doc B',
+        type: 'theme',
+        baseDocumentId: docA.id,
+      })
+
+      // Write content to doc A
+      await new Promise<void>((resolve) => {
+        const ydoc = new Y.Doc()
+        const provider = createProvider(docA.id, ydoc, token)
+
+        provider.on('synced', () => {
+          ydoc.getMap('meta').set('source', 'docA')
+          setTimeout(() => {
+            provider.destroy()
+            ydoc.destroy()
+            resolve()
+          }, 500)
+        })
+      })
+
+      // Create a cycle: A -> B -> A
+      await updateDocument(page, { id: docA.id, baseDocumentId: docB.id })
+
+      // Connection should still work (not infinite loop)
+      const result = await new Promise<{ connected: boolean; source: string }>((resolve) => {
+        const ydoc = new Y.Doc()
+        const provider = createProvider(docA.id, ydoc, token)
+        let connected = false
+
+        provider.on('connect', () => {
+          connected = true
+        })
+
+        provider.on('synced', () => {
+          const meta = ydoc.getMap('meta')
+          const source = meta.get('source') as string
+          setTimeout(() => {
+            provider.destroy()
+            ydoc.destroy()
+            resolve({ connected, source })
+          }, 100)
+        })
+
+        // Timeout in case of infinite loop
+        setTimeout(() => {
+          provider.destroy()
+          ydoc.destroy()
+          resolve({ connected, source: '' })
+        }, 5000)
+      })
+
+      expect(result.connected).toBe(true)
+      expect(result.source).toBe('docA')
+    })
+  })
+
+  test.describe('Meta Sync to Database', () => {
+    test('meta changes are synced to Document.meta', async ({ page }) => {
+      const { userId } = await createAndLoginUser(page)
+      const token = await getSessionToken(page)
+
+      const doc = await createDocument(page, {
+        userId,
+        name: 'Meta Sync Doc',
+        type: 'presentation',
+      })
+
+      // Make meta changes
+      await new Promise<void>((resolve) => {
+        const ydoc = new Y.Doc()
+        const provider = createProvider(doc.id, ydoc, token)
+
+        provider.on('synced', () => {
+          const meta = ydoc.getMap('meta')
+          meta.set('title', 'My Presentation')
+          meta.set('themeId', 'theme-123')
+          setTimeout(() => {
+            provider.destroy()
+            ydoc.destroy()
+            resolve()
+          }, 1000) // Wait for debounce and sync
+        })
+      })
+
+      // Verify meta was synced to database
+      const dbMeta = await getDocumentMeta(page, doc.id)
+
+      expect(dbMeta.title).toBe('My Presentation')
+      expect(dbMeta.themeId).toBe('theme-123')
+    })
+
+    test('meta sync includes all meta properties', async ({ page }) => {
+      const { userId } = await createAndLoginUser(page)
+      const token = await getSessionToken(page)
+
+      const doc = await createDocument(page, {
+        userId,
+        name: 'Full Meta Doc',
+        type: 'theme',
+      })
+
+      // Set multiple meta properties
+      await new Promise<void>((resolve) => {
+        const ydoc = new Y.Doc()
+        const provider = createProvider(doc.id, ydoc, token)
+
+        provider.on('synced', () => {
+          const meta = ydoc.getMap('meta')
+          meta.set('font', 'Helvetica')
+          meta.set('backgroundColor', '#f0f0f0')
+          meta.set('textColor', '#333333')
+          meta.set('isSystemTheme', false)
+          setTimeout(() => {
+            provider.destroy()
+            ydoc.destroy()
+            resolve()
+          }, 1000)
+        })
+      })
+
+      // Verify all properties synced
+      const dbMeta = await getDocumentMeta(page, doc.id)
+
+      expect(dbMeta.font).toBe('Helvetica')
+      expect(dbMeta.backgroundColor).toBe('#f0f0f0')
+      expect(dbMeta.textColor).toBe('#333333')
+      expect(dbMeta.isSystemTheme).toBe(false)
+    })
+  })
+
+  test.describe('Document Types', () => {
+    test.describe('Presentation', () => {
+      test('supports meta.title and meta.themeId', async ({ page }) => {
+        const { userId } = await createAndLoginUser(page)
+        const token = await getSessionToken(page)
+
+        const doc = await createDocument(page, {
+          userId,
+          name: 'Presentation Test',
+          type: 'presentation',
+        })
+
+        await new Promise<void>((resolve) => {
+          const ydoc = new Y.Doc()
+          const provider = createProvider(doc.id, ydoc, token)
+
+          provider.on('synced', () => {
+            const meta = ydoc.getMap('meta')
+            meta.set('title', 'Quarterly Report')
+            meta.set('themeId', 'corporate-theme-id')
+            setTimeout(() => {
+              provider.destroy()
+              ydoc.destroy()
+              resolve()
+            }, 500)
+          })
+        })
+
+        // Verify by reconnecting
+        const result = await new Promise<{ title: string; themeId: string }>((resolve) => {
+          const ydoc = new Y.Doc()
+          const provider = createProvider(doc.id, ydoc, token)
+
+          provider.on('synced', () => {
+            const meta = ydoc.getMap('meta')
+            setTimeout(() => {
+              provider.destroy()
+              ydoc.destroy()
+              resolve({
+                title: meta.get('title') as string,
+                themeId: meta.get('themeId') as string,
+              })
+            }, 100)
+          })
+        })
+
+        expect(result.title).toBe('Quarterly Report')
+        expect(result.themeId).toBe('corporate-theme-id')
+      })
+
+      test('supports rich text content', async ({ page }) => {
+        const { userId } = await createAndLoginUser(page)
+        const token = await getSessionToken(page)
+
+        const doc = await createDocument(page, {
+          userId,
+          name: 'Rich Text Presentation',
+          type: 'presentation',
+        })
+
+        await new Promise<void>((resolve) => {
+          const ydoc = new Y.Doc()
+          const provider = createProvider(doc.id, ydoc, token)
+
+          provider.on('synced', () => {
+            const content = ydoc.getText('content')
+            content.insert(0, 'Hello World', { bold: true })
+            content.insert(11, '\nThis is a paragraph')
+            setTimeout(() => {
+              provider.destroy()
+              ydoc.destroy()
+              resolve()
+            }, 500)
+          })
+        })
+
+        // Verify content persists
+        const result = await new Promise<{ content: string }>((resolve) => {
+          const ydoc = new Y.Doc()
+          const provider = createProvider(doc.id, ydoc, token)
+
+          provider.on('synced', () => {
+            const content = ydoc.getText('content').toString()
+            provider.destroy()
+            ydoc.destroy()
+            resolve({ content })
+          })
+        })
+
+        expect(result.content).toBe('Hello World\nThis is a paragraph')
+      })
+    })
+
+    test.describe('Theme', () => {
+      test('supports font, backgroundColor, textColor', async ({ page }) => {
+        const { userId } = await createAndLoginUser(page)
+        const token = await getSessionToken(page)
+
+        const doc = await createDocument(page, {
+          userId,
+          name: 'Theme Test',
+          type: 'theme',
+        })
+
+        await new Promise<void>((resolve) => {
+          const ydoc = new Y.Doc()
+          const provider = createProvider(doc.id, ydoc, token)
+
+          provider.on('synced', () => {
+            const meta = ydoc.getMap('meta')
+            meta.set('font', 'Georgia')
+            meta.set('backgroundColor', '#1a1a2e')
+            meta.set('textColor', '#eaeaea')
+            setTimeout(() => {
+              provider.destroy()
+              ydoc.destroy()
+              resolve()
+            }, 500)
+          })
+        })
+
+        const result = await new Promise<{
+          font: string
+          backgroundColor: string
+          textColor: string
+        }>((resolve) => {
+          const ydoc = new Y.Doc()
+          const provider = createProvider(doc.id, ydoc, token)
+
+          provider.on('synced', () => {
+            const meta = ydoc.getMap('meta')
+            setTimeout(() => {
+              provider.destroy()
+              ydoc.destroy()
+              resolve({
+                font: meta.get('font') as string,
+                backgroundColor: meta.get('backgroundColor') as string,
+                textColor: meta.get('textColor') as string,
+              })
+            }, 100)
+          })
+        })
+
+        expect(result.font).toBe('Georgia')
+        expect(result.backgroundColor).toBe('#1a1a2e')
+        expect(result.textColor).toBe('#eaeaea')
+      })
+
+      test('stores viewport area', async ({ page }) => {
+        const { userId } = await createAndLoginUser(page)
+        const token = await getSessionToken(page)
+
+        const doc = await createDocument(page, {
+          userId,
+          name: 'Viewport Theme',
+          type: 'theme',
+        })
+
+        const viewport = { x: 10, y: 20, width: 800, height: 600 }
+
+        await new Promise<void>((resolve) => {
+          const ydoc = new Y.Doc()
+          const provider = createProvider(doc.id, ydoc, token)
+
+          provider.on('synced', () => {
+            const meta = ydoc.getMap('meta')
+            meta.set('viewport', viewport)
+            setTimeout(() => {
+              provider.destroy()
+              ydoc.destroy()
+              resolve()
+            }, 500)
+          })
+        })
+
+        const result = await new Promise<{ viewport: typeof viewport }>((resolve) => {
+          const ydoc = new Y.Doc()
+          const provider = createProvider(doc.id, ydoc, token)
+
+          provider.on('synced', () => {
+            const meta = ydoc.getMap('meta')
+            setTimeout(() => {
+              provider.destroy()
+              ydoc.destroy()
+              resolve({ viewport: meta.get('viewport') as typeof viewport })
+            }, 100)
+          })
+        })
+
+        expect(result.viewport).toEqual(viewport)
+      })
+
+      test('stores background image as binary', async ({ page }) => {
+        const { userId } = await createAndLoginUser(page)
+        const token = await getSessionToken(page)
+
+        const doc = await createDocument(page, {
+          userId,
+          name: 'Background Image Theme',
+          type: 'theme',
+        })
+
+        // Create a simple test image (1x1 pixel PNG-like data)
+        const testImageData = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])
+
+        await new Promise<void>((resolve) => {
+          const ydoc = new Y.Doc()
+          const provider = createProvider(doc.id, ydoc, token)
+
+          provider.on('synced', () => {
+            const bgImage = ydoc.getMap('backgroundImage')
+            bgImage.set('data', testImageData)
+            setTimeout(() => {
+              provider.destroy()
+              ydoc.destroy()
+              resolve()
+            }, 500)
+          })
+        })
+
+        const result = await new Promise<{ hasImage: boolean; dataLength: number }>((resolve) => {
+          const ydoc = new Y.Doc()
+          const provider = createProvider(doc.id, ydoc, token)
+
+          provider.on('synced', () => {
+            const bgImage = ydoc.getMap('backgroundImage')
+            const data = bgImage.get('data') as Uint8Array | undefined
+            setTimeout(() => {
+              provider.destroy()
+              ydoc.destroy()
+              resolve({
+                hasImage: data != null,
+                dataLength: data?.length ?? 0,
+              })
+            }, 100)
+          })
+        })
+
+        expect(result.hasImage).toBe(true)
+        expect(result.dataLength).toBe(8)
+      })
+    })
+
+    test.describe('Event', () => {
+      test('supports presentations array', async ({ page }) => {
+        const { userId } = await createAndLoginUser(page)
+        const token = await getSessionToken(page)
+
+        const doc = await createDocument(page, {
+          userId,
+          name: 'Event Test',
+          type: 'event',
+        })
+
+        await new Promise<void>((resolve) => {
+          const ydoc = new Y.Doc()
+          const provider = createProvider(doc.id, ydoc, token)
+
+          provider.on('synced', () => {
+            const presentations = ydoc.getArray<string>('presentations')
+            presentations.push(['pres-1', 'pres-2', 'pres-3'])
+            setTimeout(() => {
+              provider.destroy()
+              ydoc.destroy()
+              resolve()
+            }, 500)
+          })
+        })
+
+        const result = await new Promise<{ presentations: string[] }>((resolve) => {
+          const ydoc = new Y.Doc()
+          const provider = createProvider(doc.id, ydoc, token)
+
+          provider.on('synced', () => {
+            const presentations = ydoc.getArray<string>('presentations').toArray()
+            provider.destroy()
+            ydoc.destroy()
+            resolve({ presentations })
+          })
+        })
+
+        expect(result.presentations).toEqual(['pres-1', 'pres-2', 'pres-3'])
+      })
+
+      test('supports channels array with nested structures', async ({ page }) => {
+        const { userId } = await createAndLoginUser(page)
+        const token = await getSessionToken(page)
+
+        const doc = await createDocument(page, {
+          userId,
+          name: 'Event Channels Test',
+          type: 'event',
+        })
+
+        await new Promise<void>((resolve) => {
+          const ydoc = new Y.Doc()
+          const provider = createProvider(doc.id, ydoc, token)
+
+          provider.on('synced', () => {
+            const channels = ydoc.getArray<Y.Map<unknown>>('channels')
+
+            // Create a channel with presentations
+            const channel1 = new Y.Map<unknown>()
+            channel1.set('id', 'channel-1')
+            channel1.set('name', 'Main Stage')
+            channel1.set('order', 0)
+
+            const presArray = new Y.Array<Y.Map<unknown>>()
+            const pres1 = new Y.Map<unknown>()
+            pres1.set('presentationId', 'pres-1')
+            pres1.set('themeOverrideId', 'theme-override-1')
+            pres1.set('order', 0)
+            presArray.push([pres1])
+
+            channel1.set('presentations', presArray)
+            channels.push([channel1])
+
+            setTimeout(() => {
+              provider.destroy()
+              ydoc.destroy()
+              resolve()
+            }, 500)
+          })
+        })
+
+        const result = await new Promise<{
+          channelCount: number
+          channelName: string
+          presentationId: string
+          themeOverrideId: string
+        }>((resolve) => {
+          const ydoc = new Y.Doc()
+          const provider = createProvider(doc.id, ydoc, token)
+
+          provider.on('synced', () => {
+            const channels = ydoc.getArray<Y.Map<unknown>>('channels')
+            const channel = channels.get(0)
+            const presentations = channel?.get('presentations') as Y.Array<Y.Map<unknown>>
+            const pres = presentations?.get(0)
+
+            provider.destroy()
+            ydoc.destroy()
+            resolve({
+              channelCount: channels.length,
+              channelName: channel?.get('name') as string,
+              presentationId: pres?.get('presentationId') as string,
+              themeOverrideId: pres?.get('themeOverrideId') as string,
+            })
+          })
+        })
+
+        expect(result.channelCount).toBe(1)
+        expect(result.channelName).toBe('Main Stage')
+        expect(result.presentationId).toBe('pres-1')
+        expect(result.themeOverrideId).toBe('theme-override-1')
+      })
     })
   })
 })

@@ -39,6 +39,35 @@ async function validateSessionToken(token: string) {
   return { session, user }
 }
 
+// Helper to collect all base document IDs (handles cycles)
+async function collectBaseDocumentIds(documentId: string): Promise<string[]> {
+  const visited = new Set<string>()
+  const baseIds: string[] = []
+  let currentId: string | null = documentId
+
+  while (currentId) {
+    if (visited.has(currentId)) {
+      // Cyclic reference detected - stop
+      break
+    }
+    visited.add(currentId)
+
+    const doc = await db.document.findUnique({
+      select: { baseDocumentId: true },
+      where: { id: currentId, deletedAt: null },
+    })
+
+    if (doc?.baseDocumentId) {
+      baseIds.push(doc.baseDocumentId)
+      currentId = doc.baseDocumentId
+    } else {
+      currentId = null
+    }
+  }
+
+  return baseIds.reverse() // Base-most first
+}
+
 // Helper to check document permissions for a user
 async function checkDocumentPermissions(
   documentId: string,
@@ -49,11 +78,11 @@ async function checkDocumentPermissions(
     const doc = await db.document.findUnique({
       select: {
         userId: true,
-        public: true,
+        isPublic: true,
         documentUsers: {
           select: {
             userId: true,
-            write: true,
+            canWrite: true,
           },
           where: {
             userId,
@@ -74,14 +103,14 @@ async function checkDocumentPermissions(
     // Owner, shared user, or public doc
     const isOwner = doc.userId === userId
     const isSharedUser = doc.documentUsers.length > 0
-    const isPublic = doc.public === true
+    const isPublicDoc = doc.isPublic === true
 
-    if (!isOwner && !isSharedUser && !isPublic) {
+    if (!isOwner && !isSharedUser && !isPublicDoc) {
       return { allowed: false, readOnly: true }
     }
 
     // Determine write access
-    const canWrite = isOwner || doc.documentUsers.some((u) => u.write === true)
+    const canWrite = isOwner || doc.documentUsers.some((u) => u.canWrite === true)
     return { allowed: true, readOnly: !canWrite }
   } else {
     // Anonymous user - only public docs
@@ -90,7 +119,7 @@ async function checkDocumentPermissions(
       where: {
         id: documentId,
         deletedAt: null,
-        public: true,
+        isPublic: true,
       },
     })
 
@@ -108,21 +137,37 @@ const server = new Server({
   extensions: [new Logger()],
 
   onLoadDocument: async ({ documentName, document }) => {
+    // Get all base document IDs (base-most first)
+    const baseIds = await collectBaseDocumentIds(documentName)
+
+    // Load updates from all base documents first
+    for (const baseId of baseIds) {
+      const baseDoc = await db.document.findUnique({
+        select: {
+          documentUpdates: {
+            select: { update: true },
+            where: { deletedAt: null },
+            orderBy: { createdAt: 'asc' },
+          },
+        },
+        where: { id: baseId, deletedAt: null },
+      })
+
+      baseDoc?.documentUpdates.forEach(({ update }) => {
+        Y.applyUpdate(document, new Uint8Array(update))
+      })
+    }
+
+    // Then load this document's own updates
     const doc = await db.document.findUnique({
       select: {
         documentUpdates: {
-          select: {
-            update: true,
-          },
-          orderBy: {
-            createdAt: 'asc',
-          },
+          select: { update: true },
+          where: { deletedAt: null },
+          orderBy: { createdAt: 'asc' },
         },
       },
-      where: {
-        id: documentName,
-        deletedAt: null,
-      },
+      where: { id: documentName, deletedAt: null },
     })
 
     doc?.documentUpdates.forEach(({ update }) => {
@@ -132,16 +177,26 @@ const server = new Server({
     return document
   },
 
-  onChange: async ({ documentName, update, context }) => {
+  onChange: async ({ documentName, document, update, context }) => {
     const userId: string | undefined = context.userId
 
     if (userId != null && userId !== '') {
+      // Store the update
       await db.documentUpdate.create({
         data: {
           documentId: documentName,
           userId,
           update: Buffer.from(update),
         },
+      })
+
+      // Sync meta to database
+      const meta = document.getMap('meta')
+      const metaJson = meta.toJSON()
+
+      await db.document.update({
+        where: { id: documentName },
+        data: { meta: metaJson },
       })
     }
   },
@@ -164,7 +219,7 @@ const server = new Server({
 
     // No cookie auth - check if document is public
     const doc = await db.document.findUnique({
-      select: { id: true, public: true },
+      select: { id: true, isPublic: true },
       where: { id: documentName, deletedAt: null },
     })
 
@@ -172,7 +227,7 @@ const server = new Server({
       throw new Error('Document not found')
     }
 
-    if (doc.public) {
+    if (doc.isPublic) {
       // Public document - allow read-only access
       connectionConfig.readOnly = true
       return { userId: undefined, requiresAuth: false }

@@ -20,9 +20,14 @@ export const POST: RequestHandler = async ({ request }) => {
     data: {
       documentId,
       userId,
-      write: write ?? false,
+      canWrite: write ?? false,
     },
   })
 
-  return json({ id: documentUser.id, documentId: documentUser.documentId, userId: documentUser.userId, write: documentUser.write })
+  return json({
+    id: documentUser.id,
+    documentId: documentUser.documentId,
+    userId: documentUser.userId,
+    write: documentUser.canWrite,
+  })
 }

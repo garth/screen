@@ -164,12 +164,45 @@ export async function createTeamMember(
 
 export async function createDocument(
   page: Page,
-  data: { userId: string; name: string; type: string; public?: boolean; meta?: Record<string, unknown> },
-): Promise<{ id: string; name: string; type: string; public: boolean }> {
+  data: {
+    userId: string
+    name: string
+    type: string
+    public?: boolean
+    meta?: Record<string, unknown>
+    baseDocumentId?: string
+  },
+): Promise<{ id: string; name: string; type: string; public: boolean; baseDocumentId: string | null }> {
   const response = await page.request.post('/api/test/create-document', { data })
 
   if (!response.ok()) {
     throw new Error(`Failed to create document: ${response.status()}`)
+  }
+
+  return response.json()
+}
+
+export async function updateDocument(
+  page: Page,
+  data: { id: string; baseDocumentId?: string | null },
+): Promise<{ id: string; baseDocumentId: string | null }> {
+  const response = await page.request.post('/api/test/update-document', { data })
+
+  if (!response.ok()) {
+    throw new Error(`Failed to update document: ${response.status()}`)
+  }
+
+  return response.json()
+}
+
+export async function getDocumentMeta(
+  page: Page,
+  documentId: string,
+): Promise<Record<string, unknown>> {
+  const response = await page.request.get(`/api/test/document-meta/${documentId}`)
+
+  if (!response.ok()) {
+    throw new Error(`Failed to get document meta: ${response.status()}`)
   }
 
   return response.json()

@@ -10,28 +10,21 @@ export const POST: RequestHandler = async ({ request }) => {
     error(404, 'Not found')
   }
 
-  const { userId, name, type, public: isPublic, meta, baseDocumentId } = await request.json()
+  const { id, baseDocumentId } = await request.json()
 
-  if (!userId || !name || !type) {
-    error(400, 'Missing required fields: userId, name, type')
+  if (!id) {
+    error(400, 'Missing required field: id')
   }
 
-  const document = await db.document.create({
+  const document = await db.document.update({
+    where: { id },
     data: {
-      userId,
-      name,
-      type,
-      isPublic: isPublic ?? false,
-      meta: meta ?? {},
       baseDocumentId: baseDocumentId ?? null,
     },
   })
 
   return json({
     id: document.id,
-    name: document.name,
-    type: document.type,
-    public: document.isPublic,
     baseDocumentId: document.baseDocumentId,
   })
 }
