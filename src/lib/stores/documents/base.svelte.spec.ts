@@ -1,6 +1,11 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import * as Y from 'yjs'
 
+// Mock $app/environment
+vi.mock('$app/environment', () => ({
+  browser: true,
+}))
+
 // Track provider options for testing
 let lastProviderOptions: {
   onConnect?: () => void
@@ -74,6 +79,24 @@ vi.mock('y-webrtc', () => {
   }
 })
 
+// Track IndexedDB provider options
+let lastIndexeddbName: string | null = null
+
+// Mock y-indexeddb
+vi.mock('y-indexeddb', () => {
+  return {
+    IndexeddbPersistence: class MockIndexeddbPersistence {
+      name: string
+      destroy = vi.fn()
+
+      constructor(name: string, _doc: Y.Doc) {
+        this.name = name
+        lastIndexeddbName = name
+      }
+    },
+  }
+})
+
 import { createBaseDocument, createReactiveMetaProperty } from './base.svelte'
 
 describe('createBaseDocument', () => {
@@ -81,6 +104,7 @@ describe('createBaseDocument', () => {
     vi.clearAllMocks()
     lastProviderOptions = null
     lastWebrtcOptions = null
+    lastIndexeddbName = null
     mockReadOnly = false
   })
 
@@ -301,6 +325,40 @@ describe('createBaseDocument', () => {
       doc.destroy()
 
       expect(webrtcDestroy).toHaveBeenCalled()
+    })
+  })
+
+  describe('IndexedDB persistence', () => {
+    it('creates IndexedDB provider for offline persistence', () => {
+      const doc = createBaseDocument({ documentId: 'test-doc' })
+
+      expect(lastIndexeddbName).not.toBeNull()
+
+      doc.destroy()
+    })
+
+    it('uses document ID prefixed with "doc-" for IndexedDB name', () => {
+      const doc = createBaseDocument({ documentId: 'my-presentation-456' })
+
+      expect(lastIndexeddbName).toBe('doc-my-presentation-456')
+
+      doc.destroy()
+    })
+
+    it('creates unique IndexedDB store per document', () => {
+      const doc1 = createBaseDocument({ documentId: 'doc-a' })
+      const firstName = lastIndexeddbName
+
+      doc1.destroy()
+
+      const doc2 = createBaseDocument({ documentId: 'doc-b' })
+      const secondName = lastIndexeddbName
+
+      expect(firstName).toBe('doc-doc-a')
+      expect(secondName).toBe('doc-doc-b')
+      expect(firstName).not.toBe(secondName)
+
+      doc2.destroy()
     })
   })
 })

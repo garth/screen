@@ -1,6 +1,11 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import * as Y from 'yjs'
 
+// Mock $app/environment
+vi.mock('$app/environment', () => ({
+  browser: true,
+}))
+
 // Control mock behavior
 let mockReadOnly = false
 
@@ -9,6 +14,12 @@ vi.mock('@hocuspocus/provider', () => {
   return {
     HocuspocusProvider: class MockHocuspocusProvider {
       destroy = vi.fn()
+      awareness = {
+        setLocalStateField: vi.fn(),
+        getStates: vi.fn(() => new Map()),
+        on: vi.fn(),
+        off: vi.fn(),
+      }
       on = vi.fn((event: string, callback: () => void) => {
         if (event === 'synced') {
           setTimeout(callback, 0)
@@ -24,6 +35,32 @@ vi.mock('@hocuspocus/provider', () => {
           options.onSynced?.({ state: mockReadOnly })
         }, 0)
       }
+    },
+  }
+})
+
+// Mock y-webrtc
+vi.mock('y-webrtc', () => {
+  return {
+    WebrtcProvider: class MockWebrtcProvider {
+      destroy = vi.fn()
+      awareness = {
+        setLocalStateField: vi.fn(),
+        getStates: vi.fn(() => new Map()),
+        on: vi.fn(),
+        off: vi.fn(),
+      }
+      constructor() {}
+    },
+  }
+})
+
+// Mock y-indexeddb
+vi.mock('y-indexeddb', () => {
+  return {
+    IndexeddbPersistence: class MockIndexeddbPersistence {
+      destroy = vi.fn()
+      constructor() {}
     },
   }
 })

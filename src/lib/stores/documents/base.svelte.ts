@@ -1,5 +1,7 @@
 import { HocuspocusProvider } from '@hocuspocus/provider'
 import { WebrtcProvider } from 'y-webrtc'
+import { IndexeddbPersistence } from 'y-indexeddb'
+import { browser } from '$app/environment'
 import * as Y from 'yjs'
 import type { DocumentOptions, UserInfo } from './types'
 
@@ -46,6 +48,11 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
   const ydoc = new Y.Doc()
   const meta = ydoc.getMap('meta')
 
+  // IndexedDB persistence for offline support and faster initial loads (browser only)
+  const indexeddbProvider = browser
+    ? new IndexeddbPersistence(`doc-${options.documentId}`, ydoc)
+    : null
+
   const wsUrl = import.meta.env.VITE_HOCUSPOCUS_URL || 'ws://localhost:1234'
 
   const provider = new HocuspocusProvider({
@@ -88,27 +95,32 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
     })
   }
 
-  // Create WebRTC provider for P2P awareness sync
+  // Create WebRTC provider for P2P awareness sync (browser only)
   // Uses a separate Y.Doc so only awareness is synced, not document content
-  const webrtcYdoc = new Y.Doc()
-  const webrtcProvider = new WebrtcProvider(
-    `awareness-${options.documentId}`,
-    webrtcYdoc,
-    {
-      // Use default public signaling servers
-      signaling: ['wss://signaling.yjs.dev', 'wss://y-webrtc-signaling-eu.herokuapp.com', 'wss://y-webrtc-signaling-us.herokuapp.com'],
-      // Disable BroadcastChannel filtering to ensure all tabs connect via WebRTC
-      filterBcConns: false,
-    }
-  )
+  let webrtcYdoc: Y.Doc | null = null
+  let webrtcProvider: WebrtcProvider | null = null
 
-  // Set user awareness on WebRTC provider
-  if (options.user) {
-    const color = options.user.color || generateUserColor(options.user.id)
-    webrtcProvider.awareness.setLocalStateField('user', {
-      name: options.user.name,
-      color,
-    })
+  if (browser) {
+    webrtcYdoc = new Y.Doc()
+    webrtcProvider = new WebrtcProvider(
+      `awareness-${options.documentId}`,
+      webrtcYdoc,
+      {
+        // Use default public signaling servers
+        signaling: ['wss://signaling.yjs.dev', 'wss://y-webrtc-signaling-eu.herokuapp.com', 'wss://y-webrtc-signaling-us.herokuapp.com'],
+        // Disable BroadcastChannel filtering to ensure all tabs connect via WebRTC
+        filterBcConns: false,
+      }
+    )
+
+    // Set user awareness on WebRTC provider
+    if (options.user) {
+      const color = options.user.color || generateUserColor(options.user.id)
+      webrtcProvider.awareness.setLocalStateField('user', {
+        name: options.user.name,
+        color,
+      })
+    }
   }
 
   // Meta observation for DB sync with debouncing
@@ -159,11 +171,12 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
     },
     destroy() {
       if (metaObserverTimeout) clearTimeout(metaObserverTimeout)
-      webrtcProvider.destroy()
-      webrtcYdoc.destroy()
+      webrtcProvider?.destroy()
+      webrtcYdoc?.destroy()
       baseProvider?.destroy()
       baseYdoc?.destroy()
       provider.destroy()
+      indexeddbProvider?.destroy()
       ydoc.destroy()
     },
   }

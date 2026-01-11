@@ -24,7 +24,7 @@ export interface PresentationAwareness {
 
 export interface DualProviders {
   hocuspocus: HocuspocusProvider
-  webrtc: WebrtcProvider
+  webrtc: WebrtcProvider | null
 }
 
 /**
@@ -37,7 +37,7 @@ export interface DualProviders {
  */
 export function createPresentationAwareness(providers: DualProviders): PresentationAwareness {
   const hocuspocusAwareness = providers.hocuspocus.awareness
-  const webrtcAwareness = providers.webrtc.awareness
+  const webrtcAwareness = providers.webrtc?.awareness ?? null
 
   function getActivePresenterFromAwareness(awareness: Awareness | null): PresenterState | null {
     const states = awareness?.getStates()
