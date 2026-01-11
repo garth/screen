@@ -48,9 +48,15 @@
   let titleInput = $state('')
 
   // Sync title from doc when it syncs
+  // If Yjs doc has no title but database has one, initialize it from database
   $effect(() => {
     if (doc.synced) {
-      titleInput = doc.title || ''
+      if (!doc.title && data.document.title && !doc.readOnly) {
+        doc.setTitle(data.document.title)
+        titleInput = data.document.title
+      } else {
+        titleInput = doc.title || ''
+      }
     }
   })
 

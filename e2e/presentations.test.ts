@@ -68,6 +68,38 @@ test.describe('Presentations List', () => {
     await expect(page).toHaveURL(/\/presentation\/[^/]+\/edit/, { timeout: 10000 })
   })
 
+  test('new presentation shows generated name in editor title input', async ({ page }) => {
+    const email = `pres-title-${Date.now()}@example.com`
+
+    await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/presentations')
+
+    await page.goto('/presentations')
+    await page.waitForLoadState('networkidle')
+
+    // Click new presentation button
+    await page.getByRole('button', { name: 'New Presentation' }).click()
+
+    // Should redirect to edit page
+    await expect(page).toHaveURL(/\/presentation\/[^/]+\/edit/, { timeout: 10000 })
+
+    // Wait for the editor to load and sync
+    await page.waitForLoadState('networkidle')
+
+    // The title input should have a generated name (not empty or "Untitled")
+    const titleInput = page.locator('input[type="text"]').first()
+    await expect(titleInput).toBeVisible({ timeout: 10000 })
+
+    // Wait for Yjs sync and check the title is not empty
+    await expect(titleInput).not.toHaveValue('', { timeout: 10000 })
+    await expect(titleInput).not.toHaveValue('Untitled', { timeout: 5000 })
+
+    // The value should be a generated name (2 words)
+    const titleValue = await titleInput.inputValue()
+    expect(titleValue.split(' ').length).toBeGreaterThanOrEqual(2)
+  })
+
   test('shows shared presentations from other users', async ({ page }) => {
     const ownerEmail = `pres-owner-${Date.now()}@example.com`
     const sharedEmail = `pres-shared-${Date.now()}@example.com`
