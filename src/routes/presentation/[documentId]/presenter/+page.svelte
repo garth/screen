@@ -162,9 +162,6 @@
     <!-- Header -->
     <header class="flex items-center justify-between border-b border-gray-700 bg-gray-800 px-4 py-3">
       <div class="flex items-center gap-4">
-        <a href={resolve(`/presentation/${data.document.id}/edit`)} class="text-gray-400 hover:text-gray-200">
-          &larr; Back to Editor
-        </a>
         <h1 class="text-lg font-medium text-gray-100">
           {doc.synced && doc.title ? doc.title : data.document.title || 'Untitled'}
         </h1>

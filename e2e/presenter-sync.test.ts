@@ -40,9 +40,6 @@ test.describe('Presenter Awareness Sync', () => {
 
     // Keyboard navigation hint should be visible (always shown in header)
     await expect(page.getByText('Use arrow keys to navigate')).toBeVisible()
-
-    // Back to Editor link should be visible
-    await expect(page.getByText('Back to Editor')).toBeVisible()
   })
 
   test('viewer page loads successfully', async ({ page }) => {
@@ -338,29 +335,6 @@ test.describe('Presenter Navigation', () => {
     // Keyboard hint should be visible
     await expect(page.getByText('Use arrow keys to navigate')).toBeVisible()
   })
-
-  test('presenter has back to editor link', async ({ page }) => {
-    const email = `presenter-back-${Date.now()}@example.com`
-
-    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
-    const doc = await createDocument(page, {
-      userId: user.id,
-      name: 'Back Link Test',
-      type: 'presentation',
-      meta: { title: 'Back Link Test' },
-    })
-
-    await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
-    await page.goto(`/presentation/${doc.id}/presenter`)
-    await page.waitForLoadState('networkidle')
-    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
-
-    // Back to Editor link should be visible and correct
-    const backLink = page.getByText('Back to Editor')
-    await expect(backLink).toBeVisible()
-    await expect(backLink).toHaveAttribute('href', `/presentation/${doc.id}/edit`)
-  })
 })
 
 test.describe('Viewer UI Elements', () => {
@@ -414,28 +388,6 @@ test.describe('Viewer UI Elements', () => {
     const presentLink = page.getByRole('link', { name: 'Present', exact: true })
     await expect(presentLink).toBeVisible()
     await expect(presentLink).toHaveAttribute('href', `/presentation/${doc.id}/presenter`)
-  })
-
-  test('viewer shows back link to presentations list', async ({ page }) => {
-    const email = `viewer-back-${Date.now()}@example.com`
-
-    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
-    const doc = await createDocument(page, {
-      userId: user.id,
-      name: 'Back Link Test',
-      type: 'presentation',
-      meta: { title: 'Back Link Test' },
-    })
-
-    await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
-    await page.goto(`/presentation/${doc.id}`)
-    await page.waitForLoadState('networkidle')
-    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
-
-    // Back link should be visible
-    const backLink = page.getByRole('link', { name: '← Back' })
-    await expect(backLink).toBeVisible()
   })
 
   test('read-only user does not see Edit or Present buttons', async ({ page }) => {

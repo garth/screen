@@ -529,26 +529,6 @@ test.describe('Presentation Presenter Mode', () => {
     await expect(page.getByText(/1 \/ \d+/)).toBeVisible()
   })
 
-  test('shows back to editor link', async ({ page }) => {
-    const email = `presenter-back-${Date.now()}@example.com`
-
-    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
-    const doc = await createDocument(page, {
-      userId: user.id,
-      name: 'Back Link Test',
-      type: 'presentation',
-    })
-
-    await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
-
-    await page.goto(`/presentation/${doc.id}/presenter`)
-    await page.waitForLoadState('networkidle')
-
-    // Back to Editor link should be visible (contains "Back to Editor" text)
-    await expect(page.getByText('Back to Editor')).toBeVisible({ timeout: 10000 })
-  })
-
   test('allows users with write access to present', async ({ page }) => {
     const ownerEmail = `presenter-collab-owner-${Date.now()}@example.com`
     const writerEmail = `presenter-collab-writer-${Date.now()}@example.com`
