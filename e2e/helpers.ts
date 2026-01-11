@@ -161,3 +161,29 @@ export async function createTeamMember(
 
   return response.json()
 }
+
+export async function createDocument(
+  page: Page,
+  data: { userId: string; name: string; type: string; public?: boolean; meta?: Record<string, unknown> },
+): Promise<{ id: string; name: string; type: string; public: boolean }> {
+  const response = await page.request.post('/api/test/create-document', { data })
+
+  if (!response.ok()) {
+    throw new Error(`Failed to create document: ${response.status()}`)
+  }
+
+  return response.json()
+}
+
+export async function createDocumentUser(
+  page: Page,
+  data: { documentId: string; userId: string; write?: boolean },
+): Promise<{ id: string; documentId: string; userId: string; write: boolean }> {
+  const response = await page.request.post('/api/test/create-document-user', { data })
+
+  if (!response.ok()) {
+    throw new Error(`Failed to create document user: ${response.status()}`)
+  }
+
+  return response.json()
+}
