@@ -42,10 +42,11 @@ export interface PresentationDocument {
   setBackgroundColor(value: string | undefined): void
   setTextColor(value: string | undefined): void
 
-  readonly content: Y.Text
+  readonly content: Y.XmlFragment
 
   readonly ydoc: Y.Doc
   readonly meta: Y.Map<unknown>
+  readonly provider: import('@hocuspocus/provider').HocuspocusProvider
 
   destroy(): void
 }

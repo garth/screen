@@ -32,8 +32,8 @@ export function createPresentationDoc(options: DocumentOptions): PresentationDoc
   )
   textColor = createReactiveMetaProperty<string | undefined>(base.meta, 'textColor', undefined)
 
-  // Rich text content
-  const content = base.ydoc.getText('content')
+  // Rich text content (XmlFragment for ProseMirror compatibility)
+  const content = base.ydoc.getXmlFragment('content')
 
   function assertWritable() {
     if (base.readOnly) {
@@ -106,6 +106,9 @@ export function createPresentationDoc(options: DocumentOptions): PresentationDoc
     },
     get meta() {
       return base.meta
+    },
+    get provider() {
+      return base.provider
     },
 
     // Lifecycle

@@ -50,7 +50,7 @@ describe('createPresentationDoc', () => {
     expect(doc.synced).toBe(true)
     expect(doc.title).toBe('')
     expect(doc.themeId).toBeNull()
-    expect(doc.content).toBeInstanceOf(Y.Text)
+    expect(doc.content).toBeInstanceOf(Y.XmlFragment)
 
     doc.destroy()
   })
@@ -122,13 +122,20 @@ describe('createPresentationDoc', () => {
     doc.destroy()
   })
 
-  it('provides access to Y.Text content', async () => {
+  it('provides access to Y.XmlFragment content', async () => {
     const doc = createPresentationDoc({ documentId: 'test-presentation' })
 
     await new Promise((resolve) => setTimeout(resolve, 10))
 
-    doc.content.insert(0, 'Hello, World!')
-    expect(doc.content.toString()).toBe('Hello, World!')
+    // XmlFragment is used for ProseMirror compatibility
+    const paragraph = new Y.XmlElement('paragraph')
+    const text = new Y.XmlText()
+    text.insert(0, 'Hello, World!')
+    paragraph.insert(0, [text])
+    doc.content.insert(0, [paragraph])
+
+    expect(doc.content.length).toBe(1)
+    expect(doc.content.get(0).toString()).toContain('Hello, World!')
 
     doc.destroy()
   })
