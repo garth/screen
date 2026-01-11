@@ -3,8 +3,8 @@
 </script>
 
 <svelte:head>
-  <title>Privacy Policy - Elastic Time</title>
-  <meta name="description" content="Privacy Policy for Elastic Time time tracking service" />
+  <title>Privacy Policy - Chapel Screen</title>
+  <meta name="description" content="Privacy Policy for Chapel Screen" />
   <link rel="canonical" href="{page.url.origin}/privacy" />
 </svelte:head>
 
@@ -64,8 +64,8 @@
           mental, economic, cultural or social identity.
         </li>
         <li>
-          <strong class="text-gray-100">Service</strong> refers to the Elastic Time website, accessible from
-          <a href="https://elastictime.com" class="text-blue-400 hover:underline">https://elastictime.com</a>.
+          <strong class="text-gray-100">Service</strong> refers to the Chapel Screen website, accessible from
+          <a href="https://chapelscreen.com" class="text-blue-400 hover:underline">https://chapelscreen.com</a>.
         </li>
         <li>
           <strong class="text-gray-100">Service Provider</strong> means any natural or legal person who processes the data
@@ -280,7 +280,7 @@
       <h2 class="mb-4 text-xl font-semibold text-gray-100">Contact Us</h2>
       <p>
         If you have any questions about this Privacy Policy, You can contact us by email:
-        <a href="mailto:support@elastictime.com" class="text-blue-400 hover:underline">support@elastictime.com</a>
+        <a href="mailto:support@chapelscreen.com" class="text-blue-400 hover:underline">support@chapelscreen.com</a>
       </p>
     </section>
   </div>

@@ -4,7 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Chapel Screen (Elastic Time) is a time tracking web application built with SvelteKit 2, Svelte 5, TypeScript, and PostgreSQL via Prisma ORM. It features user authentication, document management, and email verification.
+Chapel Screen is a real-time collaborative presentation editor built with SvelteKit 2, Svelte 5, TypeScript, and PostgreSQL via Prisma ORM.
+
+The app features user authentication, document management, real-time collaboration via Yjs/WebRTC, and email verification.
 
 ## Commands
 
@@ -56,12 +58,28 @@ pnpm db:seed          # Seed database with test data
 - `src/routes/` - SvelteKit pages and server handlers
 - `src/lib/server/` - Server-only code (auth, database, email)
 - `src/lib/components/` - Reusable Svelte components
+- `src/lib/editor/` - ProseMirror editor schema, plugins, and utilities
 - `prisma/` - Database schema and migrations
 - `e2e/` - Playwright end-to-end tests
 
 ### Database Models
 
 User → Session (auth), Document → DocumentUpdate (change tracking), DocumentUser (sharing/collaboration)
+
+### Presentation System
+
+The presentation feature uses a rich text editor with real-time collaboration:
+
+- **Editor**: ProseMirror with custom schema (`src/lib/editor/schema.ts`) supporting paragraphs, headings, lists, images, blockquotes, and slide dividers
+- **Collaboration**: Yjs with y-prosemirror for CRDT-based real-time sync, WebRTC for peer-to-peer connections
+- **Segmentation**: Content is automatically segmented for presenter navigation:
+  - Stable UUIDs assigned to each segment via `segmentId` attribute
+  - Long paragraphs (>100 chars) split into sentence nodes
+  - Segment plugin (`src/lib/editor/segment-plugin.ts`) handles ID assignment and sentence splitting
+  - Visual segment boundaries shown in editor with subtle left borders
+- **Presenter Mode**: Navigate content segment-by-segment with keyboard/click controls
+  - ID-based position tracking (stable across live edits from collaborators)
+  - Viewer auto-scrolls to active segment
 
 ## Environment Setup
 

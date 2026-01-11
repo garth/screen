@@ -3,8 +3,8 @@
 </script>
 
 <svelte:head>
-  <title>Support - Elastic Time</title>
-  <meta name="description" content="Get help and support for Elastic Time time tracking service" />
+  <title>Support - Chapel Screen</title>
+  <meta name="description" content="Get help and support for Chapel Screen" />
   <link rel="canonical" href="{page.url.origin}/support" />
 </svelte:head>
 
@@ -13,12 +13,12 @@
 
   <div class="space-y-6 text-gray-300">
     <p>
-      For any issues related to your Elastic Time account, or if you are interested in signing up to Elastic Time but
+      For any issues related to your Chapel Screen account, or if you are interested in signing up to Chapel Screen but
       still have questions, please use our support email address:
     </p>
 
     <p class="text-xl">
-      <a href="mailto:support@elastictime.com" class="text-blue-400 hover:underline">support@elastictime.com</a>
+      <a href="mailto:support@chapelscreen.com" class="text-blue-400 hover:underline">support@chapelscreen.com</a>
     </p>
 
     <p>We will do our best to answer all support questions promptly.</p>

@@ -20,16 +20,6 @@
       deleting = false
     }
   }
-
-  // Import state
-  let selectedFile = $state<File | null>(null)
-  let importing = $state(false)
-  let importResult = $state<{
-    imported: number
-    duplicates: number
-    unknownEmails: number
-    errors: string[]
-  } | null>(null)
 </script>
 
 <div class="mx-auto max-w-4xl p-6">
@@ -182,17 +172,10 @@
           <strong class="text-gray-100">Warning:</strong> This will permanently delete your account and all your data, including:
         </p>
         <ul class="ml-4 list-disc space-y-1">
-          <li>All your activities</li>
-          <li>All your clients and projects</li>
+          <li>All your presentations</li>
           <li>Your account settings</li>
         </ul>
-        <p class="rounded border border-yellow-600 bg-yellow-900/30 p-3 text-yellow-300">
-          <strong>Tip:</strong> Before deleting, consider
-          <a href={resolve('/preferences#export')} class="underline" onclick={() => (showDeleteDialog = false)}>
-            exporting your data
-          </a>
-          so you have a backup.
-        </p>
+        <p class="text-yellow-300">This action cannot be undone.</p>
       </div>
 
       <div class="flex justify-end gap-3">

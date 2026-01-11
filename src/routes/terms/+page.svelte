@@ -3,8 +3,8 @@
 </script>
 
 <svelte:head>
-  <title>Terms and Conditions - Elastic Time</title>
-  <meta name="description" content="Terms and Conditions for Elastic Time time tracking service" />
+  <title>Terms and Conditions - Chapel Screen</title>
+  <meta name="description" content="Terms and Conditions for Chapel Screen" />
   <link rel="canonical" href="{page.url.origin}/terms" />
 </svelte:head>
 
@@ -49,8 +49,8 @@
         </li>
         <li><strong class="text-gray-100">Service</strong> refers to the Website.</li>
         <li>
-          <strong class="text-gray-100">Website</strong> refers to Elastic Time, accessible from
-          <a href="https://elastictime.com" class="text-blue-400 hover:underline">https://elastictime.com</a>.
+          <strong class="text-gray-100">Website</strong> refers to Chapel Screen, accessible from
+          <a href="https://chapelscreen.com" class="text-blue-400 hover:underline">https://chapelscreen.com</a>.
         </li>
         <li>
           <strong class="text-gray-100">You</strong> means the individual accessing or using the Service, or the company,
@@ -205,7 +205,7 @@
       <h2 class="mb-4 text-xl font-semibold text-gray-100">Contact Us</h2>
       <p>
         If you have any questions about these Terms and Conditions, You can contact us by email:
-        <a href="mailto:support@elastictime.com" class="text-blue-400 hover:underline">support@elastictime.com</a>
+        <a href="mailto:support@chapelscreen.com" class="text-blue-400 hover:underline">support@chapelscreen.com</a>
       </p>
     </section>
   </div>

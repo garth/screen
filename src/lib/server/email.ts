@@ -21,13 +21,13 @@ export async function sendVerificationEmail(email: string, token: string) {
   const verifyUrl = `${appUrl}/verify-email?token=${token}`
 
   await transporter.sendMail({
-    from: env.SMTP_FROM ?? 'noreply@elastictime.com',
+    from: env.SMTP_FROM ?? 'noreply@chapelscreen.com',
     to: email,
-    subject: 'Verify your email - Elastic Time',
+    subject: 'Verify your email - Chapel Screen',
     html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #1e40af;">Verify your email</h1>
-        <p>Thanks for registering with Elastic Time. Click the link below to verify your email address:</p>
+        <p>Thanks for registering with Chapel Screen. Click the link below to verify your email address:</p>
         <p>
           <a href="${verifyUrl}" style="display: inline-block; padding: 12px 24px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 6px;">
             Verify Email
@@ -49,9 +49,9 @@ export async function sendPasswordResetEmail(email: string, token: string) {
   const resetUrl = `${appUrl}/reset-password?token=${token}`
 
   await transporter.sendMail({
-    from: env.SMTP_FROM ?? 'noreply@elastictime.com',
+    from: env.SMTP_FROM ?? 'noreply@chapelscreen.com',
     to: email,
-    subject: 'Reset your password - Elastic Time',
+    subject: 'Reset your password - Chapel Screen',
     html: `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #1e40af;">Reset your password</h1>
