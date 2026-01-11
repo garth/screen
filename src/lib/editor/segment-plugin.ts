@@ -1,4 +1,4 @@
-import { Plugin, PluginKey, Transaction } from 'prosemirror-state'
+import { Plugin, PluginKey, type Transaction } from 'prosemirror-state'
 import { Decoration, DecorationSet } from 'prosemirror-view'
 import type { Node, Schema } from 'prosemirror-model'
 import {

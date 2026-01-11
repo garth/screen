@@ -1,4 +1,4 @@
-import { Schema, NodeSpec, MarkSpec } from 'prosemirror-model'
+import { Schema } from 'prosemirror-model'
 
 /**
  * Custom ProseMirror schema for presentations with:
