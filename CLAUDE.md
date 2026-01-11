@@ -81,8 +81,16 @@ The presentation feature uses a rich text editor with real-time collaboration:
   - Long paragraphs (>100 chars) split into sentence nodes
   - Segment plugin (`src/lib/editor/segment-plugin.ts`) handles ID assignment and sentence splitting
   - Visual segment boundaries shown in editor with subtle left borders
+- **Merged Segments**: Multiple segments can be merged to present as a single unit:
+  - `mergeGroupId` attribute shared by segments in the same group
+  - Merge via toolbar button or `Cmd/Ctrl+M`, unmerge via `Cmd/Ctrl+Shift+M`
+  - Merged segments show blue background/border in editor
+  - Only segments on the same slide can be merged
+  - Deleting any segment from a group dissolves the entire group
+  - Merge commands in `src/lib/editor/merge-commands.ts`
 - **Presenter Mode**: Navigate content segment-by-segment with keyboard/click controls
   - ID-based position tracking (stable across live edits from collaborators)
+  - Merged segments navigate and highlight as one unit
   - Viewer auto-scrolls to active segment
   - Presenter sync via shared awareness channel
 

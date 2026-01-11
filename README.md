@@ -9,6 +9,7 @@ A real-time collaborative presentation editor with presenter mode, offline suppo
 - Automatic content segmentation for presenter navigation
 - Presenter mode with keyboard/click segment navigation
 - Stable segment IDs that persist across live edits
+- **Segment merging** - combine multiple segments to present as one unit
 - Long paragraphs automatically split into sentences
 - Slide dividers for multi-slide presentations
 - Theme customization
@@ -89,8 +90,9 @@ The presentation editor automatically segments content for presenter navigation:
 1. **Segment Nodes**: Paragraphs, headings, list items, images, and blockquotes are segments
 2. **Stable IDs**: Each segment gets a UUID (e.g., `seg-a1b2c3d4`) stored as an attribute
 3. **Sentence Splitting**: Paragraphs over 100 characters are split into sentence nodes
-4. **Visual Boundaries**: Subtle left borders indicate segment boundaries in the editor
-5. **ID-Based Navigation**: Presenter tracks position by segment ID, not index, so live edits from collaborators don't disrupt viewing
+4. **Segment Merging**: Select multiple segments and merge them (`Cmd/Ctrl+M`) to present as one unit
+5. **Visual Boundaries**: Subtle left borders indicate segment boundaries; merged segments show blue highlighting
+6. **ID-Based Navigation**: Presenter tracks position by segment ID, not index, so live edits from collaborators don't disrupt viewing
 
 ### Real-Time Collaboration
 
