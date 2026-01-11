@@ -51,10 +51,37 @@
   // Track by STABLE segment ID (not index)
   let currentSegmentId = $state<string | null>(null)
 
+  // Track last local update timestamp to prevent feedback loops
+  let lastLocalUpdate = $state(0)
+
   // Initialize to first segment when segments are available
   $effect(() => {
     if (segments.length > 0 && !currentSegmentId) {
       currentSegmentId = segments[0].id
+    }
+  })
+
+  // Join as presenter on shared awareness channel when synced
+  $effect(() => {
+    if (doc.synced && currentSegmentId) {
+      lastLocalUpdate = Date.now()
+      doc.awareness.setPresenter(currentSegmentId)
+    }
+  })
+
+  // Subscribe to other presenters' navigation on the shared channel
+  $effect(() => {
+    if (doc.synced) {
+      const unsubscribe = doc.awareness.onPresenterChange((presenter) => {
+        // Ignore our own updates (prevent feedback loop)
+        if (!presenter || presenter.timestamp <= lastLocalUpdate) return
+
+        // Another presenter navigated - sync to their position
+        if (presenter.segmentId && presenter.segmentId !== currentSegmentId) {
+          currentSegmentId = presenter.segmentId
+        }
+      })
+      return unsubscribe
     }
   })
 
@@ -66,12 +93,21 @@
   // Handle navigation by index (for keyboard/controls)
   function handleNavigateByIndex(index: number) {
     const clampedIndex = clampSegmentIndex(index, segments.length)
-    currentSegmentId = segments[clampedIndex]?.id ?? null
+    const newSegmentId = segments[clampedIndex]?.id ?? null
+    if (newSegmentId && newSegmentId !== currentSegmentId) {
+      currentSegmentId = newSegmentId
+      lastLocalUpdate = Date.now()
+      doc.awareness.setPresenter(newSegmentId)
+    }
   }
 
   // Handle navigation by ID (for clicks)
   function handleNavigateById(segmentId: string) {
-    currentSegmentId = segmentId
+    if (segmentId !== currentSegmentId) {
+      currentSegmentId = segmentId
+      lastLocalUpdate = Date.now()
+      doc.awareness.setPresenter(segmentId)
+    }
   }
 
   // Keyboard navigation
@@ -113,6 +149,7 @@
   })
 
   onDestroy(() => {
+    doc.awareness.clearPresenter()
     themeDoc?.destroy()
     doc.destroy()
   })

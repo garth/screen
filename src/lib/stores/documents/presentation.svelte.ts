@@ -1,4 +1,5 @@
 import { createBaseDocument, createReactiveMetaProperty } from './base.svelte'
+import { createPresentationAwareness } from './awareness.svelte'
 import type { DocumentOptions, PresentationDocument } from './types'
 
 export function createPresentationDoc(options: DocumentOptions): PresentationDocument {
@@ -34,6 +35,9 @@ export function createPresentationDoc(options: DocumentOptions): PresentationDoc
 
   // Rich text content (XmlFragment for ProseMirror compatibility)
   const content = base.ydoc.getXmlFragment('content')
+
+  // Shared awareness channel for presenter sync
+  const awareness = createPresentationAwareness(base.provider)
 
   function assertWritable() {
     if (base.readOnly) {
@@ -109,6 +113,9 @@ export function createPresentationDoc(options: DocumentOptions): PresentationDoc
     },
     get provider() {
       return base.provider
+    },
+    get awareness() {
+      return awareness
     },
 
     // Lifecycle

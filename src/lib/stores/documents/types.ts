@@ -1,4 +1,5 @@
 import type * as Y from 'yjs'
+import type { PresentationAwareness } from './awareness.svelte'
 
 // =============================================================================
 // Base Types
@@ -54,6 +55,7 @@ export interface PresentationDocument {
   readonly ydoc: Y.Doc
   readonly meta: Y.Map<unknown>
   readonly provider: import('@hocuspocus/provider').HocuspocusProvider
+  readonly awareness: PresentationAwareness
 
   destroy(): void
 }

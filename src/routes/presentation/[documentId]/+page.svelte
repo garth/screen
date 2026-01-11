@@ -3,6 +3,8 @@
   import { createPresentationDoc, createThemeDoc, type ThemeDocument } from '$lib/stores/documents'
   import PresentationViewer from '$lib/components/presentation/PresentationViewer.svelte'
   import { resolveTheme, defaultTheme, type ResolvedTheme } from '$lib/utils/theme-resolver'
+  import { parseContentSegments, type ContentSegment } from '$lib/utils/segment-parser'
+  import type { PresenterState } from '$lib/stores/documents/awareness.svelte'
 
   let { data } = $props()
 
@@ -40,6 +42,34 @@
       : defaultTheme,
   )
 
+  // Parse content into segments for follow mode
+  const segments: ContentSegment[] = $derived(
+    doc.synced ? parseContentSegments(doc.content) : [],
+  )
+
+  // Follow mode state
+  let followMode = $state(true)
+  let activePresenter = $state<PresenterState | null>(null)
+  let currentSegmentId = $state<string | null>(null)
+
+  // Subscribe to presenter changes on the shared channel
+  $effect(() => {
+    if (doc.synced) {
+      const unsubscribe = doc.awareness.onPresenterChange((presenter) => {
+        activePresenter = presenter
+
+        // Auto-follow if enabled
+        if (followMode && presenter?.segmentId) {
+          currentSegmentId = presenter.segmentId
+        }
+      })
+      return unsubscribe
+    }
+  })
+
+  // Derived: are we following someone?
+  const isFollowing = $derived(followMode && activePresenter !== null)
+
   onDestroy(() => {
     themeDoc?.destroy()
     doc.destroy()
@@ -62,8 +92,22 @@
       </h1>
     </div>
 
-    {#if data.permissions.canWrite}
-      <div class="flex items-center gap-2">
+    <div class="flex items-center gap-3">
+      {#if activePresenter}
+        <button
+          type="button"
+          onclick={() => followMode = !followMode}
+          class="flex items-center gap-2 rounded px-3 py-1.5 text-sm {followMode ? 'bg-purple-600 text-white' : 'border border-gray-600 text-gray-300 hover:bg-gray-700'}">
+          {#if followMode}
+            <span class="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
+            Following presenter
+          {:else}
+            Follow presenter
+          {/if}
+        </button>
+      {/if}
+
+      {#if data.permissions.canWrite}
         <a
           href="/presentation/{data.document.id}/edit"
           class="rounded border border-gray-600 px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-700">
@@ -74,14 +118,19 @@
           class="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500">
           Present
         </a>
-      </div>
-    {/if}
+      {/if}
+    </div>
   </header>
 
   <!-- Viewer -->
   <main class="flex-1 overflow-hidden">
     {#if doc.synced}
-      <PresentationViewer content={doc.content} theme={resolvedTheme} mode="view" />
+      <PresentationViewer
+        content={doc.content}
+        theme={resolvedTheme}
+        mode={isFollowing ? 'present' : 'view'}
+        segments={isFollowing ? segments : []}
+        currentSegmentId={isFollowing ? currentSegmentId : null} />
     {:else}
       <div class="flex h-full items-center justify-center">
         <p class="text-gray-500">Loading presentation...</p>
