@@ -1,6 +1,8 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
+  import { goto } from '$app/navigation'
   import { resolve } from '$app/paths'
+  import { toast } from '$lib/toast.svelte'
   import { createPresentationDoc, createThemeDoc, type ThemeDocument } from '$lib/stores/documents'
   import PresentationEditor from '$lib/components/presentation/PresentationEditor.svelte'
   import { resolveTheme, defaultTheme, type ResolvedTheme } from '$lib/utils/theme-resolver'
@@ -72,6 +74,36 @@
     }
   }
 
+  // Delete handling
+  let deleting = $state(false)
+  let deleteDialog = $state<HTMLDialogElement | null>(null)
+
+  function showDeleteDialog() {
+    deleteDialog?.showModal()
+  }
+
+  function closeDeleteDialog() {
+    deleteDialog?.close()
+  }
+
+  async function confirmDelete() {
+    deleting = true
+    closeDeleteDialog()
+    try {
+      const response = await fetch(`/api/presentations?id=${data.document.id}`, {
+        method: 'DELETE',
+      })
+      if (!response.ok) {
+        throw new Error('Failed to delete')
+      }
+      toast('success', 'Presentation deleted')
+      await goto(resolve('/presentations'))
+    } catch {
+      toast('error', 'Failed to delete presentation')
+      deleting = false
+    }
+  }
+
   onDestroy(() => {
     if (titleTimeout) clearTimeout(titleTimeout)
     themeDoc?.destroy()
@@ -126,6 +158,14 @@
         class="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500">
         Present
       </a>
+
+      <button
+        type="button"
+        onclick={showDeleteDialog}
+        disabled={deleting}
+        class="rounded border border-red-600 px-3 py-1.5 text-sm text-red-400 hover:bg-red-900/50 disabled:opacity-50">
+        {deleting ? 'Deleting...' : 'Delete'}
+      </button>
     </div>
   </header>
 
@@ -140,3 +180,69 @@
     {/if}
   </main>
 </div>
+
+<!-- Delete Confirmation Dialog -->
+<dialog
+  bind:this={deleteDialog}
+  class="delete-dialog fixed inset-0 m-auto rounded-lg border border-gray-700 bg-gray-800 p-0 text-gray-100 shadow-xl backdrop:bg-black/50">
+  <div class="p-6">
+    <h2 class="mb-2 text-lg font-semibold">Delete Presentation</h2>
+    <p class="mb-6 text-gray-400">
+      Are you sure you want to delete "{titleInput || 'Untitled'}"? This action cannot be undone.
+    </p>
+    <div class="flex justify-end gap-3">
+      <button
+        type="button"
+        onclick={closeDeleteDialog}
+        class="rounded border border-gray-600 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">
+        Cancel
+      </button>
+      <button
+        type="button"
+        onclick={confirmDelete}
+        class="rounded bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-500">
+        Delete
+      </button>
+    </div>
+  </div>
+</dialog>
+
+<style>
+  .delete-dialog {
+    opacity: 0;
+    transform: scale(0.95);
+    transition:
+      opacity 150ms ease-out,
+      transform 150ms ease-out,
+      overlay 150ms ease-out allow-discrete,
+      display 150ms ease-out allow-discrete;
+  }
+
+  .delete-dialog[open] {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .delete-dialog::backdrop {
+    opacity: 0;
+    transition:
+      opacity 150ms ease-out,
+      overlay 150ms ease-out allow-discrete,
+      display 150ms ease-out allow-discrete;
+  }
+
+  .delete-dialog[open]::backdrop {
+    opacity: 1;
+  }
+
+  @starting-style {
+    .delete-dialog[open] {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    .delete-dialog[open]::backdrop {
+      opacity: 0;
+    }
+  }
+</style>

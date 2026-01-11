@@ -35,3 +35,34 @@ export const POST: RequestHandler = async ({ locals }) => {
 
   return json({ id: document.id })
 }
+
+export const DELETE: RequestHandler = async ({ locals, url }) => {
+  if (!locals.user) {
+    error(401, 'Authentication required')
+  }
+
+  const documentId = url.searchParams.get('id')
+  if (!documentId) {
+    error(400, 'Document ID required')
+  }
+
+  // Verify user owns this document
+  const document = await db.document.findUnique({
+    where: { id: documentId, userId: locals.user.id, deletedAt: null },
+  })
+
+  if (!document) {
+    error(404, 'Presentation not found')
+  }
+
+  // Soft delete
+  await db.document.update({
+    where: { id: documentId },
+    data: { deletedAt: new Date() },
+  })
+
+  // Sync removal to document-list
+  await syncToDocumentList(locals.user.id, documentId, 'remove')
+
+  return new Response(null, { status: 204 })
+}

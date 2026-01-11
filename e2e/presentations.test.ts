@@ -549,6 +549,216 @@ test.describe('Presentation Presenter Mode', () => {
   })
 })
 
+test.describe('Presentation Deletion', () => {
+  const testUser = {
+    firstName: 'Delete',
+    lastName: 'Tester',
+    password: 'password123',
+  }
+
+  test('owner can delete their presentation from edit page', async ({ page }) => {
+    const email = `delete-owner-${Date.now()}@example.com`
+
+    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: user.id,
+      name: 'Presentation to Delete',
+      type: 'presentation',
+      meta: { title: 'Presentation to Delete' },
+    })
+
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/')
+
+    await page.goto(`/presentation/${doc.id}/edit`)
+    await page.waitForLoadState('networkidle')
+
+    // Delete button should be visible
+    const deleteButton = page.getByRole('button', { name: 'Delete', exact: true })
+    await expect(deleteButton).toBeVisible({ timeout: 10000 })
+
+    // Click delete to open the confirmation dialog
+    await deleteButton.click()
+
+    // Confirm dialog should appear
+    const dialog = page.locator('dialog')
+    await expect(dialog).toBeVisible()
+    await expect(dialog.getByText('Delete Presentation')).toBeVisible()
+
+    // Click the confirm delete button in the dialog
+    await dialog.getByRole('button', { name: 'Delete' }).click()
+
+    // Should redirect to presentations list
+    await expect(page).toHaveURL(/\/presentations/, { timeout: 10000 })
+
+    // Wait for the list to load
+    await page.waitForLoadState('networkidle')
+
+    // Presentation should no longer appear in the list (check within main content, not announcer)
+    await expect(page.locator('main').getByText('Presentation to Delete')).not.toBeVisible({ timeout: 5000 })
+  })
+
+  test('delete can be cancelled via confirmation dialog', async ({ page }) => {
+    const email = `delete-cancel-${Date.now()}@example.com`
+
+    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: user.id,
+      name: 'Keep This Presentation',
+      type: 'presentation',
+    })
+
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/')
+
+    await page.goto(`/presentation/${doc.id}/edit`)
+    await page.waitForLoadState('networkidle')
+
+    // Click delete to open dialog
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
+
+    // Dialog should appear
+    const dialog = page.locator('dialog')
+    await expect(dialog).toBeVisible()
+
+    // Click cancel
+    await dialog.getByRole('button', { name: 'Cancel' }).click()
+
+    // Dialog should close
+    await expect(dialog).not.toBeVisible()
+
+    // Should stay on edit page
+    await expect(page).toHaveURL(`/presentation/${doc.id}/edit`)
+  })
+
+  test('deleted presentation returns 404', async ({ page }) => {
+    const email = `delete-404-${Date.now()}@example.com`
+
+    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: user.id,
+      name: 'Soon to be Deleted',
+      type: 'presentation',
+    })
+
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/')
+
+    await page.goto(`/presentation/${doc.id}/edit`)
+    await page.waitForLoadState('networkidle')
+
+    // Open and confirm the delete dialog
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
+    const dialog = page.locator('dialog')
+    await expect(dialog).toBeVisible()
+    await dialog.getByRole('button', { name: 'Delete' }).click()
+
+    await expect(page).toHaveURL(/\/presentations/, { timeout: 10000 })
+
+    // Try to access the deleted presentation
+    const response = await page.goto(`/presentation/${doc.id}`)
+    expect(response?.status()).toBe(404)
+  })
+
+  test('shows success toast after deletion', async ({ page }) => {
+    const email = `delete-toast-${Date.now()}@example.com`
+
+    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: user.id,
+      name: 'Toast Test Presentation',
+      type: 'presentation',
+    })
+
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/')
+
+    await page.goto(`/presentation/${doc.id}/edit`)
+    await page.waitForLoadState('networkidle')
+
+    // Open and confirm delete dialog
+    await page.getByRole('button', { name: 'Delete', exact: true }).click()
+    const dialog = page.locator('dialog')
+    await expect(dialog).toBeVisible()
+    await dialog.getByRole('button', { name: 'Delete' }).click()
+
+    // Should show success toast
+    await expect(page.getByText('Presentation deleted')).toBeVisible({ timeout: 10000 })
+  })
+})
+
+test.describe('Presentation Delete API', () => {
+  const testUser = {
+    firstName: 'DeleteAPI',
+    lastName: 'Tester',
+    password: 'password123',
+  }
+
+  test('DELETE requires authentication', async ({ page }) => {
+    const response = await page.request.delete('/api/presentations?id=some-id')
+    expect(response.status()).toBe(401)
+  })
+
+  test('DELETE requires document id parameter', async ({ page }) => {
+    const email = `delete-api-noid-${Date.now()}@example.com`
+
+    await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/')
+
+    const response = await page.request.delete('/api/presentations')
+    expect(response.status()).toBe(400)
+  })
+
+  test('DELETE returns 404 for non-existent document', async ({ page }) => {
+    const email = `delete-api-404-${Date.now()}@example.com`
+
+    await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/')
+
+    const response = await page.request.delete('/api/presentations?id=non-existent-id')
+    expect(response.status()).toBe(404)
+  })
+
+  test('DELETE returns 404 for document owned by another user', async ({ page }) => {
+    const ownerEmail = `delete-api-owner-${Date.now()}@example.com`
+    const otherEmail = `delete-api-other-${Date.now()}@example.com`
+
+    const owner = await createVerifiedUser(page, { ...testUser, email: ownerEmail, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: owner.id,
+      name: 'Not Your Presentation',
+      type: 'presentation',
+    })
+
+    await createVerifiedUser(page, { ...testUser, firstName: 'Other', email: otherEmail, password: testUser.password })
+    await loginUser(page, { email: otherEmail, password: testUser.password })
+    await expect(page).toHaveURL('/')
+
+    // Other user tries to delete owner's presentation
+    const response = await page.request.delete(`/api/presentations?id=${doc.id}`)
+    expect(response.status()).toBe(404)
+  })
+
+  test('DELETE returns 204 on successful deletion', async ({ page }) => {
+    const email = `delete-api-success-${Date.now()}@example.com`
+
+    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: user.id,
+      name: 'API Delete Test',
+      type: 'presentation',
+    })
+
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/')
+
+    const response = await page.request.delete(`/api/presentations?id=${doc.id}`)
+    expect(response.status()).toBe(204)
+  })
+})
+
 test.describe('Presentation 404 Handling', () => {
   test('returns 404 for non-existent presentation', async ({ page }) => {
     const email = `404-test-${Date.now()}@example.com`
