@@ -1,11 +1,31 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
+  import { browser } from '$app/environment'
   import './layout.css'
-  import favicon from '$lib/assets/favicon.svg'
   import Toasts from '$lib/components/Toasts.svelte'
   import { page } from '$app/state'
   import { resolve } from '$app/paths'
   import { goto, invalidateAll } from '$app/navigation'
   import { logout } from './data.remote'
+
+  // Register PWA service worker
+  onMount(async () => {
+    if (browser) {
+      const { pwaInfo } = await import('virtual:pwa-info')
+      if (pwaInfo) {
+        const { registerSW } = await import('virtual:pwa-register')
+        registerSW({
+          immediate: true,
+          onRegistered(r) {
+            if (r) console.log('SW Registered')
+          },
+          onRegisterError(error) {
+            console.error('SW registration error', error)
+          },
+        })
+      }
+    }
+  })
 
   async function handleLogout() {
     await logout()
@@ -30,7 +50,6 @@
   }
 </script>
 
-<svelte:head><link rel="icon" href={favicon} /></svelte:head>
 <svelte:window onclick={handleClickOutside} />
 
 <nav class="border-b border-gray-700 bg-gray-800">
