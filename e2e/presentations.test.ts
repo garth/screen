@@ -386,6 +386,43 @@ test.describe('Presentation Editor', () => {
     await expect(themeSelect).toBeVisible()
   })
 
+  test('editor can be focused and accepts text input', async ({ page }) => {
+    const email = `editor-focus-${Date.now()}@example.com`
+
+    await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/presentations')
+
+    // Create presentation via UI to ensure proper Yjs initialization
+    await page.goto('/presentations')
+    await page.waitForLoadState('networkidle')
+    await page.getByRole('button', { name: 'New Presentation' }).click()
+    await expect(page).toHaveURL(/\/presentation\/[^/]+\/edit/, { timeout: 10000 })
+
+    // Wait for the editor to load and sync
+    await page.waitForLoadState('networkidle')
+
+    // Verify title input is visible (same check as the passing test)
+    const titleInput = page.locator('input[type="text"]').first()
+    await expect(titleInput).toBeVisible({ timeout: 10000 })
+
+    // Wait for ProseMirror to initialize
+    const editor = page.locator('.editor-content .ProseMirror')
+    await expect(editor).toBeVisible({ timeout: 10000 })
+
+    // Verify the editor has contenteditable attribute
+    await expect(editor).toHaveAttribute('contenteditable', 'true')
+
+    // Click on the editor to focus it
+    await editor.click()
+
+    // Type some text
+    await page.keyboard.type('Hello, World!')
+
+    // Verify the text appears in the editor
+    await expect(editor).toContainText('Hello, World!')
+  })
+
   test('shows Present button that links to presenter mode', async ({ page }) => {
     const email = `editor-present-link-${Date.now()}@example.com`
 

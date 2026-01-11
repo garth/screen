@@ -16,10 +16,13 @@
 
   let { doc, theme }: Props = $props()
 
-  let editorElement: HTMLDivElement | undefined = $state()
-  let view: EditorView | undefined = $state()
+  // Use a unique ID for the editor container
+  const editorId = `prosemirror-editor-${Math.random().toString(36).slice(2)}`
+  let view: EditorView | null = $state(null)
 
   onMount(() => {
+    // Query the element directly - it should exist by the time onMount runs
+    const editorElement = document.getElementById(editorId)
     if (!editorElement) return
 
     const plugins = [
@@ -30,8 +33,9 @@
     ]
 
     // Add cursor plugin if awareness is available
-    if (doc.provider.awareness) {
-      plugins.unshift(yCursorPlugin(doc.provider.awareness))
+    // Note: yCursorPlugin must come AFTER ySyncPlugin because it depends on its state
+    if (doc.provider?.awareness) {
+      plugins.splice(1, 0, yCursorPlugin(doc.provider.awareness))
     }
 
     const state = EditorState.create({
@@ -47,7 +51,7 @@
   })
 </script>
 
-<div class="presentation-editor flex h-full w-full flex-col">
+<div class="presentation-editor flex min-h-0 flex-1 flex-col">
   <!-- Toolbar -->
   <EditorToolbar {view} />
 
@@ -56,20 +60,21 @@
     class="flex-1 overflow-auto"
     style:font-family={theme.font}
     style:background-color={theme.backgroundColor}
-    style:color={theme.textColor}>
+    style:color={theme.textColor}
+    style:min-height="200px">
     {#if theme.viewport}
       <div
         class="viewport-container relative mx-auto"
         style:width="{theme.viewport.width}px"
         style:max-width="100%"
         style:aspect-ratio="{theme.viewport.width} / {theme.viewport.height}">
-        <div class="prose max-w-none p-8" style:color={theme.textColor}>
-          <div bind:this={editorElement} class="editor-content"></div>
+        <div class="prose h-full max-w-none p-8" style:color={theme.textColor}>
+          <div id={editorId} class="editor-content h-full"></div>
         </div>
       </div>
     {:else}
-      <div class="prose max-w-none p-8" style:color={theme.textColor}>
-        <div bind:this={editorElement} class="editor-content"></div>
+      <div class="prose h-full max-w-none p-8" style:color={theme.textColor}>
+        <div id={editorId} class="editor-content h-full"></div>
       </div>
     {/if}
   </div>

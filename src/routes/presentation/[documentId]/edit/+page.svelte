@@ -175,7 +175,7 @@
   </header>
 
   <!-- Editor -->
-  <main class="flex-1 overflow-hidden">
+  <main class="flex flex-1 flex-col overflow-hidden">
     {#if doc.synced}
       <PresentationEditor {doc} theme={resolvedTheme} />
     {:else}
