@@ -188,6 +188,43 @@
         </p>
       </div>
     </div>
+
+    <!-- Second row of features -->
+    <div class="mt-8 grid gap-8 md:grid-cols-2 md:px-16">
+      <div
+        class="animate-fade-in-up animation-delay-300 rounded-lg border border-gray-700 bg-gray-800 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-gray-600 hover:shadow-lg hover:shadow-purple-900/20">
+        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-purple-600/20 text-purple-400">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414" />
+          </svg>
+        </div>
+        <h3 class="mb-2 text-lg font-semibold text-gray-100">Works Offline</h3>
+        <p class="text-gray-400">
+          Edit presentations without internet. Changes sync automatically when you're back online.
+        </p>
+      </div>
+
+      <div
+        class="animate-fade-in-up animation-delay-300 rounded-lg border border-gray-700 bg-gray-800 p-6 transition-all duration-300 hover:-translate-y-1 hover:border-gray-600 hover:shadow-lg hover:shadow-purple-900/20">
+        <div class="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-purple-600/20 text-purple-400">
+          <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <h3 class="mb-2 text-lg font-semibold text-gray-100">Install as App</h3>
+        <p class="text-gray-400">
+          Add to your home screen for a native app experience on mobile and desktop.
+        </p>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -355,6 +392,18 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
           </svg>
           Rich text editor
+        </li>
+        <li class="flex items-center gap-2">
+          <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          Offline support
+        </li>
+        <li class="flex items-center gap-2">
+          <svg class="h-5 w-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+          </svg>
+          Install as app (PWA)
         </li>
       </ul>
       {#if !data.user}

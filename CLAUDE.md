@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Chapel Screen is a real-time collaborative presentation editor built with SvelteKit 2, Svelte 5, TypeScript, and PostgreSQL via Prisma ORM.
 
-The app features user authentication, document management, real-time collaboration via Yjs/WebRTC, and email verification.
+The app features user authentication, document management, real-time collaboration via Yjs/Hocuspocus/WebRTC, offline support via IndexedDB, and PWA capabilities for native app-like experience.
 
 ## Commands
 
@@ -33,6 +33,10 @@ pnpm db:generate      # Generate Prisma client
 pnpm db:migrate       # Create new migration
 pnpm db:studio        # Open Prisma Studio GUI
 pnpm db:seed          # Seed database with test data
+
+# Hocuspocus (collaboration server)
+pnpm hocuspocus       # Start Hocuspocus server
+pnpm hocuspocus:dev   # Start with file watching
 ```
 
 ## Architecture
@@ -71,7 +75,7 @@ User → Session (auth), Document → DocumentUpdate (change tracking), Document
 The presentation feature uses a rich text editor with real-time collaboration:
 
 - **Editor**: ProseMirror with custom schema (`src/lib/editor/schema.ts`) supporting paragraphs, headings, lists, images, blockquotes, and slide dividers
-- **Collaboration**: Yjs with y-prosemirror for CRDT-based real-time sync, WebRTC for peer-to-peer connections
+- **Collaboration**: Yjs with y-prosemirror for CRDT-based real-time sync
 - **Segmentation**: Content is automatically segmented for presenter navigation:
   - Stable UUIDs assigned to each segment via `segmentId` attribute
   - Long paragraphs (>100 chars) split into sentence nodes
@@ -80,6 +84,31 @@ The presentation feature uses a rich text editor with real-time collaboration:
 - **Presenter Mode**: Navigate content segment-by-segment with keyboard/click controls
   - ID-based position tracking (stable across live edits from collaborators)
   - Viewer auto-scrolls to active segment
+  - Presenter sync via shared awareness channel
+
+### Document Stores (`src/lib/stores/documents/`)
+
+Typed Svelte stores wrapping Yjs documents with reactive properties:
+
+- **base.svelte.ts**: Core document infrastructure with dual-provider sync
+  - Hocuspocus provider (primary) for server-mediated sync
+  - WebRTC provider for P2P awareness sync (presenter position, cursors)
+  - IndexedDB persistence via y-indexeddb for offline support
+  - `createReactiveMetaProperty()` for reactive Yjs Map bindings
+- **presentation.svelte.ts**: Presentation documents (title, themeId, content, theme overrides)
+- **theme.svelte.ts**: Theme documents with inheritance (font, colors, viewport, backgroundImage)
+- **event.svelte.ts**: Event documents (presentations array, channels)
+- **awareness.svelte.ts**: Dual-provider awareness for presenter sync
+  - Writes to both Hocuspocus and WebRTC awareness
+  - Reads from most recent (timestamp-based conflict resolution)
+
+### Offline Support & PWA
+
+- **IndexedDB**: y-indexeddb caches documents locally for offline editing
+- **Service Worker**: Workbox caches static assets (JS, CSS, images, fonts)
+- **PWA Manifest**: Enables "Add to Home Screen" on mobile/desktop
+- **Dual Providers**: Hocuspocus (when online) + WebRTC (P2P fallback)
+- **Configuration**: `vite.config.ts` contains SvelteKitPWA plugin setup
 
 ## Environment Setup
 
