@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
   import { browser } from '$app/environment'
+  import { resolve } from '$app/paths'
   import { createPresentationDoc, createThemeDoc, type ThemeDocument } from '$lib/stores/documents'
   import PresentationViewer from '$lib/components/presentation/PresentationViewer.svelte'
   import PresenterControls from '$lib/components/presentation/PresenterControls.svelte'
@@ -31,22 +32,20 @@
 
   // Compute resolved theme
   const resolvedTheme: ResolvedTheme = $derived(
-    doc.synced
-      ? resolveTheme(
-          {
-            font: doc.font,
-            backgroundColor: doc.backgroundColor,
-            textColor: doc.textColor,
-          },
-          themeDoc?.synced ? themeDoc : null,
-        )
-      : defaultTheme,
+    doc.synced ?
+      resolveTheme(
+        {
+          font: doc.font,
+          backgroundColor: doc.backgroundColor,
+          textColor: doc.textColor,
+        },
+        themeDoc?.synced ? themeDoc : null,
+      )
+    : defaultTheme,
   )
 
   // Parse content into segments for navigation
-  const segments: ContentSegment[] = $derived(
-    doc.synced ? parseContentSegments(doc.content) : [],
-  )
+  const segments: ContentSegment[] = $derived(doc.synced ? parseContentSegments(doc.content) : [])
 
   // Track by STABLE segment ID (not index)
   let currentSegmentId = $state<string | null>(null)
@@ -86,9 +85,7 @@
   })
 
   // Derive current index from ID (for display)
-  const currentSegmentIndex = $derived(
-    segments.findIndex(s => s.id === currentSegmentId)
-  )
+  const currentSegmentIndex = $derived(segments.findIndex((s) => s.id === currentSegmentId))
 
   // Handle navigation by index (for keyboard/controls)
   function handleNavigateByIndex(index: number) {
@@ -165,7 +162,7 @@
     <!-- Header -->
     <header class="flex items-center justify-between border-b border-gray-700 bg-gray-800 px-4 py-3">
       <div class="flex items-center gap-4">
-        <a href="/presentation/{data.document.id}/edit" class="text-gray-400 hover:text-gray-200">
+        <a href={resolve(`/presentation/${data.document.id}/edit`)} class="text-gray-400 hover:text-gray-200">
           &larr; Back to Editor
         </a>
         <h1 class="text-lg font-medium text-gray-100">

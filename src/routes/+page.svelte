@@ -68,7 +68,8 @@
         Collaborative Presentations,<br />Real-Time Sync
       </h1>
       <p class="mx-auto mb-8 max-w-2xl text-lg text-gray-400">
-        Create and present content together with your team. Edit in real-time, navigate segment-by-segment in presenter mode, and keep your audience focused.
+        Create and present content together with your team. Edit in real-time, navigate segment-by-segment in presenter
+        mode, and keep your audience focused.
       </p>
 
       {#if data.user}
@@ -115,11 +116,16 @@
           </div>
           <div class="flex items-start gap-2">
             <div class="mt-1 w-1 self-stretch rounded bg-blue-500/20"></div>
-            <div class="text-sm text-gray-300">Our team has made significant progress this quarter. We shipped three major features and improved performance by 40%.</div>
+            <div class="text-sm text-gray-300">
+              Our team has made significant progress this quarter. We shipped three major features and improved
+              performance by 40%.
+            </div>
           </div>
           <div class="flex items-start gap-2">
             <div class="mt-1 w-1 self-stretch rounded bg-blue-500/40"></div>
-            <div class="rounded bg-blue-900/30 px-2 py-1 text-sm text-gray-300">The mobile app redesign exceeded expectations with a 25% increase in daily active users.</div>
+            <div class="rounded bg-blue-900/30 px-2 py-1 text-sm text-gray-300">
+              The mobile app redesign exceeded expectations with a 25% increase in daily active users.
+            </div>
           </div>
           <div class="flex items-start gap-2">
             <div class="mt-1 w-1 self-stretch rounded bg-blue-500/20"></div>
@@ -184,7 +190,8 @@
         </div>
         <h3 class="mb-2 text-lg font-semibold text-gray-100">Smart Segmentation</h3>
         <p class="text-gray-400">
-          Content is automatically segmented with stable IDs. Long paragraphs split into sentences for precise navigation.
+          Content is automatically segmented with stable IDs. Long paragraphs split into sentences for precise
+          navigation.
         </p>
       </div>
     </div>
@@ -220,9 +227,7 @@
           </svg>
         </div>
         <h3 class="mb-2 text-lg font-semibold text-gray-100">Install as App</h3>
-        <p class="text-gray-400">
-          Add to your home screen for a native app experience on mobile and desktop.
-        </p>
+        <p class="text-gray-400">Add to your home screen for a native app experience on mobile and desktop.</p>
       </div>
     </div>
   </div>
@@ -303,7 +308,11 @@
       <div use:animateOnScroll class="animate-on-scroll flex items-start gap-4">
         <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-700 text-purple-400">
           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </div>
         <div>
@@ -315,7 +324,11 @@
       <div use:animateOnScroll class="animate-on-scroll flex items-start gap-4">
         <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-700 text-purple-400">
           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
           </svg>
         </div>
         <div>
@@ -327,7 +340,11 @@
       <div use:animateOnScroll class="animate-on-scroll flex items-start gap-4">
         <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-gray-700 text-purple-400">
           <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
           </svg>
         </div>
         <div>
@@ -422,9 +439,7 @@
   <div class="border-t border-gray-700 bg-gray-800/50 py-16">
     <div class="mx-auto max-w-2xl px-6 text-center">
       <h2 class="mb-4 text-2xl font-bold text-gray-200">Ready to present?</h2>
-      <p class="mb-8 text-gray-400">
-        Create collaborative presentations with real-time sync and presenter mode.
-      </p>
+      <p class="mb-8 text-gray-400">Create collaborative presentations with real-time sync and presenter mode.</p>
       <a
         href={resolve('/register')}
         class="inline-block rounded-lg bg-purple-600 px-8 py-3 font-medium text-white hover:bg-purple-500">

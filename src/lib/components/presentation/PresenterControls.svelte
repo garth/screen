@@ -89,12 +89,12 @@
     {#each segments as segment (segment.id)}
       <button
         onclick={() => handleSegmentClick(segment)}
-        class="w-full px-3 py-2 text-left transition-colors flex items-start gap-2 {segment.index === currentIndex
-          ? 'bg-blue-600 text-white'
-          : 'text-gray-300 hover:bg-gray-700'}"
+        class="flex w-full items-start gap-2 px-3 py-2 text-left transition-colors {segment.index === currentIndex ?
+          'bg-blue-600 text-white'
+        : 'text-gray-300 hover:bg-gray-700'}"
         style:padding-left="{getIndentLevel(segment) * 0.75 + 0.75}rem">
-        <span class="text-xs opacity-60 flex-shrink-0 w-4 text-center">{getSegmentIcon(segment.type)}</span>
-        <span class="text-xs opacity-50 flex-shrink-0">{segment.index + 1}.</span>
+        <span class="w-4 flex-shrink-0 text-center text-xs opacity-60">{getSegmentIcon(segment.type)}</span>
+        <span class="flex-shrink-0 text-xs opacity-50">{segment.index + 1}.</span>
         <span class="truncate">{segment.label}</span>
       </button>
     {/each}

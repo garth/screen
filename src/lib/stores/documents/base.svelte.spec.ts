@@ -7,7 +7,7 @@ vi.mock('$app/environment', () => ({
 }))
 
 // Track provider options for testing
-let lastProviderOptions: {
+let _lastProviderOptions: {
   onConnect?: () => void
   onSynced?: (args: { state: boolean }) => void
 } | null = null
@@ -45,11 +45,8 @@ vi.mock('@hocuspocus/provider', () => {
         }
       })
 
-      constructor(options: {
-        onConnect?: () => void
-        onSynced?: (args: { state: boolean }) => void
-      }) {
-        lastProviderOptions = options
+      constructor(options: { onConnect?: () => void; onSynced?: (args: { state: boolean }) => void }) {
+        _lastProviderOptions = options
         setTimeout(() => {
           options.onConnect?.()
           options.onSynced?.({ state: mockReadOnly })
@@ -102,7 +99,7 @@ import { createBaseDocument, createReactiveMetaProperty } from './base.svelte'
 describe('createBaseDocument', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    lastProviderOptions = null
+    _lastProviderOptions = null
     lastWebrtcOptions = null
     lastIndexeddbName = null
     mockReadOnly = false

@@ -1,6 +1,5 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { EditorState } from 'prosemirror-state'
-import { EditorView } from 'prosemirror-view'
 import {
   insertSlideDivider,
   insertImage,
@@ -12,18 +11,13 @@ import {
 
 describe('commands', () => {
   function createState(content?: string) {
-    const doc = content
-      ? presentationSchema.nodes.doc.create(
+    const doc =
+      content ?
+        presentationSchema.nodes.doc.create(
           null,
-          presentationSchema.nodes.paragraph.create(
-            null,
-            content ? presentationSchema.text(content) : null,
-          ),
+          presentationSchema.nodes.paragraph.create(null, content ? presentationSchema.text(content) : null),
         )
-      : presentationSchema.nodes.doc.create(
-          null,
-          presentationSchema.nodes.paragraph.create(),
-        )
+      : presentationSchema.nodes.doc.create(null, presentationSchema.nodes.paragraph.create())
 
     return EditorState.create({
       doc,
@@ -55,9 +49,7 @@ describe('commands', () => {
       })
 
       expect(newState).not.toBeNull()
-      const hasSlideDiv = newState!.doc.content.content.some(
-        (node) => node.type.name === 'slide_divider',
-      )
+      const hasSlideDiv = newState!.doc.content.content.some((node) => node.type.name === 'slide_divider')
       expect(hasSlideDiv).toBe(true)
     })
   })
@@ -106,10 +98,10 @@ describe('commands', () => {
     it('wraps selected content in blockquote', () => {
       const command = wrapInBlockquote(presentationSchema)
       const state = createState('Quote this')
-      let newState: EditorState | null = null
+      let _newState: EditorState | null = null
 
       const result = command(state, (tr) => {
-        newState = state.apply(tr)
+        _newState = state.apply(tr)
       })
 
       // The command may fail if there's no valid range to wrap
@@ -134,11 +126,10 @@ describe('fileToDataUrl', () => {
   it.skipIf(typeof FileReader === 'undefined')('handles image files', async () => {
     // Create a minimal PNG (1x1 transparent pixel)
     const pngData = new Uint8Array([
-      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44,
-      0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1f,
-      0x15, 0xc4, 0x89, 0x00, 0x00, 0x00, 0x0a, 0x49, 0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00,
-      0x01, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00, 0x00, 0x00, 0x49,
-      0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
+      0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00,
+      0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06, 0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89, 0x00, 0x00, 0x00, 0x0a, 0x49,
+      0x44, 0x41, 0x54, 0x78, 0x9c, 0x63, 0x00, 0x01, 0x00, 0x00, 0x05, 0x00, 0x01, 0x0d, 0x0a, 0x2d, 0xb4, 0x00, 0x00,
+      0x00, 0x00, 0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82,
     ])
     const blob = new Blob([pngData], { type: 'image/png' })
     const file = new File([blob], 'test.png', { type: 'image/png' })
@@ -174,7 +165,7 @@ describe('createEditorPlugins', () => {
 })
 
 describe('input rules', () => {
-  function createStateAndApplyInput(input: string) {
+  function _createStateAndApplyInput(input: string) {
     const plugins = createEditorPlugins(presentationSchema)
     const state = EditorState.create({
       schema: presentationSchema,

@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
 import { presentationSchema } from './schema'
-import { Node, Mark } from 'prosemirror-model'
 
 describe('presentationSchema', () => {
   describe('nodes', () => {
@@ -108,11 +107,7 @@ describe('presentationSchema', () => {
 
       it('includes start attribute when order is not 1', () => {
         const list = presentationSchema.nodes.ordered_list.create({ order: 3 })
-        expect(presentationSchema.nodes.ordered_list.spec.toDOM?.(list)).toEqual([
-          'ol',
-          { start: 3 },
-          0,
-        ])
+        expect(presentationSchema.nodes.ordered_list.spec.toDOM?.(list)).toEqual(['ol', { start: 3 }, 0])
       })
     })
 
@@ -264,11 +259,7 @@ describe('presentationSchema', () => {
       it('includes data-segment-id in DOM when segmentId is set', () => {
         const sentence = presentationSchema.nodes.sentence.create({ segmentId: 'seg-abc123' })
         const dom = presentationSchema.nodes.sentence.spec.toDOM?.(sentence)
-        expect(dom).toEqual([
-          'span',
-          { 'data-sentence': 'true', 'data-segment-id': 'seg-abc123' },
-          0,
-        ])
+        expect(dom).toEqual(['span', { 'data-sentence': 'true', 'data-segment-id': 'seg-abc123' }, 0])
       })
     })
 
@@ -432,10 +423,7 @@ describe('presentationSchema', () => {
     })
 
     it('creates valid document with paragraph', () => {
-      const paragraph = presentationSchema.nodes.paragraph.create(
-        null,
-        presentationSchema.text('Hello world'),
-      )
+      const paragraph = presentationSchema.nodes.paragraph.create(null, presentationSchema.text('Hello world'))
       const doc = presentationSchema.nodes.doc.create(null, paragraph)
       expect(doc.type.name).toBe('doc')
       expect(doc.childCount).toBe(1)
@@ -443,10 +431,7 @@ describe('presentationSchema', () => {
     })
 
     it('creates valid document with heading', () => {
-      const heading = presentationSchema.nodes.heading.create(
-        { level: 1 },
-        presentationSchema.text('Title'),
-      )
+      const heading = presentationSchema.nodes.heading.create({ level: 1 }, presentationSchema.text('Title'))
       const doc = presentationSchema.nodes.doc.create(null, heading)
       expect(doc.firstChild?.type.name).toBe('heading')
       expect(doc.firstChild?.attrs.level).toBe(1)
@@ -463,14 +448,8 @@ describe('presentationSchema', () => {
     })
 
     it('creates valid document with multiple block elements', () => {
-      const heading = presentationSchema.nodes.heading.create(
-        { level: 1 },
-        presentationSchema.text('Title'),
-      )
-      const paragraph = presentationSchema.nodes.paragraph.create(
-        null,
-        presentationSchema.text('Content'),
-      )
+      const heading = presentationSchema.nodes.heading.create({ level: 1 }, presentationSchema.text('Title'))
+      const paragraph = presentationSchema.nodes.paragraph.create(null, presentationSchema.text('Content'))
       const divider = presentationSchema.nodes.slide_divider.create()
       const doc = presentationSchema.nodes.doc.create(null, [heading, paragraph, divider])
 

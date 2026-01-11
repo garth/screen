@@ -46,8 +46,12 @@ function createMockAwareness() {
 // Create mock dual providers
 function createMockDualProviders(
   hocuspocusAwareness = createMockAwareness(),
-  webrtcAwareness = createMockAwareness()
-): { providers: DualProviders; hocuspocusAwareness: ReturnType<typeof createMockAwareness>; webrtcAwareness: ReturnType<typeof createMockAwareness> } {
+  webrtcAwareness = createMockAwareness(),
+): {
+  providers: DualProviders
+  hocuspocusAwareness: ReturnType<typeof createMockAwareness>
+  webrtcAwareness: ReturnType<typeof createMockAwareness>
+} {
   return {
     providers: {
       hocuspocus: { awareness: hocuspocusAwareness } as unknown as HocuspocusProvider,

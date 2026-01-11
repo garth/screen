@@ -9,7 +9,6 @@
 
   // Get test env flag from server (constant, won't change during page lifecycle)
   const { data }: { data: PageData } = $props()
-  // eslint-disable-next-line svelte/state-referenced-locally
   const isTestEnv = data.isTestEnv
 
   let documentType = $state<'presentation' | 'theme' | 'event'>('presentation')
@@ -192,9 +191,7 @@
       <button onclick={connect} disabled={!documentId || status === 'connecting'} data-testid="connect-btn">
         Connect
       </button>
-      <button onclick={disconnect} disabled={status === 'idle'} data-testid="disconnect-btn">
-        Disconnect
-      </button>
+      <button onclick={disconnect} disabled={status === 'idle'} data-testid="disconnect-btn"> Disconnect </button>
     </div>
 
     <div data-testid="status">
@@ -214,15 +211,24 @@
       <div data-testid="doc-info">
         {#if documentType === 'presentation'}
           <div>Title: <span data-testid="title">{(activeDoc as PresentationDocument).title}</span></div>
-          <div>Theme ID: <span data-testid="theme-id">{(activeDoc as PresentationDocument).themeId ?? 'none'}</span></div>
+          <div>
+            Theme ID: <span data-testid="theme-id">{(activeDoc as PresentationDocument).themeId ?? 'none'}</span>
+          </div>
         {:else if documentType === 'theme'}
           <div>Font: <span data-testid="font">{(activeDoc as ThemeDocument).font}</span></div>
           <div>Background: <span data-testid="bg-color">{(activeDoc as ThemeDocument).backgroundColor}</span></div>
           <div>Text Color: <span data-testid="text-color">{(activeDoc as ThemeDocument).textColor}</span></div>
-          <div>Effective Font: <span data-testid="effective-font">{(activeDoc as ThemeDocument).effectiveFont}</span></div>
+          <div>
+            Effective Font: <span data-testid="effective-font">{(activeDoc as ThemeDocument).effectiveFont}</span>
+          </div>
         {:else if documentType === 'event'}
-          <div>Presentations: <span data-testid="presentations">{JSON.stringify((activeDoc as EventDocument).presentations)}</span></div>
-          <div>Channels: <span data-testid="channels">{JSON.stringify((activeDoc as EventDocument).channels)}</span></div>
+          <div>
+            Presentations: <span data-testid="presentations"
+              >{JSON.stringify((activeDoc as EventDocument).presentations)}</span>
+          </div>
+          <div>
+            Channels: <span data-testid="channels">{JSON.stringify((activeDoc as EventDocument).channels)}</span>
+          </div>
         {/if}
       </div>
     {/if}

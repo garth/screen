@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
+  import { resolve } from '$app/paths'
   import { createPresentationDoc, createThemeDoc, type ThemeDocument } from '$lib/stores/documents'
   import PresentationViewer from '$lib/components/presentation/PresentationViewer.svelte'
   import { resolveTheme, defaultTheme, type ResolvedTheme } from '$lib/utils/theme-resolver'
@@ -30,22 +31,20 @@
 
   // Compute resolved theme
   const resolvedTheme: ResolvedTheme = $derived(
-    doc.synced
-      ? resolveTheme(
-          {
-            font: doc.font,
-            backgroundColor: doc.backgroundColor,
-            textColor: doc.textColor,
-          },
-          themeDoc?.synced ? themeDoc : null,
-        )
-      : defaultTheme,
+    doc.synced ?
+      resolveTheme(
+        {
+          font: doc.font,
+          backgroundColor: doc.backgroundColor,
+          textColor: doc.textColor,
+        },
+        themeDoc?.synced ? themeDoc : null,
+      )
+    : defaultTheme,
   )
 
   // Parse content into segments for follow mode
-  const segments: ContentSegment[] = $derived(
-    doc.synced ? parseContentSegments(doc.content) : [],
-  )
+  const segments: ContentSegment[] = $derived(doc.synced ? parseContentSegments(doc.content) : [])
 
   // Follow mode state
   let followMode = $state(true)
@@ -84,9 +83,7 @@
   <!-- Header -->
   <header class="flex items-center justify-between border-b border-gray-700 bg-gray-800 px-4 py-3">
     <div class="flex items-center gap-4">
-      <a href="/presentations" class="text-gray-400 hover:text-gray-200">
-        &larr; Back
-      </a>
+      <a href={resolve('/presentations')} class="text-gray-400 hover:text-gray-200"> &larr; Back </a>
       <h1 class="text-lg font-medium text-gray-100">
         {doc.synced && doc.title ? doc.title : data.document.title || 'Untitled'}
       </h1>
@@ -96,10 +93,12 @@
       {#if activePresenter}
         <button
           type="button"
-          onclick={() => followMode = !followMode}
-          class="flex items-center gap-2 rounded px-3 py-1.5 text-sm {followMode ? 'bg-purple-600 text-white' : 'border border-gray-600 text-gray-300 hover:bg-gray-700'}">
+          onclick={() => (followMode = !followMode)}
+          class="flex items-center gap-2 rounded px-3 py-1.5 text-sm {followMode ? 'bg-purple-600 text-white' : (
+            'border border-gray-600 text-gray-300 hover:bg-gray-700'
+          )}">
           {#if followMode}
-            <span class="h-2 w-2 rounded-full bg-green-400 animate-pulse"></span>
+            <span class="h-2 w-2 animate-pulse rounded-full bg-green-400"></span>
             Following presenter
           {:else}
             Follow presenter
@@ -109,12 +108,12 @@
 
       {#if data.permissions.canWrite}
         <a
-          href="/presentation/{data.document.id}/edit"
+          href={resolve(`/presentation/${data.document.id}/edit`)}
           class="rounded border border-gray-600 px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-700">
           Edit
         </a>
         <a
-          href="/presentation/{data.document.id}/presenter"
+          href={resolve(`/presentation/${data.document.id}/presenter`)}
           class="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500">
           Present
         </a>

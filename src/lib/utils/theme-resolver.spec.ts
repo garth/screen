@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { resolveTheme, defaultTheme, type ResolvedTheme } from './theme-resolver'
+import { resolveTheme, defaultTheme } from './theme-resolver'
 import type { ThemeDocument, ViewportArea } from '$lib/stores/documents'
 
 // Mock ThemeDocument for testing
@@ -23,8 +23,8 @@ function createMockThemeDocument(overrides: Partial<ThemeDocument> = {}): ThemeD
     effectiveBackgroundColor: '#f0f0f0',
     effectiveTextColor: '#333333',
     effectiveViewport: undefined,
-    ydoc: {} as any,
-    meta: {} as any,
+    ydoc: {} as unknown as ThemeDocument['ydoc'],
+    meta: {} as unknown as ThemeDocument['meta'],
     destroy: () => {},
     ...overrides,
   }

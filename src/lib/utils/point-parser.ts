@@ -31,7 +31,7 @@ export function parseNavigationPoints(content: Y.XmlFragment | null): Navigation
         // Check for slide dividers - these create slide navigation points
         if (tagName === 'slide_divider') {
           // If we haven't added the first slide yet and there was content, add it
-          if (slideCount === 1 && hasContent && !points.some(p => p.type === 'slide' && p.label === 'Slide 1')) {
+          if (slideCount === 1 && hasContent && !points.some((p) => p.type === 'slide' && p.label === 'Slide 1')) {
             points.push({
               index: points.length,
               label: 'Slide 1',
@@ -62,7 +62,13 @@ export function parseNavigationPoints(content: Y.XmlFragment | null): Navigation
           }
         }
         // Check for content-bearing elements
-        else if (tagName === 'paragraph' || tagName === 'bullet_list' || tagName === 'ordered_list' || tagName === 'blockquote' || tagName === 'image') {
+        else if (
+          tagName === 'paragraph' ||
+          tagName === 'bullet_list' ||
+          tagName === 'ordered_list' ||
+          tagName === 'blockquote' ||
+          tagName === 'image'
+        ) {
           hasContent = true
           // Recurse into child elements for nested headings
           processFragment(item)

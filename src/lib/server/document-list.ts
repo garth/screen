@@ -201,10 +201,7 @@ export async function rebuildDocumentList(userId: string): Promise<void> {
 /**
  * Get document metadata for syncing to list
  */
-export async function getDocumentMetadata(
-  documentId: string,
-  forUserId: string,
-): Promise<DocumentListItemData | null> {
+export async function getDocumentMetadata(documentId: string, forUserId: string): Promise<DocumentListItemData | null> {
   const doc = await db.document.findUnique({
     where: { id: documentId, deletedAt: null },
     select: {

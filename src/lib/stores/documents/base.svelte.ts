@@ -3,7 +3,7 @@ import { WebrtcProvider } from 'y-webrtc'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import { browser } from '$app/environment'
 import * as Y from 'yjs'
-import type { DocumentOptions, UserInfo } from './types'
+import type { DocumentOptions } from './types'
 
 export interface BaseDocumentOptions extends DocumentOptions {
   onDocumentSynced?: () => void
@@ -17,7 +17,7 @@ function generateUserColor(userId: string): string {
   let hash = 0
   for (let i = 0; i < userId.length; i++) {
     const char = userId.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
+    hash = (hash << 5) - hash + char
     hash = hash & hash // Convert to 32bit integer
   }
 
@@ -49,9 +49,7 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
   const meta = ydoc.getMap('meta')
 
   // IndexedDB persistence for offline support and faster initial loads (browser only)
-  const indexeddbProvider = browser
-    ? new IndexeddbPersistence(`doc-${options.documentId}`, ydoc)
-    : null
+  const indexeddbProvider = browser ? new IndexeddbPersistence(`doc-${options.documentId}`, ydoc) : null
 
   const wsUrl = import.meta.env.VITE_HOCUSPOCUS_URL || 'ws://localhost:1234'
 
@@ -102,16 +100,16 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
 
   if (browser) {
     webrtcYdoc = new Y.Doc()
-    webrtcProvider = new WebrtcProvider(
-      `awareness-${options.documentId}`,
-      webrtcYdoc,
-      {
-        // Use default public signaling servers
-        signaling: ['wss://signaling.yjs.dev', 'wss://y-webrtc-signaling-eu.herokuapp.com', 'wss://y-webrtc-signaling-us.herokuapp.com'],
-        // Disable BroadcastChannel filtering to ensure all tabs connect via WebRTC
-        filterBcConns: false,
-      }
-    )
+    webrtcProvider = new WebrtcProvider(`awareness-${options.documentId}`, webrtcYdoc, {
+      // Use default public signaling servers
+      signaling: [
+        'wss://signaling.yjs.dev',
+        'wss://y-webrtc-signaling-eu.herokuapp.com',
+        'wss://y-webrtc-signaling-us.herokuapp.com',
+      ],
+      // Disable BroadcastChannel filtering to ensure all tabs connect via WebRTC
+      filterBcConns: false,
+    })
 
     // Set user awareness on WebRTC provider
     if (options.user) {

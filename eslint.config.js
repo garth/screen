@@ -12,6 +12,8 @@ const gitignorePath = fileURLToPath(new URL('./.gitignore', import.meta.url))
 
 export default defineConfig(
   includeIgnoreFile(gitignorePath),
+  // Ignore generated files
+  { ignores: ['dev-dist/**'] },
   js.configs.recommended,
   ...ts.configs.recommended,
   ...svelte.configs.recommended,
@@ -24,6 +26,10 @@ export default defineConfig(
       // typescript-eslint strongly recommend that you do not use the no-undef lint rule on TypeScript projects.
       // see: https://typescript-eslint.io/troubleshooting/faqs/eslint/#i-get-errors-from-the-no-undef-rule-about-global-variables-not-being-defined-even-though-there-are-no-typescript-errors
       'no-undef': 'off',
+      // Allow let for variables that are assigned once in callbacks (late binding pattern)
+      'prefer-const': 'off',
+      // Allow underscore-prefixed variables to be unused (intentional convention)
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
   {

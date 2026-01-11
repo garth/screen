@@ -20,7 +20,7 @@ export interface ContentSegment {
 }
 
 /** Threshold for splitting long text into sentences */
-const SENTENCE_SPLIT_THRESHOLD = 100
+const _SENTENCE_SPLIT_THRESHOLD = 100 // Reserved for future use
 
 /** Maximum label length for display */
 const MAX_LABEL_LENGTH = 50
@@ -121,12 +121,8 @@ export function parseContentSegments(content: Y.XmlFragment | null): ContentSegm
     const segmentId = element.getAttribute('segmentId')
     if (segmentId && isSegmentNode(element)) {
       const type = mapNodeTypeToSegmentType(tagName)
-      const text = tagName === 'image'
-        ? String(element.getAttribute('alt') || 'Image')
-        : extractText(element)
-      const level = tagName === 'heading'
-        ? parseInt(String(element.getAttribute('level') || '1'), 10)
-        : undefined
+      const text = tagName === 'image' ? String(element.getAttribute('alt') || 'Image') : extractText(element)
+      const level = tagName === 'heading' ? parseInt(String(element.getAttribute('level') || '1'), 10) : undefined
 
       segments.push({
         id: String(segmentId),
@@ -216,9 +212,7 @@ export function splitIntoSentences(text: string): string[] {
   const parts = processed.split(/(?<=[.!?])\s+/)
 
   // Restore abbreviation periods and filter empty
-  return parts
-    .map(s => s.replace(/<<<DOT>>>/g, '.').trim())
-    .filter(s => s.length > 0)
+  return parts.map((s) => s.replace(/<<<DOT>>>/g, '.').trim()).filter((s) => s.length > 0)
 }
 
 /**

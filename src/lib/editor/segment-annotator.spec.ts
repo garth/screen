@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest'
+import { describe, it, expect } from 'vitest'
 import { Node } from 'prosemirror-model'
 import { presentationSchema } from './schema'
 import {
@@ -148,7 +148,7 @@ describe('hasSentenceChildren', () => {
   it('returns true for paragraph with sentence children', () => {
     const sentence = presentationSchema.nodes.sentence.create(
       { segmentId: 'seg-test' },
-      presentationSchema.text('A sentence.')
+      presentationSchema.text('A sentence.'),
     )
     const node = presentationSchema.nodes.paragraph.create(null, sentence)
     expect(hasSentenceChildren(node)).toBe(true)
@@ -169,7 +169,7 @@ describe('shouldSplitParagraph', () => {
   it('returns false for paragraph that already has sentence children', () => {
     const sentence = presentationSchema.nodes.sentence.create(
       { segmentId: 'seg-test' },
-      presentationSchema.text('A sentence.')
+      presentationSchema.text('A sentence.'),
     )
     const node = presentationSchema.nodes.paragraph.create(null, sentence)
     expect(shouldSplitParagraph(node)).toBe(false)
@@ -188,7 +188,8 @@ describe('shouldSplitParagraph', () => {
   })
 
   it('returns true for long paragraphs with multiple sentences', () => {
-    const longText = 'This is the first sentence with enough text. This is the second sentence that continues. And here is the third one that makes it long enough!'
+    const longText =
+      'This is the first sentence with enough text. This is the second sentence that continues. And here is the third one that makes it long enough!'
     const text = presentationSchema.text(longText)
     const node = presentationSchema.nodes.paragraph.create(null, text)
     expect(shouldSplitParagraph(node)).toBe(true)
@@ -252,10 +253,7 @@ describe('extractSegmentsFromDoc', () => {
   })
 
   it('extracts paragraph segments with IDs', () => {
-    const doc = createDoc(
-      createParagraph('Hello world', 'seg-001'),
-      createParagraph('Second paragraph', 'seg-002')
-    )
+    const doc = createDoc(createParagraph('Hello world', 'seg-001'), createParagraph('Second paragraph', 'seg-002'))
     const segments = extractSegmentsFromDoc(doc)
 
     expect(segments).toHaveLength(2)
@@ -266,10 +264,7 @@ describe('extractSegmentsFromDoc', () => {
   })
 
   it('extracts heading segments with level', () => {
-    const doc = createDoc(
-      createHeading('Title', 1, 'seg-h1'),
-      createHeading('Subtitle', 2, 'seg-h2')
-    )
+    const doc = createDoc(createHeading('Title', 1, 'seg-h1'), createHeading('Subtitle', 2, 'seg-h2'))
     const segments = extractSegmentsFromDoc(doc)
 
     expect(segments).toHaveLength(2)
@@ -283,7 +278,7 @@ describe('extractSegmentsFromDoc', () => {
     const doc = createDoc(
       createParagraph('Has ID', 'seg-001'),
       createParagraph('No ID'),
-      createParagraph('Also has ID', 'seg-002')
+      createParagraph('Also has ID', 'seg-002'),
     )
     const segments = extractSegmentsFromDoc(doc)
 
@@ -299,7 +294,7 @@ describe('extractSegmentsFromDoc', () => {
       divider,
       createParagraph('Slide 2 content', 'seg-002'),
       presentationSchema.nodes.slide_divider.create(),
-      createParagraph('Slide 3 content', 'seg-003')
+      createParagraph('Slide 3 content', 'seg-003'),
     )
     const segments = extractSegmentsFromDoc(doc)
 
@@ -312,16 +307,13 @@ describe('extractSegmentsFromDoc', () => {
   it('extracts sentence segments from paragraphs', () => {
     const sentence1 = presentationSchema.nodes.sentence.create(
       { segmentId: 'seg-p1-s0' },
-      presentationSchema.text('First sentence.')
+      presentationSchema.text('First sentence.'),
     )
     const sentence2 = presentationSchema.nodes.sentence.create(
       { segmentId: 'seg-p1-s1' },
-      presentationSchema.text('Second sentence.')
+      presentationSchema.text('Second sentence.'),
     )
-    const para = presentationSchema.nodes.paragraph.create(
-      { segmentId: 'seg-p1' },
-      [sentence1, sentence2]
-    )
+    const para = presentationSchema.nodes.paragraph.create({ segmentId: 'seg-p1' }, [sentence1, sentence2])
     const doc = createDoc(para)
     const segments = extractSegmentsFromDoc(doc)
 
@@ -335,12 +327,9 @@ describe('extractSegmentsFromDoc', () => {
   it('skips paragraph when it contains sentences', () => {
     const sentence = presentationSchema.nodes.sentence.create(
       { segmentId: 'seg-p1-s0' },
-      presentationSchema.text('A sentence.')
+      presentationSchema.text('A sentence.'),
     )
-    const para = presentationSchema.nodes.paragraph.create(
-      { segmentId: 'seg-p1' },
-      sentence
-    )
+    const para = presentationSchema.nodes.paragraph.create({ segmentId: 'seg-p1' }, sentence)
     const doc = createDoc(para)
     const segments = extractSegmentsFromDoc(doc)
 
@@ -350,22 +339,10 @@ describe('extractSegmentsFromDoc', () => {
   })
 
   it('extracts list item segments', () => {
-    const para1 = presentationSchema.nodes.paragraph.create(
-      null,
-      presentationSchema.text('Item 1')
-    )
-    const para2 = presentationSchema.nodes.paragraph.create(
-      null,
-      presentationSchema.text('Item 2')
-    )
-    const li1 = presentationSchema.nodes.list_item.create(
-      { segmentId: 'seg-li1' },
-      para1
-    )
-    const li2 = presentationSchema.nodes.list_item.create(
-      { segmentId: 'seg-li2' },
-      para2
-    )
+    const para1 = presentationSchema.nodes.paragraph.create(null, presentationSchema.text('Item 1'))
+    const para2 = presentationSchema.nodes.paragraph.create(null, presentationSchema.text('Item 2'))
+    const li1 = presentationSchema.nodes.list_item.create({ segmentId: 'seg-li1' }, para1)
+    const li2 = presentationSchema.nodes.list_item.create({ segmentId: 'seg-li2' }, para2)
     const list = presentationSchema.nodes.bullet_list.create(null, [li1, li2])
     const doc = createDoc(list)
     const segments = extractSegmentsFromDoc(doc)
@@ -405,14 +382,8 @@ describe('extractSegmentsFromDoc', () => {
   })
 
   it('extracts blockquote segments', () => {
-    const quotePara = presentationSchema.nodes.paragraph.create(
-      null,
-      presentationSchema.text('Famous quote here')
-    )
-    const quote = presentationSchema.nodes.blockquote.create(
-      { segmentId: 'seg-bq1' },
-      quotePara
-    )
+    const quotePara = presentationSchema.nodes.paragraph.create(null, presentationSchema.text('Famous quote here'))
+    const quote = presentationSchema.nodes.blockquote.create({ segmentId: 'seg-bq1' }, quotePara)
     const doc = createDoc(quote)
     const segments = extractSegmentsFromDoc(doc)
 
@@ -425,7 +396,7 @@ describe('extractSegmentsFromDoc', () => {
     const doc = createDoc(
       createHeading('Title', 1, 'seg-h1'),
       createParagraph('Para 1', 'seg-p1'),
-      createParagraph('Para 2', 'seg-p2')
+      createParagraph('Para 2', 'seg-p2'),
     )
     const segments = extractSegmentsFromDoc(doc)
 

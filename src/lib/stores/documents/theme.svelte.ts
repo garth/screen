@@ -2,7 +2,7 @@ import { createBaseDocument, createReactiveMetaProperty } from './base.svelte'
 import type { DocumentOptions, ThemeDocument, ViewportArea } from './types'
 
 export function createThemeDoc(options: DocumentOptions): ThemeDocument {
-  // Local meta properties - will be initialized after base is created
+  // Local meta properties - will be initialized after base is created (in onDocumentSynced callback)
   let font: ReturnType<typeof createReactiveMetaProperty<string>>
   let backgroundColor: ReturnType<typeof createReactiveMetaProperty<string>>
   let textColor: ReturnType<typeof createReactiveMetaProperty<string>>

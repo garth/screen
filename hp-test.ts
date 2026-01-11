@@ -7,7 +7,7 @@ console.log('=== Test Start ===')
 // Create a class that extends WebSocket but injects headers
 function createCookieWebSocketClass(cookieValue: string): typeof WebSocket {
   console.log('Creating class with cookie:', cookieValue)
-  
+
   // Use Proxy to intercept the 'new' call
   return new Proxy(WebSocket, {
     construct(target, args) {
@@ -15,11 +15,11 @@ function createCookieWebSocketClass(cookieValue: string): typeof WebSocket {
       console.log('>>> Proxy construct called <<<')
       console.log('  address:', address)
       console.log('  protocols:', protocols)
-      
+
       const options: WebSocket.ClientOptions = {
-        headers: { Cookie: `auth-session=${cookieValue}` }
+        headers: { Cookie: `auth-session=${cookieValue}` },
       }
-      
+
       if (protocols === undefined) {
         console.log('  Creating WebSocket with options only')
         return new target(address, options)
@@ -27,7 +27,7 @@ function createCookieWebSocketClass(cookieValue: string): typeof WebSocket {
         console.log('  Creating WebSocket with protocols and options')
         return new target(address, protocols, options)
       }
-    }
+    },
   })
 }
 

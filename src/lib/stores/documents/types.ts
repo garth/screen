@@ -139,28 +139,13 @@ export interface EventDocument {
   readonly channels: EventChannel[]
   addChannel(name: string): string
   removeChannel(channelId: string): void
-  updateChannel(
-    channelId: string,
-    updates: Partial<Pick<EventChannel, 'name' | 'order'>>,
-  ): void
+  updateChannel(channelId: string, updates: Partial<Pick<EventChannel, 'name' | 'order'>>): void
   reorderChannel(channelId: string, newIndex: number): void
 
-  assignPresentationToChannel(
-    channelId: string,
-    presentationId: string,
-    themeOverrideId?: string,
-  ): void
+  assignPresentationToChannel(channelId: string, presentationId: string, themeOverrideId?: string): void
   removePresentationFromChannel(channelId: string, presentationId: string): void
-  setChannelPresentationTheme(
-    channelId: string,
-    presentationId: string,
-    themeOverrideId: string | undefined,
-  ): void
-  reorderChannelPresentation(
-    channelId: string,
-    presentationId: string,
-    newIndex: number,
-  ): void
+  setChannelPresentationTheme(channelId: string, presentationId: string, themeOverrideId: string | undefined): void
+  reorderChannelPresentation(channelId: string, presentationId: string, newIndex: number): void
 
   readonly ydoc: Y.Doc
   readonly meta: Y.Map<unknown>

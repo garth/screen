@@ -63,9 +63,7 @@ export function createDocumentListDoc(options: DocumentListOptions): DocumentLis
   }>('documents')
 
   // IndexedDB persistence for offline support (browser only)
-  const indexeddbProvider = browser
-    ? new IndexeddbPersistence(`doc-${documentId}`, ydoc)
-    : null
+  const indexeddbProvider = browser ? new IndexeddbPersistence(`doc-${documentId}`, ydoc) : null
 
   // Sync documents array from Y.Map
   function syncDocuments() {
@@ -77,6 +75,7 @@ export function createDocumentListDoc(options: DocumentListOptions): DocumentLis
       })
     })
     // Sort by updatedAt descending
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- Date used for comparison, not reactive state
     items.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
     documents = items
   }

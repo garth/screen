@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import * as Y from 'yjs'
-import { parseNavigationPoints, clampPointIndex, type NavigationPoint } from './point-parser'
+import { parseNavigationPoints, clampPointIndex } from './point-parser'
 
 describe('parseNavigationPoints', () => {
   it('returns empty array for null content', () => {
@@ -292,9 +292,11 @@ describe('parseNavigationPoints', () => {
 
       const result = parseNavigationPoints(content)
 
-      result.filter(p => p.type === 'slide').forEach(point => {
-        expect(point.level).toBe(0)
-      })
+      result
+        .filter((p) => p.type === 'slide')
+        .forEach((point) => {
+          expect(point.level).toBe(0)
+        })
     })
   })
 })

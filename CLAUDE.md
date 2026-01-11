@@ -113,6 +113,7 @@ Typed Svelte stores wrapping Yjs documents with reactive properties:
 ## Environment Setup
 
 Copy `.env.example` to `.env`. Required variables:
+
 - `DATABASE_URL` - PostgreSQL connection string
 - `SMTP_*` - Email configuration (MailDev runs on port 1025 locally)
 - `APP_URL` - Application URL for email links

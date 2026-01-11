@@ -179,13 +179,11 @@ export function createEventDoc(options: DocumentOptions): EventDocument {
           const allChannelData = channelsArray.toArray().map((c) => ({
             id: c.get('id') as string,
             name: c.get('name') as string,
-            presentations: (c.get('presentations') as Y.Array<Y.Map<unknown>>)
-              .toArray()
-              .map((p) => ({
-                presentationId: p.get('presentationId') as string,
-                themeOverrideId: p.get('themeOverrideId') as string | undefined,
-                order: p.get('order') as number,
-              })),
+            presentations: (c.get('presentations') as Y.Array<Y.Map<unknown>>).toArray().map((p) => ({
+              presentationId: p.get('presentationId') as string,
+              themeOverrideId: p.get('themeOverrideId') as string | undefined,
+              order: p.get('order') as number,
+            })),
           }))
 
           // Perform the reorder in the plain array
@@ -227,20 +225,14 @@ export function createEventDoc(options: DocumentOptions): EventDocument {
     },
 
     // Channel-Presentation relations
-    assignPresentationToChannel(
-      channelId: string,
-      presentationId: string,
-      themeOverrideId?: string,
-    ) {
+    assignPresentationToChannel(channelId: string, presentationId: string, themeOverrideId?: string) {
       assertWritable()
       const channelMap = getChannelMap(channelId)
       if (channelMap) {
         const presArray = channelMap.get('presentations') as Y.Array<Y.Map<unknown>>
 
         // Check if already assigned
-        const existing = presArray
-          .toArray()
-          .find((p) => p.get('presentationId') === presentationId)
+        const existing = presArray.toArray().find((p) => p.get('presentationId') === presentationId)
         if (existing) return
 
         const relationMap = new Y.Map<unknown>()
@@ -259,27 +251,19 @@ export function createEventDoc(options: DocumentOptions): EventDocument {
       const channelMap = getChannelMap(channelId)
       if (channelMap) {
         const presArray = channelMap.get('presentations') as Y.Array<Y.Map<unknown>>
-        const index = presArray
-          .toArray()
-          .findIndex((p) => p.get('presentationId') === presentationId)
+        const index = presArray.toArray().findIndex((p) => p.get('presentationId') === presentationId)
         if (index !== -1) {
           presArray.delete(index, 1)
         }
       }
     },
 
-    setChannelPresentationTheme(
-      channelId: string,
-      presentationId: string,
-      themeOverrideId: string | undefined,
-    ) {
+    setChannelPresentationTheme(channelId: string, presentationId: string, themeOverrideId: string | undefined) {
       assertWritable()
       const channelMap = getChannelMap(channelId)
       if (channelMap) {
         const presArray = channelMap.get('presentations') as Y.Array<Y.Map<unknown>>
-        const relationMap = presArray
-          .toArray()
-          .find((p) => p.get('presentationId') === presentationId)
+        const relationMap = presArray.toArray().find((p) => p.get('presentationId') === presentationId)
         if (relationMap) {
           if (themeOverrideId) {
             relationMap.set('themeOverrideId', themeOverrideId)
@@ -297,9 +281,7 @@ export function createEventDoc(options: DocumentOptions): EventDocument {
       const channelMap = getChannelMap(channelId)
       if (channelMap) {
         const presArray = channelMap.get('presentations') as Y.Array<Y.Map<unknown>>
-        const currentIndex = presArray
-          .toArray()
-          .findIndex((p) => p.get('presentationId') === presentationId)
+        const currentIndex = presArray.toArray().findIndex((p) => p.get('presentationId') === presentationId)
 
         if (currentIndex !== -1 && currentIndex !== newIndex) {
           base.ydoc.transact(() => {

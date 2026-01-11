@@ -112,12 +112,7 @@ export function createSegmentPlugin(schema: Schema): Plugin {
 /**
  * Split a paragraph into sentence nodes
  */
-function splitParagraphToSentences(
-  tr: Transaction,
-  pos: number,
-  node: Node,
-  schema: Schema
-): Transaction {
+function splitParagraphToSentences(tr: Transaction, pos: number, node: Node, schema: Schema): Transaction {
   const text = node.textContent
   const sentences = splitIntoSentences(text)
 
@@ -128,18 +123,12 @@ function splitParagraphToSentences(
 
   // Create sentence nodes
   const sentenceNodes = sentences.map((sentenceText, index) => {
-    return schema.nodes.sentence.create(
-      { segmentId: `${parentSegmentId}-s${index}` },
-      schema.text(sentenceText)
-    )
+    return schema.nodes.sentence.create({ segmentId: `${parentSegmentId}-s${index}` }, schema.text(sentenceText))
   })
 
   // Replace paragraph content with sentence nodes
   // The paragraph keeps its segmentId, sentences get derived IDs
-  const newParagraph = schema.nodes.paragraph.create(
-    { segmentId: parentSegmentId },
-    sentenceNodes
-  )
+  const newParagraph = schema.nodes.paragraph.create({ segmentId: parentSegmentId }, sentenceNodes)
 
   // Replace the old paragraph with the new one
   return tr.replaceWith(pos, pos + node.nodeSize, newParagraph)
@@ -163,7 +152,7 @@ function createSegmentDecorations(doc: Node): DecorationSet {
         Decoration.node(pos, pos + node.nodeSize, {
           class: 'segment-boundary',
           'data-segment-type': node.type.name,
-        })
+        }),
       )
     }
   })

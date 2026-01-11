@@ -7,10 +7,7 @@ describe('createSegmentPlugin', () => {
   function createState(...paragraphTexts: string[]) {
     const paragraphs = paragraphTexts.map((text) => {
       if (text) {
-        return presentationSchema.nodes.paragraph.create(
-          null,
-          presentationSchema.text(text)
-        )
+        return presentationSchema.nodes.paragraph.create(null, presentationSchema.text(text))
       }
       return presentationSchema.nodes.paragraph.create()
     })
@@ -47,10 +44,7 @@ describe('createSegmentPlugin', () => {
       const state = createState('Initial content')
 
       // Simulate adding a new paragraph
-      const newPara = presentationSchema.nodes.paragraph.create(
-        null,
-        presentationSchema.text('New paragraph')
-      )
+      const newPara = presentationSchema.nodes.paragraph.create(null, presentationSchema.text('New paragraph'))
       const tr = state.tr.insert(state.doc.content.size, newPara)
       const newState = state.apply(tr)
 
@@ -69,7 +63,7 @@ describe('createSegmentPlugin', () => {
       const existingId = 'seg-existing'
       const para = presentationSchema.nodes.paragraph.create(
         { segmentId: existingId },
-        presentationSchema.text('Has ID')
+        presentationSchema.text('Has ID'),
       )
       const doc = presentationSchema.nodes.doc.create(null, para)
       const plugin = createSegmentPlugin(presentationSchema)
@@ -137,7 +131,7 @@ describe('createSegmentPlugin', () => {
         'This is the first sentence with quite a bit of content to make it longer. This is the second sentence that continues the paragraph. And here is the third one that makes it even longer than before!'
       const para = presentationSchema.nodes.paragraph.create(
         null, // No segmentId - plugin will assign
-        presentationSchema.text(longText)
+        presentationSchema.text(longText),
       )
       const doc = presentationSchema.nodes.doc.create(null, para)
       const plugin = createSegmentPlugin(presentationSchema)
@@ -170,7 +164,7 @@ describe('createSegmentPlugin', () => {
     it('creates decorations for segment nodes', () => {
       const para = presentationSchema.nodes.paragraph.create(
         { segmentId: 'seg-001' },
-        presentationSchema.text('Decorated paragraph')
+        presentationSchema.text('Decorated paragraph'),
       )
       const doc = presentationSchema.nodes.doc.create(null, para)
       const plugin = createSegmentPlugin(presentationSchema)
@@ -192,24 +186,18 @@ describe('createSegmentPlugin', () => {
       const state = createState('Initial')
 
       const pluginState1 = segmentPluginKey.getState(state)
-      const decorCount1 = pluginState1?.decorations.find(
-        1,
-        state.doc.content.size
-      ).length
+      const decorCount1 = pluginState1?.decorations.find(1, state.doc.content.size).length
 
       // Add another paragraph
       const newPara = presentationSchema.nodes.paragraph.create(
         { segmentId: 'seg-new' },
-        presentationSchema.text('New paragraph')
+        presentationSchema.text('New paragraph'),
       )
       const tr = state.tr.insert(state.doc.content.size, newPara)
       const newState = state.apply(tr)
 
       const pluginState2 = segmentPluginKey.getState(newState)
-      const decorCount2 = pluginState2?.decorations.find(
-        1,
-        newState.doc.content.size
-      ).length
+      const decorCount2 = pluginState2?.decorations.find(1, newState.doc.content.size).length
 
       // Should have more decorations after adding content
       expect(decorCount2).toBeGreaterThanOrEqual(decorCount1 || 0)
@@ -221,7 +209,7 @@ describe('getSegments', () => {
   it('returns segments from editor state', () => {
     const para = presentationSchema.nodes.paragraph.create(
       { segmentId: 'seg-001' },
-      presentationSchema.text('Test paragraph')
+      presentationSchema.text('Test paragraph'),
     )
     const doc = presentationSchema.nodes.doc.create(null, para)
     const plugin = createSegmentPlugin(presentationSchema)
@@ -253,14 +241,8 @@ describe('getSegments', () => {
   })
 
   it('returns multiple segments in order', () => {
-    const para1 = presentationSchema.nodes.paragraph.create(
-      { segmentId: 'seg-001' },
-      presentationSchema.text('First')
-    )
-    const para2 = presentationSchema.nodes.paragraph.create(
-      { segmentId: 'seg-002' },
-      presentationSchema.text('Second')
-    )
+    const para1 = presentationSchema.nodes.paragraph.create({ segmentId: 'seg-001' }, presentationSchema.text('First'))
+    const para2 = presentationSchema.nodes.paragraph.create({ segmentId: 'seg-002' }, presentationSchema.text('Second'))
     const doc = presentationSchema.nodes.doc.create(null, [para1, para2])
     const plugin = createSegmentPlugin(presentationSchema)
     const state = EditorState.create({

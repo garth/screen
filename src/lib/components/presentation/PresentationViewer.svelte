@@ -12,14 +12,7 @@
     onSegmentClick?: (segmentId: string) => void
   }
 
-  let {
-    content,
-    theme,
-    mode = 'view',
-    segments = [],
-    currentSegmentId = null,
-    onSegmentClick,
-  }: Props = $props()
+  let { content, theme, mode = 'view', segments = [], currentSegmentId = null, onSegmentClick }: Props = $props()
 
   let viewerElement: HTMLElement | null = $state(null)
 
@@ -109,7 +102,7 @@
   /**
    * Extract plain text from XmlElement for matching sentences
    */
-  function extractPlainText(element: Y.XmlElement | Y.XmlText): string {
+  function _extractPlainText(element: Y.XmlElement | Y.XmlText): string {
     if (element instanceof Y.XmlText) {
       return element.toString()
     }
@@ -127,10 +120,7 @@
   /**
    * Convert XmlFragment/XmlElement to HTML string
    */
-  function xmlToHtml(
-    node: Y.XmlFragment | Y.XmlElement | Y.XmlText | string,
-    ctx?: SegmentContext
-  ): string {
+  function xmlToHtml(node: Y.XmlFragment | Y.XmlElement | Y.XmlText | string, ctx?: SegmentContext): string {
     // Handle string content
     if (typeof node === 'string') {
       return escapeHtml(node)
@@ -294,6 +284,7 @@
       style:aspect-ratio="{theme.viewport.width} / {theme.viewport.height}">
       <div class="prose max-w-none p-8" style:color={theme.textColor}>
         {#if htmlContent}
+          <!-- eslint-disable-next-line svelte/no-at-html-tags -- Rendering presentation content requires HTML -->
           {@html htmlContent}
         {:else}
           <p class="text-center opacity-50">No content yet</p>
@@ -303,6 +294,7 @@
   {:else}
     <div class="prose max-w-none p-8" style:color={theme.textColor}>
       {#if htmlContent}
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -- Rendering presentation content requires HTML -->
         {@html htmlContent}
       {:else}
         <p class="text-center opacity-50">No content yet</p>
@@ -314,7 +306,9 @@
 <style>
   /* Segment highlighting */
   .presentation-viewer :global(.segment) {
-    transition: background-color 0.2s ease, outline-color 0.2s ease;
+    transition:
+      background-color 0.2s ease,
+      outline-color 0.2s ease;
     border-radius: 0.25rem;
     padding: 0.125rem 0.25rem;
     margin: -0.125rem -0.25rem;

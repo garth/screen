@@ -1,18 +1,12 @@
 import { describe, it, expect } from 'vitest'
 import * as Y from 'yjs'
-import {
-  parseContentSegments,
-  splitIntoSentences,
-  createLabel,
-  clampSegmentIndex,
-  type ContentSegment,
-} from './segment-parser'
+import { parseContentSegments, splitIntoSentences, createLabel, clampSegmentIndex } from './segment-parser'
 
 describe('parseContentSegments', () => {
   let segmentCounter = 0
 
   function createContent() {
-    segmentCounter = 0  // Reset counter for each test
+    segmentCounter = 0 // Reset counter for each test
     const ydoc = new Y.Doc()
     return ydoc.getXmlFragment('content')
   }
@@ -339,7 +333,7 @@ describe('parseContentSegments', () => {
     it('skips elements without segmentId attribute', () => {
       const content = createContent()
       addHeading(content, 'With ID', 1, true)
-      addParagraph(content, 'Without ID', false)  // No segmentId
+      addParagraph(content, 'Without ID', false) // No segmentId
       addParagraph(content, 'With ID too', true)
 
       const segments = parseContentSegments(content)
@@ -382,9 +376,9 @@ describe('parseContentSegments', () => {
     it('elements without segmentId are skipped', () => {
       const content = createContent()
       // Empty elements don't get segment IDs from the helper
-      addParagraph(content, '', true)  // Empty - no segmentId assigned
-      addParagraph(content, '   ', true)  // Whitespace only - no segmentId assigned
-      addParagraph(content, 'Valid')  // Has content - gets segmentId
+      addParagraph(content, '', true) // Empty - no segmentId assigned
+      addParagraph(content, '   ', true) // Whitespace only - no segmentId assigned
+      addParagraph(content, 'Valid') // Has content - gets segmentId
 
       const segments = parseContentSegments(content)
 
@@ -394,8 +388,8 @@ describe('parseContentSegments', () => {
 
     it('empty headings without segmentId are skipped', () => {
       const content = createContent()
-      addHeading(content, '', 1)  // Empty - no segmentId assigned
-      addHeading(content, 'Valid Heading', 2)  // Has content - gets segmentId
+      addHeading(content, '', 1) // Empty - no segmentId assigned
+      addHeading(content, 'Valid Heading', 2) // Has content - gets segmentId
 
       const segments = parseContentSegments(content)
 

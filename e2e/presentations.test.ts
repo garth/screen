@@ -82,7 +82,12 @@ test.describe('Presentations List', () => {
     })
 
     // Create shared user and grant access
-    const sharedUser = await createVerifiedUser(page, { firstName: 'Shared', lastName: 'User', email: sharedEmail, password: testUser.password })
+    const sharedUser = await createVerifiedUser(page, {
+      firstName: 'Shared',
+      lastName: 'User',
+      email: sharedEmail,
+      password: testUser.password,
+    })
     await createDocumentUser(page, { documentId: doc.id, userId: sharedUser.id, write: false })
 
     // Login as shared user
@@ -162,7 +167,12 @@ test.describe('Presentation Viewer', () => {
     })
 
     // Create reader with read-only access
-    const reader = await createVerifiedUser(page, { firstName: 'Reader', lastName: 'User', email: readerEmail, password: testUser.password })
+    const reader = await createVerifiedUser(page, {
+      firstName: 'Reader',
+      lastName: 'User',
+      email: readerEmail,
+      password: testUser.password,
+    })
     await createDocumentUser(page, { documentId: doc.id, userId: reader.id, write: false })
 
     await loginUser(page, { email: readerEmail, password: testUser.password })
@@ -233,7 +243,12 @@ test.describe('Presentation Viewer', () => {
     })
 
     // Create another user without access
-    await createVerifiedUser(page, { firstName: 'Other', lastName: 'User', email: otherEmail, password: testUser.password })
+    await createVerifiedUser(page, {
+      firstName: 'Other',
+      lastName: 'User',
+      email: otherEmail,
+      password: testUser.password,
+    })
     await loginUser(page, { email: otherEmail, password: testUser.password })
     await expect(page).toHaveURL('/')
 
@@ -265,7 +280,12 @@ test.describe('Presentation Editor', () => {
     })
 
     // Create reader with read-only access
-    const reader = await createVerifiedUser(page, { firstName: 'Reader', lastName: 'User', email: readerEmail, password: testUser.password })
+    const reader = await createVerifiedUser(page, {
+      firstName: 'Reader',
+      lastName: 'User',
+      email: readerEmail,
+      password: testUser.password,
+    })
     await createDocumentUser(page, { documentId: doc.id, userId: reader.id, write: false })
 
     await loginUser(page, { email: readerEmail, password: testUser.password })
@@ -369,7 +389,12 @@ test.describe('Presentation Editor', () => {
     })
 
     // Create collaborator with write access
-    const writer = await createVerifiedUser(page, { firstName: 'Writer', lastName: 'User', email: writerEmail, password: testUser.password })
+    const writer = await createVerifiedUser(page, {
+      firstName: 'Writer',
+      lastName: 'User',
+      email: writerEmail,
+      password: testUser.password,
+    })
     await createDocumentUser(page, { documentId: doc.id, userId: writer.id, write: true })
 
     await loginUser(page, { email: writerEmail, password: testUser.password })
@@ -403,7 +428,12 @@ test.describe('Presentation Presenter Mode', () => {
     })
 
     // Create reader with read-only access
-    const reader = await createVerifiedUser(page, { firstName: 'Reader', lastName: 'User', email: readerEmail, password: testUser.password })
+    const reader = await createVerifiedUser(page, {
+      firstName: 'Reader',
+      lastName: 'User',
+      email: readerEmail,
+      password: testUser.password,
+    })
     await createDocumentUser(page, { documentId: doc.id, userId: reader.id, write: false })
 
     await loginUser(page, { email: readerEmail, password: testUser.password })
@@ -500,7 +530,12 @@ test.describe('Presentation Presenter Mode', () => {
     })
 
     // Create collaborator with write access
-    const writer = await createVerifiedUser(page, { firstName: 'Writer', lastName: 'User', email: writerEmail, password: testUser.password })
+    const writer = await createVerifiedUser(page, {
+      firstName: 'Writer',
+      lastName: 'User',
+      email: writerEmail,
+      password: testUser.password,
+    })
     await createDocumentUser(page, { documentId: doc.id, userId: writer.id, write: true })
 
     await loginUser(page, { email: writerEmail, password: testUser.password })

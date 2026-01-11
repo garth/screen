@@ -5,13 +5,14 @@ export async function createVerifiedUser(
   user: { name?: string; firstName?: string; lastName?: string; email: string; password: string },
 ) {
   // Support both old 'name' and new firstName/lastName
-  const data = user.firstName
-    ? user
-    : {
+  const data =
+    user.firstName ? user : (
+      {
         ...user,
         firstName: user.name?.split(' ')[0] || '',
         lastName: user.name?.split(' ').slice(1).join(' ') || '',
       }
+    )
 
   const response = await page.request.post('/api/test/create-user', {
     data,
@@ -29,13 +30,14 @@ export async function createUnverifiedUser(
   user: { name?: string; firstName?: string; lastName?: string; email: string; password: string },
 ): Promise<{ id: string; email: string; verificationToken: string }> {
   // Support both old 'name' and new firstName/lastName
-  const data = user.firstName
-    ? user
-    : {
+  const data =
+    user.firstName ? user : (
+      {
         ...user,
         firstName: user.name?.split(' ')[0] || '',
         lastName: user.name?.split(' ').slice(1).join(' ') || '',
       }
+    )
 
   const response = await page.request.post('/api/test/create-unverified-user', {
     data,
@@ -195,10 +197,7 @@ export async function updateDocument(
   return response.json()
 }
 
-export async function getDocumentMeta(
-  page: Page,
-  documentId: string,
-): Promise<Record<string, unknown>> {
+export async function getDocumentMeta(page: Page, documentId: string): Promise<Record<string, unknown>> {
   const response = await page.request.get(`/api/test/document-meta/${documentId}`)
 
   if (!response.ok()) {

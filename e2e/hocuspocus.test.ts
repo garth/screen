@@ -72,11 +72,7 @@ test.describe('Hocuspocus Collaboration Server', () => {
   }
 
   // Helper to create a HocuspocusProvider with proper config
-  function createProvider(
-    documentId: string,
-    ydoc: Y.Doc,
-    token: string | null,
-  ): HocuspocusProvider {
+  function createProvider(documentId: string, ydoc: Y.Doc, token: string | null): HocuspocusProvider {
     return new HocuspocusProvider({
       url: 'ws://localhost:1234',
       name: documentId,
@@ -613,7 +609,7 @@ test.describe('Hocuspocus Collaboration Server', () => {
 
   test.describe('Multi-User Collaboration', () => {
     test('changes by one user synchronize to other users', async ({ page }) => {
-      const { userId: ownerId, email: ownerEmail } = await createAndLoginUser(page)
+      const { userId: ownerId } = await createAndLoginUser(page)
       const ownerToken = await getSessionToken(page)
       const doc = await createDocument(page, {
         userId: ownerId,
@@ -669,7 +665,7 @@ test.describe('Hocuspocus Collaboration Server', () => {
     })
 
     test('simultaneous changes by multiple users sync correctly', async ({ page }) => {
-      const { userId: ownerId, email: ownerEmail } = await createAndLoginUser(page)
+      const { userId: ownerId } = await createAndLoginUser(page)
       const ownerToken = await getSessionToken(page)
       const doc = await createDocument(page, {
         userId: ownerId,

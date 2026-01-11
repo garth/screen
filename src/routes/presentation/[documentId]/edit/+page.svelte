@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
+  import { resolve } from '$app/paths'
   import { createPresentationDoc, createThemeDoc, type ThemeDocument } from '$lib/stores/documents'
   import PresentationEditor from '$lib/components/presentation/PresentationEditor.svelte'
   import { resolveTheme, defaultTheme, type ResolvedTheme } from '$lib/utils/theme-resolver'
@@ -29,16 +30,16 @@
 
   // Compute resolved theme
   const resolvedTheme: ResolvedTheme = $derived(
-    doc.synced
-      ? resolveTheme(
-          {
-            font: doc.font,
-            backgroundColor: doc.backgroundColor,
-            textColor: doc.textColor,
-          },
-          themeDoc?.synced ? themeDoc : null,
-        )
-      : defaultTheme,
+    doc.synced ?
+      resolveTheme(
+        {
+          font: doc.font,
+          backgroundColor: doc.backgroundColor,
+          textColor: doc.textColor,
+        },
+        themeDoc?.synced ? themeDoc : null,
+      )
+    : defaultTheme,
   )
 
   // Local title state for input
@@ -86,16 +87,14 @@
   <!-- Header -->
   <header class="flex items-center justify-between border-b border-gray-700 bg-gray-800 px-4 py-3">
     <div class="flex items-center gap-4">
-      <a href="/presentation/{data.document.id}" class="text-gray-400 hover:text-gray-200">
-        &larr; Back
-      </a>
+      <a href={resolve(`/presentation/${data.document.id}`)} class="text-gray-400 hover:text-gray-200"> &larr; Back </a>
       <div class="flex items-center gap-2">
         <input
           type="text"
           bind:value={titleInput}
           oninput={handleTitleChange}
           placeholder="Untitled"
-          class="bg-transparent text-lg font-medium text-gray-100 placeholder-gray-500 outline-none focus:ring-1 focus:ring-blue-500 rounded px-2 py-1"
+          class="rounded bg-transparent px-2 py-1 text-lg font-medium text-gray-100 placeholder-gray-500 outline-none focus:ring-1 focus:ring-blue-500"
           disabled={!doc.synced || doc.readOnly} />
         {#if !doc.synced}
           <span class="text-xs text-gray-500">Connecting...</span>
@@ -123,7 +122,7 @@
       </div>
 
       <a
-        href="/presentation/{data.document.id}/presenter"
+        href={resolve(`/presentation/${data.document.id}/presenter`)}
         class="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500">
         Present
       </a>

@@ -1,22 +1,12 @@
 import { keymap } from 'prosemirror-keymap'
 import { history, undo, redo } from 'prosemirror-history'
 import { baseKeymap, toggleMark, setBlockType, chainCommands, exitCode } from 'prosemirror-commands'
-import {
-  wrapInList,
-  splitListItem,
-  liftListItem,
-  sinkListItem,
-} from 'prosemirror-schema-list'
-import {
-  inputRules,
-  wrappingInputRule,
-  textblockTypeInputRule,
-  InputRule,
-} from 'prosemirror-inputrules'
+import { wrapInList, splitListItem, liftListItem, sinkListItem } from 'prosemirror-schema-list'
+import { inputRules, wrappingInputRule, textblockTypeInputRule, InputRule } from 'prosemirror-inputrules'
 import { dropCursor } from 'prosemirror-dropcursor'
 import { gapCursor } from 'prosemirror-gapcursor'
 import { Plugin } from 'prosemirror-state'
-import type { Schema, NodeType, MarkType } from 'prosemirror-model'
+import type { Schema } from 'prosemirror-model'
 import type { EditorView } from 'prosemirror-view'
 import type { Command } from 'prosemirror-state'
 
@@ -31,7 +21,6 @@ import { presentationSchema } from './schema'
  */
 export function insertSlideDivider(schema: Schema): Command {
   return (state, dispatch) => {
-    const { $from } = state.selection
     const slideDivider = schema.nodes.slide_divider.create()
 
     if (dispatch) {
@@ -95,9 +84,7 @@ function buildInputRules(schema: Schema) {
   )
 
   // Bullet list: - item or * item
-  rules.push(
-    wrappingInputRule(/^\s*([-*])\s$/, schema.nodes.bullet_list),
-  )
+  rules.push(wrappingInputRule(/^\s*([-*])\s$/, schema.nodes.bullet_list))
 
   // Ordered list: 1. item
   rules.push(
@@ -110,9 +97,7 @@ function buildInputRules(schema: Schema) {
   )
 
   // Blockquote: > quote
-  rules.push(
-    wrappingInputRule(/^\s*>\s$/, schema.nodes.blockquote),
-  )
+  rules.push(wrappingInputRule(/^\s*>\s$/, schema.nodes.blockquote))
 
   // Slide divider: --- or ***
   rules.push(
@@ -208,7 +193,7 @@ export async function fileToDataUrl(file: File): Promise<string> {
 /**
  * Create a plugin to handle image paste and drop
  */
-function imageUploadPlugin(schema: Schema): Plugin {
+function imageUploadPlugin(_schema: Schema): Plugin {
   return new Plugin({
     props: {
       handlePaste(view, event) {

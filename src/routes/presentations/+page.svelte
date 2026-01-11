@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte'
   import { goto } from '$app/navigation'
+  import { resolve } from '$app/paths'
   import { browser } from '$app/environment'
   import { toast } from '$lib/toast.svelte'
   import { createDocumentListDoc, type DocumentListDocument } from '$lib/stores/documents'
@@ -33,7 +34,7 @@
       }
 
       const { id } = await response.json()
-      await goto(`/presentation/${id}/edit`)
+      await goto(resolve(`/presentation/${id}/edit`))
     } catch {
       toast('error', 'Failed to create presentation')
       creating = false
@@ -123,18 +124,18 @@
 
           <div class="ml-4 flex items-center gap-2">
             <a
-              href="/presentation/{presentation.id}"
+              href={resolve(`/presentation/${presentation.id}`)}
               class="rounded border border-gray-600 px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-700">
               View
             </a>
             {#if presentation.canWrite}
               <a
-                href="/presentation/{presentation.id}/edit"
+                href={resolve(`/presentation/${presentation.id}/edit`)}
                 class="rounded border border-gray-600 px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-700">
                 Edit
               </a>
               <a
-                href="/presentation/{presentation.id}/presenter"
+                href={resolve(`/presentation/${presentation.id}/presenter`)}
                 class="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500">
                 Present
               </a>

@@ -236,7 +236,12 @@ test.describe('Presenter Access Control', () => {
     })
 
     // Create reader with read-only access
-    const reader = await createVerifiedUser(page, { firstName: 'Reader', lastName: 'User', email: readerEmail, password: testUser.password })
+    const reader = await createVerifiedUser(page, {
+      firstName: 'Reader',
+      lastName: 'User',
+      email: readerEmail,
+      password: testUser.password,
+    })
     await createDocumentUser(page, { documentId: doc.id, userId: reader.id, write: false })
 
     await loginUser(page, { email: readerEmail, password: testUser.password })
@@ -263,7 +268,12 @@ test.describe('Presenter Access Control', () => {
     })
 
     // Create collaborator with write access
-    const writer = await createVerifiedUser(page, { firstName: 'Writer', lastName: 'User', email: writerEmail, password: testUser.password })
+    const writer = await createVerifiedUser(page, {
+      firstName: 'Writer',
+      lastName: 'User',
+      email: writerEmail,
+      password: testUser.password,
+    })
     await createDocumentUser(page, { documentId: doc.id, userId: writer.id, write: true })
 
     await loginUser(page, { email: writerEmail, password: testUser.password })
@@ -440,7 +450,12 @@ test.describe('Viewer UI Elements', () => {
       meta: { title: 'Read Only Viewer Test' },
     })
 
-    const reader = await createVerifiedUser(page, { firstName: 'Reader', lastName: 'Only', email: readerEmail, password: testUser.password })
+    const reader = await createVerifiedUser(page, {
+      firstName: 'Reader',
+      lastName: 'Only',
+      email: readerEmail,
+      password: testUser.password,
+    })
     await createDocumentUser(page, { documentId: doc.id, userId: reader.id, write: false })
 
     await loginUser(page, { email: readerEmail, password: testUser.password })

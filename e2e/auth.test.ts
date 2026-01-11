@@ -55,7 +55,12 @@ test.describe('Authentication', () => {
     const email = `logout-${Date.now()}@example.com`
 
     // Create verified user and login
-    await createVerifiedUser(page, { firstName: testUser.firstName, lastName: testUser.lastName, email, password: testUser.password })
+    await createVerifiedUser(page, {
+      firstName: testUser.firstName,
+      lastName: testUser.lastName,
+      email,
+      password: testUser.password,
+    })
     await loginUser(page, { email, password: testUser.password })
     await expect(page).toHaveURL('/')
 
@@ -75,7 +80,12 @@ test.describe('Authentication', () => {
     const email = `login-${Date.now()}@example.com`
 
     // Create verified user
-    await createVerifiedUser(page, { firstName: testUser.firstName, lastName: testUser.lastName, email, password: testUser.password })
+    await createVerifiedUser(page, {
+      firstName: testUser.firstName,
+      lastName: testUser.lastName,
+      email,
+      password: testUser.password,
+    })
 
     // Login
     await loginUser(page, { email, password: testUser.password })
@@ -102,7 +112,12 @@ test.describe('Authentication', () => {
     const email = `duplicate-${Date.now()}@example.com`
 
     // Create first user directly in database
-    await createVerifiedUser(page, { firstName: testUser.firstName, lastName: testUser.lastName, email, password: testUser.password })
+    await createVerifiedUser(page, {
+      firstName: testUser.firstName,
+      lastName: testUser.lastName,
+      email,
+      password: testUser.password,
+    })
 
     // Try to register with same email
     await page.goto('/register')
@@ -157,7 +172,12 @@ test.describe('Authentication', () => {
     const email = `forgot-${Date.now()}@example.com`
 
     // Create verified user
-    await createVerifiedUser(page, { firstName: testUser.firstName, lastName: testUser.lastName, email, password: testUser.password })
+    await createVerifiedUser(page, {
+      firstName: testUser.firstName,
+      lastName: testUser.lastName,
+      email,
+      password: testUser.password,
+    })
 
     // Go to forgot password page
     await page.goto('/forgot-password')
@@ -176,7 +196,12 @@ test.describe('Authentication', () => {
     const newPassword = 'newpassword123'
 
     // Create verified user
-    await createVerifiedUser(page, { firstName: testUser.firstName, lastName: testUser.lastName, email, password: testUser.password })
+    await createVerifiedUser(page, {
+      firstName: testUser.firstName,
+      lastName: testUser.lastName,
+      email,
+      password: testUser.password,
+    })
 
     // Create password reset token
     const { resetToken } = await createPasswordReset(page, email)

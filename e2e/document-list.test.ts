@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { createVerifiedUser, createDocument, createDocumentUser, loginUser } from './helpers'
+import { createVerifiedUser, loginUser } from './helpers'
 
 test.describe('Document List', () => {
   const testUser = {
@@ -96,9 +96,7 @@ test.describe('Document List', () => {
       await page.goto('/presentations')
 
       // Should show either loading or content (empty state)
-      await expect(
-        page.getByRole('button', { name: 'New Presentation' })
-      ).toBeVisible({ timeout: 15000 })
+      await expect(page.getByRole('button', { name: 'New Presentation' })).toBeVisible({ timeout: 15000 })
 
       // Empty state should be visible after sync
       await expect(page.getByText("You don't have any presentations yet")).toBeVisible({ timeout: 10000 })

@@ -10,7 +10,12 @@ test.describe('Preferences Page', () => {
 
   async function createAndLoginUser(page: import('@playwright/test').Page) {
     const email = `preferences-${Date.now()}@example.com`
-    await createVerifiedUser(page, { firstName: testUser.firstName, lastName: testUser.lastName, email, password: testUser.password })
+    await createVerifiedUser(page, {
+      firstName: testUser.firstName,
+      lastName: testUser.lastName,
+      email,
+      password: testUser.password,
+    })
     await loginUser(page, { email, password: testUser.password })
     await expect(page).toHaveURL('/')
     return email

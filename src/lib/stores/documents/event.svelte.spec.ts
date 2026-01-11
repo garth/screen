@@ -26,10 +26,7 @@ vi.mock('@hocuspocus/provider', () => {
         }
       })
 
-      constructor(options: {
-        onConnect?: () => void
-        onSynced?: (args: { state: boolean }) => void
-      }) {
+      constructor(options: { onConnect?: () => void; onSynced?: (args: { state: boolean }) => void }) {
         setTimeout(() => {
           options.onConnect?.()
           options.onSynced?.({ state: mockReadOnly })

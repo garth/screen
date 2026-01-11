@@ -20,10 +20,7 @@ export interface PresentationOverrides {
  * 2. Theme document values
  * 3. Default values (lowest priority)
  */
-export function resolveTheme(
-  overrides: PresentationOverrides,
-  theme: ThemeDocument | null,
-): ResolvedTheme {
+export function resolveTheme(overrides: PresentationOverrides, theme: ThemeDocument | null): ResolvedTheme {
   return {
     font: overrides.font || theme?.effectiveFont || 'sans-serif',
     backgroundColor: overrides.backgroundColor || theme?.effectiveBackgroundColor || '#ffffff',

@@ -1,8 +1,8 @@
 <script lang="ts">
   import type { EditorView } from 'prosemirror-view'
-  import type { EditorState } from 'prosemirror-state'
+  import type { EditorState, Transaction } from 'prosemirror-state'
   import { toggleMark, setBlockType } from 'prosemirror-commands'
-  import { wrapInList, liftListItem } from 'prosemirror-schema-list'
+  import { wrapInList } from 'prosemirror-schema-list'
   import { undo, redo } from 'prosemirror-history'
   import { presentationSchema } from '$lib/editor/schema'
   import { insertSlideDivider, wrapInBlockquote, fileToDataUrl } from '$lib/editor/setup'
@@ -24,7 +24,11 @@
     return state.doc.rangeHasMark(from, to, markType)
   }
 
-  function isBlockActive(state: EditorState, nodeType: typeof presentationSchema.nodes.paragraph, attrs?: Record<string, unknown>) {
+  function isBlockActive(
+    state: EditorState,
+    nodeType: typeof presentationSchema.nodes.paragraph,
+    attrs?: Record<string, unknown>,
+  ) {
     const { to } = state.selection
     const resolvedFrom = state.selection.$from
     let active = false
@@ -38,7 +42,7 @@
     return active
   }
 
-  function runCommand(command: (state: EditorState, dispatch?: (tr: any) => void) => boolean) {
+  function runCommand(command: (state: EditorState, dispatch?: (tr: Transaction) => void) => boolean) {
     if (!view) return
     command(view.state, view.dispatch)
     view.focus()
@@ -111,14 +115,18 @@
 
 <div class="editor-toolbar flex flex-wrap items-center gap-1 border-b border-gray-600 bg-gray-700 p-2">
   <!-- Undo/Redo -->
-  <div class="flex items-center gap-0.5 border-r border-gray-600 pr-2 mr-1">
+  <div class="mr-1 flex items-center gap-0.5 border-r border-gray-600 pr-2">
     <button
       type="button"
       onclick={() => runCommand(undo)}
       class="rounded p-1.5 text-gray-300 hover:bg-gray-600 hover:text-white"
       title="Undo (Ctrl+Z)">
       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
       </svg>
     </button>
     <button
@@ -127,52 +135,76 @@
       class="rounded p-1.5 text-gray-300 hover:bg-gray-600 hover:text-white"
       title="Redo (Ctrl+Y)">
       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
       </svg>
     </button>
   </div>
 
   <!-- Text Formatting -->
-  <div class="flex items-center gap-0.5 border-r border-gray-600 pr-2 mr-1">
+  <div class="mr-1 flex items-center gap-0.5 border-r border-gray-600 pr-2">
     <button
       type="button"
       onclick={() => toggleFormat(presentationSchema.marks.strong)}
-      class="rounded p-1.5 text-gray-300 hover:bg-gray-600 hover:text-white {view && isMarkActive(view.state, presentationSchema.marks.strong) ? 'bg-gray-600 text-white' : ''}"
+      class="rounded p-1.5 text-gray-300 hover:bg-gray-600 hover:text-white {(
+        view && isMarkActive(view.state, presentationSchema.marks.strong)
+      ) ?
+        'bg-gray-600 text-white'
+      : ''}"
       title="Bold (Ctrl+B)">
-      <span class="font-bold text-sm">B</span>
+      <span class="text-sm font-bold">B</span>
     </button>
     <button
       type="button"
       onclick={() => toggleFormat(presentationSchema.marks.em)}
-      class="rounded p-1.5 text-gray-300 hover:bg-gray-600 hover:text-white {view && isMarkActive(view.state, presentationSchema.marks.em) ? 'bg-gray-600 text-white' : ''}"
+      class="rounded p-1.5 text-gray-300 hover:bg-gray-600 hover:text-white {(
+        view && isMarkActive(view.state, presentationSchema.marks.em)
+      ) ?
+        'bg-gray-600 text-white'
+      : ''}"
       title="Italic (Ctrl+I)">
-      <span class="italic text-sm">I</span>
+      <span class="text-sm italic">I</span>
     </button>
     <button
       type="button"
       onclick={() => toggleFormat(presentationSchema.marks.underline)}
-      class="rounded p-1.5 text-gray-300 hover:bg-gray-600 hover:text-white {view && isMarkActive(view.state, presentationSchema.marks.underline) ? 'bg-gray-600 text-white' : ''}"
+      class="rounded p-1.5 text-gray-300 hover:bg-gray-600 hover:text-white {(
+        view && isMarkActive(view.state, presentationSchema.marks.underline)
+      ) ?
+        'bg-gray-600 text-white'
+      : ''}"
       title="Underline (Ctrl+U)">
-      <span class="underline text-sm">U</span>
+      <span class="text-sm underline">U</span>
     </button>
     <button
       type="button"
       onclick={() => toggleFormat(presentationSchema.marks.strikethrough)}
-      class="rounded p-1.5 text-gray-300 hover:bg-gray-600 hover:text-white {view && isMarkActive(view.state, presentationSchema.marks.strikethrough) ? 'bg-gray-600 text-white' : ''}"
+      class="rounded p-1.5 text-gray-300 hover:bg-gray-600 hover:text-white {(
+        view && isMarkActive(view.state, presentationSchema.marks.strikethrough)
+      ) ?
+        'bg-gray-600 text-white'
+      : ''}"
       title="Strikethrough (Ctrl+Shift+S)">
-      <span class="line-through text-sm">S</span>
+      <span class="text-sm line-through">S</span>
     </button>
     <button
       type="button"
       onclick={() => toggleFormat(presentationSchema.marks.code)}
-      class="rounded p-1.5 text-gray-300 hover:bg-gray-600 hover:text-white {view && isMarkActive(view.state, presentationSchema.marks.code) ? 'bg-gray-600 text-white' : ''}"
+      class="rounded p-1.5 text-gray-300 hover:bg-gray-600 hover:text-white {(
+        view && isMarkActive(view.state, presentationSchema.marks.code)
+      ) ?
+        'bg-gray-600 text-white'
+      : ''}"
       title="Code (Ctrl+`)">
       <span class="font-mono text-xs">&lt;/&gt;</span>
     </button>
   </div>
 
   <!-- Headings -->
-  <div class="flex items-center gap-0.5 border-r border-gray-600 pr-2 mr-1">
+  <div class="mr-1 flex items-center gap-0.5 border-r border-gray-600 pr-2">
     <button
       type="button"
       onclick={setParagraph}
@@ -183,28 +215,40 @@
     <button
       type="button"
       onclick={() => setHeading(1)}
-      class="rounded px-2 py-1 text-xs text-gray-300 hover:bg-gray-600 hover:text-white {view && isBlockActive(view.state, presentationSchema.nodes.heading, { level: 1 }) ? 'bg-gray-600 text-white' : ''}"
+      class="rounded px-2 py-1 text-xs text-gray-300 hover:bg-gray-600 hover:text-white {(
+        view && isBlockActive(view.state, presentationSchema.nodes.heading, { level: 1 })
+      ) ?
+        'bg-gray-600 text-white'
+      : ''}"
       title="Heading 1 (Ctrl+1)">
       H1
     </button>
     <button
       type="button"
       onclick={() => setHeading(2)}
-      class="rounded px-2 py-1 text-xs text-gray-300 hover:bg-gray-600 hover:text-white {view && isBlockActive(view.state, presentationSchema.nodes.heading, { level: 2 }) ? 'bg-gray-600 text-white' : ''}"
+      class="rounded px-2 py-1 text-xs text-gray-300 hover:bg-gray-600 hover:text-white {(
+        view && isBlockActive(view.state, presentationSchema.nodes.heading, { level: 2 })
+      ) ?
+        'bg-gray-600 text-white'
+      : ''}"
       title="Heading 2 (Ctrl+2)">
       H2
     </button>
     <button
       type="button"
       onclick={() => setHeading(3)}
-      class="rounded px-2 py-1 text-xs text-gray-300 hover:bg-gray-600 hover:text-white {view && isBlockActive(view.state, presentationSchema.nodes.heading, { level: 3 }) ? 'bg-gray-600 text-white' : ''}"
+      class="rounded px-2 py-1 text-xs text-gray-300 hover:bg-gray-600 hover:text-white {(
+        view && isBlockActive(view.state, presentationSchema.nodes.heading, { level: 3 })
+      ) ?
+        'bg-gray-600 text-white'
+      : ''}"
       title="Heading 3 (Ctrl+3)">
       H3
     </button>
   </div>
 
   <!-- Lists -->
-  <div class="flex items-center gap-0.5 border-r border-gray-600 pr-2 mr-1">
+  <div class="mr-1 flex items-center gap-0.5 border-r border-gray-600 pr-2">
     <button
       type="button"
       onclick={toggleBulletList}
@@ -231,7 +275,7 @@
   </div>
 
   <!-- Block Elements -->
-  <div class="flex items-center gap-0.5 border-r border-gray-600 pr-2 mr-1">
+  <div class="mr-1 flex items-center gap-0.5 border-r border-gray-600 pr-2">
     <button
       type="button"
       onclick={insertBlockquote}
@@ -247,7 +291,11 @@
       class="rounded p-1.5 text-gray-300 hover:bg-gray-600 hover:text-white"
       title="Insert Image">
       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
       </svg>
     </button>
     <button
@@ -262,10 +310,5 @@
   </div>
 
   <!-- Hidden file input for images -->
-  <input
-    bind:this={fileInput}
-    type="file"
-    accept="image/*"
-    class="hidden"
-    onchange={handleImageSelect} />
+  <input bind:this={fileInput} type="file" accept="image/*" class="hidden" onchange={handleImageSelect} />
 </div>

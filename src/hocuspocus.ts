@@ -38,11 +38,7 @@ function isDocumentListId(documentId: string): boolean {
   return documentId.startsWith('user-') && documentId.endsWith('-documents')
 }
 
-async function syncToDocumentList(
-  userId: string,
-  documentId: string,
-  metadata: DocumentListItemData,
-): Promise<void> {
+async function syncToDocumentList(userId: string, documentId: string, metadata: DocumentListItemData): Promise<void> {
   const listId = getDocumentListId(userId)
 
   // Check if document-list exists

@@ -3,7 +3,7 @@ import { createPresentationAwareness } from './awareness.svelte'
 import type { DocumentOptions, PresentationDocument } from './types'
 
 export function createPresentationDoc(options: DocumentOptions): PresentationDocument {
-  // Meta properties with reactive bindings
+  // Meta properties with reactive bindings (assigned in onDocumentSynced callback)
   let title: ReturnType<typeof createReactiveMetaProperty<string>>
   let themeId: ReturnType<typeof createReactiveMetaProperty<string | null>>
   let font: ReturnType<typeof createReactiveMetaProperty<string | undefined>>
@@ -26,11 +26,7 @@ export function createPresentationDoc(options: DocumentOptions): PresentationDoc
   title = createReactiveMetaProperty(base.meta, 'title', '')
   themeId = createReactiveMetaProperty<string | null>(base.meta, 'themeId', null)
   font = createReactiveMetaProperty<string | undefined>(base.meta, 'font', undefined)
-  backgroundColor = createReactiveMetaProperty<string | undefined>(
-    base.meta,
-    'backgroundColor',
-    undefined,
-  )
+  backgroundColor = createReactiveMetaProperty<string | undefined>(base.meta, 'backgroundColor', undefined)
   textColor = createReactiveMetaProperty<string | undefined>(base.meta, 'textColor', undefined)
 
   // Rich text content (XmlFragment for ProseMirror compatibility)

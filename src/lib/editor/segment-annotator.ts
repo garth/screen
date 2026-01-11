@@ -66,9 +66,7 @@ export function shouldSplitParagraph(node: Node): boolean {
 /**
  * Map ProseMirror node type to segment type
  */
-export function mapNodeTypeToSegmentType(
-  typeName: string
-): ContentSegment['type'] {
+export function mapNodeTypeToSegmentType(typeName: string): ContentSegment['type'] {
   switch (typeName) {
     case 'heading':
       return 'heading'

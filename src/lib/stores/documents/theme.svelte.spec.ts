@@ -273,9 +273,7 @@ describe('createThemeDoc', () => {
       expect(() => doc.setFont('Arial')).toThrow('Cannot modify system theme')
       expect(() => doc.setBackgroundColor('#000')).toThrow('Cannot modify system theme')
       expect(() => doc.setTextColor('#fff')).toThrow('Cannot modify system theme')
-      expect(() => doc.setViewport({ x: 0, y: 0, width: 100, height: 100 })).toThrow(
-        'Cannot modify system theme',
-      )
+      expect(() => doc.setViewport({ x: 0, y: 0, width: 100, height: 100 })).toThrow('Cannot modify system theme')
       expect(() => doc.setBackgroundImage(new Uint8Array([1]))).toThrow('Cannot modify system theme')
 
       doc.destroy()
