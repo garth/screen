@@ -24,7 +24,7 @@ model User {
   documents       Document[]
   documentUpdates DocumentUpdate[]
   documentUsers   DocumentUser[]
-  screens         Screen[]
+  channels        Channel[]
 
   @@map("user")
 }
@@ -57,6 +57,7 @@ model Document {
   childDocuments  Document[]       @relation("baseDocument") @ignore
   documentUpdates DocumentUpdate[]
   documentUsers   DocumentUser[]
+  channels        Channel[]        @ignore
 
   @@map("document")
 }
@@ -93,19 +94,21 @@ model DocumentUser {
   @@map("document_user")
 }
 
-model Screen {
-  id     String  @id @default(cuid(2))
-  userId String  @map("user_id")
-  name   String
-  slug   String? @unique
+model Channel {
+  id              String  @id @default(cuid(2))
+  userId          String  @map("user_id")
+  eventDocumentId String  @map("event_document_id")
+  name            String
+  slug            String? @unique
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
   deletedAt DateTime? @map("deleted_at") @db.Timestamptz()
 
-  user User @relation(fields: [userId], references: [id])
+  user          User     @relation(fields: [userId], references: [id])
+  eventDocument Document @relation(fields: [eventDocumentId], references: [id])
 
-  @@map("screen")
+  @@map("channel")
 }
 
 model EmailVerification {

@@ -14,20 +14,24 @@ ALTER TABLE "document_user" DROP COLUMN "write",
 ADD COLUMN     "canWrite" BOOLEAN NOT NULL DEFAULT false;
 
 -- CreateTable
-CREATE TABLE "screen" (
+CREATE TABLE "channel" (
     "id" TEXT NOT NULL,
     "user_id" TEXT NOT NULL,
+    "event_document_id" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "slug" TEXT,
     "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMPTZ NOT NULL,
     "deleted_at" TIMESTAMPTZ,
 
-    CONSTRAINT "screen_pkey" PRIMARY KEY ("id")
+    CONSTRAINT "channel_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "screen_slug_key" ON "screen"("slug");
+CREATE UNIQUE INDEX "channel_slug_key" ON "channel"("slug");
 
 -- AddForeignKey
-ALTER TABLE "screen" ADD CONSTRAINT "screen_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "channel" ADD CONSTRAINT "channel_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "user"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "channel" ADD CONSTRAINT "channel_event_document_id_fkey" FOREIGN KEY ("event_document_id") REFERENCES "document"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
