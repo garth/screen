@@ -153,7 +153,7 @@ test.describe('Preferences Page', () => {
       await expect(dialog).toBeVisible()
       await expect(dialog.getByText('Delete Account?')).toBeVisible()
       await expect(dialog.getByText('This will permanently delete your account')).toBeVisible()
-      await expect(dialog.getByText('exporting your data')).toBeVisible()
+      await expect(dialog.getByText('This action cannot be undone.')).toBeVisible()
       await expect(dialog.getByRole('button', { name: 'Cancel' })).toBeVisible()
       await expect(dialog.getByRole('button', { name: 'Delete My Account' })).toBeVisible()
     })

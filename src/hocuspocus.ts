@@ -17,6 +17,74 @@ const db = new PrismaClient({ adapter })
 
 const sessionCookieName = 'auth-session'
 
+// =============================================================================
+// Document List Helpers
+// =============================================================================
+
+interface DocumentListItemData {
+  title: string
+  type: 'presentation' | 'theme' | 'event'
+  isPublic: boolean
+  isOwner: boolean
+  canWrite: boolean
+  updatedAt: string
+}
+
+function getDocumentListId(userId: string): string {
+  return `user-${userId}-documents`
+}
+
+function isDocumentListId(documentId: string): boolean {
+  return documentId.startsWith('user-') && documentId.endsWith('-documents')
+}
+
+async function syncToDocumentList(
+  userId: string,
+  documentId: string,
+  metadata: DocumentListItemData,
+): Promise<void> {
+  const listId = getDocumentListId(userId)
+
+  // Check if document-list exists
+  const listDoc = await db.document.findUnique({
+    select: { id: true },
+    where: { id: listId },
+  })
+
+  if (!listDoc) {
+    // Document list doesn't exist yet
+    return
+  }
+
+  // Load current state
+  const ydoc = new Y.Doc()
+  const updates = await db.documentUpdate.findMany({
+    select: { update: true },
+    where: { documentId: listId, deletedAt: null },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  for (const { update } of updates) {
+    Y.applyUpdate(ydoc, new Uint8Array(update))
+  }
+
+  // Update the documents map
+  const documentsMap = ydoc.getMap<DocumentListItemData>('documents')
+  documentsMap.set(documentId, metadata)
+
+  // Store the update
+  const update = Y.encodeStateAsUpdate(ydoc)
+  await db.documentUpdate.create({
+    data: {
+      documentId: listId,
+      userId,
+      update: Buffer.from(update),
+    },
+  })
+
+  ydoc.destroy()
+}
+
 async function validateSessionToken(token: string) {
   const sessionId = encodeHexLowerCase(sha256(new TextEncoder().encode(token)))
   const result = await db.session.findUnique({
@@ -73,6 +141,17 @@ async function checkDocumentPermissions(
   documentId: string,
   userId: string | null,
 ): Promise<{ allowed: boolean; readOnly: boolean }> {
+  // Handle document-list special case
+  if (isDocumentListId(documentId)) {
+    // Extract userId from document-list ID: user-{userId}-documents
+    const listUserId = documentId.replace(/^user-/, '').replace(/-documents$/, '')
+    // Only the owner can access their document-list
+    if (userId === listUserId) {
+      return { allowed: true, readOnly: true } // Read-only for clients, server updates via onChange
+    }
+    return { allowed: false, readOnly: true }
+  }
+
   if (userId) {
     // Authenticated user - check ownership or shared access
     const doc = await db.document.findUnique({
@@ -198,6 +277,49 @@ const server = new Server({
         where: { id: documentName },
         data: { meta: metaJson },
       })
+
+      // Sync to owner's document-list (skip document-list documents to prevent recursion)
+      if (!isDocumentListId(documentName)) {
+        const doc = await db.document.findUnique({
+          select: {
+            userId: true,
+            name: true,
+            type: true,
+            isPublic: true,
+            documentUsers: {
+              where: { deletedAt: null },
+              select: { userId: true, canWrite: true },
+            },
+          },
+          where: { id: documentName, deletedAt: null },
+        })
+
+        if (doc && doc.type !== 'document-list') {
+          // Sync to owner's list
+          await syncToDocumentList(doc.userId, documentName, {
+            title: (metaJson as { title?: string }).title || doc.name || 'Untitled',
+            type: doc.type as 'presentation' | 'theme' | 'event',
+            isPublic: doc.isPublic,
+            isOwner: true,
+            canWrite: true,
+            updatedAt: new Date().toISOString(),
+          })
+
+          // Also sync to shared users' lists
+          for (const sharedUser of doc.documentUsers) {
+            if (sharedUser.userId !== doc.userId) {
+              await syncToDocumentList(sharedUser.userId, documentName, {
+                title: (metaJson as { title?: string }).title || doc.name || 'Untitled',
+                type: doc.type as 'presentation' | 'theme' | 'event',
+                isPublic: doc.isPublic,
+                isOwner: false,
+                canWrite: sharedUser.canWrite,
+                updatedAt: new Date().toISOString(),
+              })
+            }
+          }
+        }
+      }
     }
   },
 
