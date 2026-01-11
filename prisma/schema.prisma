@@ -24,6 +24,7 @@ model User {
   documents       Document[]
   documentUpdates DocumentUpdate[]
   documentUsers   DocumentUser[]
+  screens         Screen[]
 
   @@map("user")
 }
@@ -44,7 +45,7 @@ model Document {
   name           String
   type           String
   baseDocumentId String?
-  public         Boolean @default(false)
+  isPublic       Boolean @default(false)
   meta           Json
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
@@ -80,7 +81,7 @@ model DocumentUser {
   id         String  @id @default(cuid(2))
   documentId String  @map("document_id")
   userId     String  @map("user_id")
-  write      Boolean @default(false)
+  canWrite   Boolean @default(false)
 
   createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
   updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
@@ -90,6 +91,21 @@ model DocumentUser {
   user     User     @relation(fields: [userId], references: [id])
 
   @@map("document_user")
+}
+
+model Screen {
+  id     String  @id @default(cuid(2))
+  userId String  @map("user_id")
+  name   String
+  slug   String? @unique
+
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz()
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz()
+  deletedAt DateTime? @map("deleted_at") @db.Timestamptz()
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("screen")
 }
 
 model EmailVerification {
