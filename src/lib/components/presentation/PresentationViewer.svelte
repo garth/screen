@@ -45,7 +45,20 @@
     segments: ContentSegment[]
     segmentIndex: number
     currentSegmentId: string | null
+    /** The merge group ID that should be highlighted (if current segment is in a merge group) */
+    activeMergeGroupId: string | null
     inPresenterMode: boolean
+  }
+
+  /**
+   * Check if a segment should be highlighted (either directly active or part of active merge group)
+   */
+  function isSegmentActive(segment: ContentSegment, ctx: SegmentContext): boolean {
+    // Direct match
+    if (segment.id === ctx.currentSegmentId) return true
+    // Part of active merge group
+    if (ctx.activeMergeGroupId && segment.mergeGroupId === ctx.activeMergeGroupId) return true
+    return false
   }
 
   /**
@@ -57,7 +70,7 @@
     const segment = ctx.segments[ctx.segmentIndex]
     if (!segment) return html
 
-    const isActive = segment.id === ctx.currentSegmentId
+    const isActive = isSegmentActive(segment, ctx)
     const activeClass = isActive ? ' segment-active' : ''
     ctx.segmentIndex++
 
@@ -86,7 +99,7 @@
 
     while (ctx.segmentIndex < ctx.segments.length && ctx.segments[ctx.segmentIndex].type === 'sentence') {
       const segment = ctx.segments[ctx.segmentIndex]
-      const isActive = segment.id === ctx.currentSegmentId
+      const isActive = isSegmentActive(segment, ctx)
       const activeClass = isActive ? ' segment-active' : ''
 
       // Get the sentence text from the segment label (it contains the actual sentence)
@@ -111,7 +124,7 @@
       if (child instanceof Y.XmlText) {
         text += child.toString()
       } else if (child instanceof Y.XmlElement) {
-        text += extractPlainText(child)
+        text += _extractPlainText(child)
       }
     })
     return text
@@ -245,10 +258,15 @@
 
     // Create segment context when in presenter mode with segments
     if (mode === 'present' && segments.length > 0) {
+      // Find the merge group ID if the current segment is part of a merge group
+      const currentSegment = currentSegmentId ? segments.find((s) => s.id === currentSegmentId) : null
+      const activeMergeGroupId = currentSegment?.mergeGroupId ?? null
+
       const ctx: SegmentContext = {
         segments,
         segmentIndex: 0,
         currentSegmentId,
+        activeMergeGroupId,
         inPresenterMode: true,
       }
       return xmlToHtml(content, ctx)

@@ -11,6 +11,7 @@ import type { EditorView } from 'prosemirror-view'
 import type { Command } from 'prosemirror-state'
 
 import { presentationSchema } from './schema'
+import { mergeSegments, unmergeSegments } from './merge-commands'
 
 // ============================================================================
 // Commands
@@ -170,6 +171,12 @@ function buildKeymap(schema: Schema) {
   keys['Mod-z'] = undo
   keys['Mod-y'] = redo
   keys['Mod-Shift-z'] = redo
+
+  // Merge/Unmerge segments: Ctrl/Cmd + M / Ctrl/Cmd + Shift + M
+  keys['Mod-m'] = mergeSegments
+  keys['Mod-M'] = mergeSegments
+  keys['Mod-Shift-m'] = unmergeSegments
+  keys['Mod-Shift-M'] = unmergeSegments
 
   return keymap(keys)
 }

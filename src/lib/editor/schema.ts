@@ -20,6 +20,7 @@ const nodes: Record<string, NodeSpec> = {
   paragraph: {
     attrs: {
       segmentId: { default: null },
+      mergeGroupId: { default: null },
     },
     content: 'inline*',
     group: 'block',
@@ -29,6 +30,7 @@ const nodes: Record<string, NodeSpec> = {
         getAttrs(dom) {
           return {
             segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
+            mergeGroupId: (dom as HTMLElement).getAttribute('data-merge-group-id'),
           }
         },
       },
@@ -37,6 +39,9 @@ const nodes: Record<string, NodeSpec> = {
       const attrs: Record<string, string> = {}
       if (node.attrs.segmentId) {
         attrs['data-segment-id'] = node.attrs.segmentId
+      }
+      if (node.attrs.mergeGroupId) {
+        attrs['data-merge-group-id'] = node.attrs.mergeGroupId
       }
       return ['p', attrs, 0]
     },
@@ -47,6 +52,7 @@ const nodes: Record<string, NodeSpec> = {
   sentence: {
     attrs: {
       segmentId: { default: null },
+      mergeGroupId: { default: null },
     },
     inline: true,
     content: 'text*',
@@ -57,6 +63,7 @@ const nodes: Record<string, NodeSpec> = {
         getAttrs(dom) {
           return {
             segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
+            mergeGroupId: (dom as HTMLElement).getAttribute('data-merge-group-id'),
           }
         },
       },
@@ -65,6 +72,9 @@ const nodes: Record<string, NodeSpec> = {
       const attrs: Record<string, string> = { 'data-sentence': 'true' }
       if (node.attrs.segmentId) {
         attrs['data-segment-id'] = node.attrs.segmentId
+      }
+      if (node.attrs.mergeGroupId) {
+        attrs['data-merge-group-id'] = node.attrs.mergeGroupId
       }
       return ['span', attrs, 0]
     },
@@ -75,6 +85,7 @@ const nodes: Record<string, NodeSpec> = {
     attrs: {
       level: { default: 1, validate: 'number' },
       segmentId: { default: null },
+      mergeGroupId: { default: null },
     },
     content: 'inline*',
     group: 'block',
@@ -86,6 +97,7 @@ const nodes: Record<string, NodeSpec> = {
           return {
             level: 1,
             segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
+            mergeGroupId: (dom as HTMLElement).getAttribute('data-merge-group-id'),
           }
         },
       },
@@ -95,6 +107,7 @@ const nodes: Record<string, NodeSpec> = {
           return {
             level: 2,
             segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
+            mergeGroupId: (dom as HTMLElement).getAttribute('data-merge-group-id'),
           }
         },
       },
@@ -104,6 +117,7 @@ const nodes: Record<string, NodeSpec> = {
           return {
             level: 3,
             segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
+            mergeGroupId: (dom as HTMLElement).getAttribute('data-merge-group-id'),
           }
         },
       },
@@ -112,6 +126,9 @@ const nodes: Record<string, NodeSpec> = {
       const attrs: Record<string, string> = {}
       if (node.attrs.segmentId) {
         attrs['data-segment-id'] = node.attrs.segmentId
+      }
+      if (node.attrs.mergeGroupId) {
+        attrs['data-merge-group-id'] = node.attrs.mergeGroupId
       }
       return ['h' + node.attrs.level, attrs, 0]
     },
@@ -150,6 +167,7 @@ const nodes: Record<string, NodeSpec> = {
   list_item: {
     attrs: {
       segmentId: { default: null },
+      mergeGroupId: { default: null },
     },
     content: 'paragraph block*',
     parseDOM: [
@@ -158,6 +176,7 @@ const nodes: Record<string, NodeSpec> = {
         getAttrs(dom) {
           return {
             segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
+            mergeGroupId: (dom as HTMLElement).getAttribute('data-merge-group-id'),
           }
         },
       },
@@ -166,6 +185,9 @@ const nodes: Record<string, NodeSpec> = {
       const attrs: Record<string, string> = {}
       if (node.attrs.segmentId) {
         attrs['data-segment-id'] = node.attrs.segmentId
+      }
+      if (node.attrs.mergeGroupId) {
+        attrs['data-merge-group-id'] = node.attrs.mergeGroupId
       }
       return ['li', attrs, 0]
     },
@@ -180,6 +202,7 @@ const nodes: Record<string, NodeSpec> = {
       alt: { default: null, validate: 'string|null' },
       title: { default: null, validate: 'string|null' },
       segmentId: { default: null },
+      mergeGroupId: { default: null },
     },
     group: 'inline',
     draggable: true,
@@ -193,15 +216,19 @@ const nodes: Record<string, NodeSpec> = {
             alt: element.getAttribute('alt'),
             title: element.getAttribute('title'),
             segmentId: element.getAttribute('data-segment-id'),
+            mergeGroupId: element.getAttribute('data-merge-group-id'),
           }
         },
       },
     ],
     toDOM(node) {
-      const { src, alt, title, segmentId } = node.attrs
+      const { src, alt, title, segmentId, mergeGroupId } = node.attrs
       const attrs: Record<string, string | null> = { src, alt, title }
       if (segmentId) {
         attrs['data-segment-id'] = segmentId
+      }
+      if (mergeGroupId) {
+        attrs['data-merge-group-id'] = mergeGroupId
       }
       return ['img', attrs]
     },
@@ -220,6 +247,7 @@ const nodes: Record<string, NodeSpec> = {
   blockquote: {
     attrs: {
       segmentId: { default: null },
+      mergeGroupId: { default: null },
     },
     content: 'block+ attribution?',
     group: 'block',
@@ -230,6 +258,7 @@ const nodes: Record<string, NodeSpec> = {
         getAttrs(dom) {
           return {
             segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
+            mergeGroupId: (dom as HTMLElement).getAttribute('data-merge-group-id'),
           }
         },
       },
@@ -238,6 +267,9 @@ const nodes: Record<string, NodeSpec> = {
       const attrs: Record<string, string> = {}
       if (node.attrs.segmentId) {
         attrs['data-segment-id'] = node.attrs.segmentId
+      }
+      if (node.attrs.mergeGroupId) {
+        attrs['data-merge-group-id'] = node.attrs.mergeGroupId
       }
       return ['blockquote', attrs, 0]
     },

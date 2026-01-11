@@ -6,6 +6,7 @@
   import { undo, redo } from 'prosemirror-history'
   import { presentationSchema } from '$lib/editor/schema'
   import { insertSlideDivider, wrapInBlockquote, fileToDataUrl } from '$lib/editor/setup'
+  import { canMergeSegments, canUnmergeSegments, toggleMergeSegments } from '$lib/editor/merge-commands'
 
   interface Props {
     view: EditorView | null
@@ -89,6 +90,16 @@
     wrapInBlockquote(presentationSchema)(view.state, view.dispatch)
     view.focus()
   }
+
+  function handleMerge() {
+    if (!view) return
+    toggleMergeSegments(view.state, view.dispatch)
+    view.focus()
+  }
+
+  // Reactive check for merge button state
+  const canMerge = $derived(view ? canMergeSegments(view.state) : false)
+  const canUnmerge = $derived(view ? canUnmergeSegments(view.state) : false)
 
   function triggerImageUpload() {
     fileInput?.click()
@@ -305,6 +316,28 @@
       title="Slide Divider (---)">
       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Segment Merge -->
+  <div class="flex items-center gap-0.5">
+    <button
+      type="button"
+      onclick={handleMerge}
+      disabled={!canMerge && !canUnmerge}
+      class="rounded p-1.5 text-gray-300 hover:bg-gray-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-40 {(
+        canUnmerge
+      ) ?
+        'bg-blue-600/30 text-blue-300'
+      : ''}"
+      title={canUnmerge ? 'Unmerge Segments (Ctrl+Shift+M)' : 'Merge Segments (Ctrl+M)'}>
+      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
       </svg>
     </button>
   </div>

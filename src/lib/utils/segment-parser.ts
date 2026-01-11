@@ -17,6 +17,8 @@ export interface ContentSegment {
   level?: number
   /** Which slide this segment belongs to (0-indexed) */
   slideIndex: number
+  /** ID of the merge group this segment belongs to (if merged with other segments) */
+  mergeGroupId?: string
 }
 
 /** Threshold for splitting long text into sentences */
@@ -95,12 +97,14 @@ export function parseContentSegments(content: Y.XmlFragment | null): ContentSegm
       const segmentId = element.getAttribute('segmentId')
       if (segmentId) {
         const text = extractText(element)
+        const mergeGroupId = element.getAttribute('mergeGroupId')
         segments.push({
           id: String(segmentId),
           index: segments.length,
           label: createLabel(text, 'sentence'),
           type: 'sentence',
           slideIndex,
+          ...(mergeGroupId ? { mergeGroupId: String(mergeGroupId) } : {}),
         })
       }
       return
@@ -123,6 +127,7 @@ export function parseContentSegments(content: Y.XmlFragment | null): ContentSegm
       const type = mapNodeTypeToSegmentType(tagName)
       const text = tagName === 'image' ? String(element.getAttribute('alt') || 'Image') : extractText(element)
       const level = tagName === 'heading' ? parseInt(String(element.getAttribute('level') || '1'), 10) : undefined
+      const mergeGroupId = element.getAttribute('mergeGroupId')
 
       segments.push({
         id: String(segmentId),
@@ -131,6 +136,7 @@ export function parseContentSegments(content: Y.XmlFragment | null): ContentSegm
         type,
         level,
         slideIndex,
+        ...(mergeGroupId ? { mergeGroupId: String(mergeGroupId) } : {}),
       })
       return
     }
@@ -237,4 +243,71 @@ export function createLabel(text: string, type: ContentSegment['type'], maxLengt
 export function clampSegmentIndex(index: number, totalSegments: number): number {
   if (totalSegments === 0) return 0
   return Math.max(0, Math.min(index, totalSegments - 1))
+}
+
+/**
+ * Collapse merged segments into single entries for navigation.
+ * Segments with the same mergeGroupId are combined into one entry,
+ * using the first segment in the group as the representative.
+ * The collapsed segment includes all segment IDs in the group for highlighting.
+ */
+export interface CollapsedSegment extends ContentSegment {
+  /** All segment IDs in this merge group (for highlighting all of them) */
+  mergedSegmentIds?: string[]
+  /** Number of segments in this merge group */
+  mergedCount?: number
+}
+
+export function collapseMergedSegments(segments: ContentSegment[]): CollapsedSegment[] {
+  if (segments.length === 0) return []
+
+  const result: CollapsedSegment[] = []
+  let currentGroup: ContentSegment[] = []
+  let currentGroupId: string | undefined = undefined
+
+  function flushGroup() {
+    if (currentGroup.length === 0) return
+
+    if (currentGroup.length === 1) {
+      // Single segment, no merge
+      result.push({ ...currentGroup[0] })
+    } else {
+      // Multiple segments in merge group - use first as representative
+      const first = currentGroup[0]
+      result.push({
+        ...first,
+        mergedSegmentIds: currentGroup.map((s) => s.id),
+        mergedCount: currentGroup.length,
+      })
+    }
+    currentGroup = []
+    currentGroupId = undefined
+  }
+
+  for (const segment of segments) {
+    if (segment.mergeGroupId) {
+      if (segment.mergeGroupId === currentGroupId) {
+        // Continue current merge group
+        currentGroup.push(segment)
+      } else {
+        // Start new merge group
+        flushGroup()
+        currentGroupId = segment.mergeGroupId
+        currentGroup = [segment]
+      }
+    } else {
+      // No merge group - flush any pending group and add this segment
+      flushGroup()
+      result.push({ ...segment })
+    }
+  }
+
+  // Flush any remaining group
+  flushGroup()
+
+  // Re-index the collapsed segments
+  return result.map((segment, index) => ({
+    ...segment,
+    index,
+  }))
 }

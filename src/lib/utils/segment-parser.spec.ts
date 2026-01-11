@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import * as Y from 'yjs'
-import { parseContentSegments, splitIntoSentences, createLabel, clampSegmentIndex } from './segment-parser'
+import {
+  parseContentSegments,
+  splitIntoSentences,
+  createLabel,
+  clampSegmentIndex,
+  collapseMergedSegments,
+  type ContentSegment,
+} from './segment-parser'
 
 describe('parseContentSegments', () => {
   let segmentCounter = 0
@@ -496,5 +503,138 @@ describe('clampSegmentIndex', () => {
 
   it('returns 0 when totalSegments is 0', () => {
     expect(clampSegmentIndex(5, 0)).toBe(0)
+  })
+})
+
+describe('collapseMergedSegments', () => {
+  function createSegment(id: string, index: number, label: string, mergeGroupId?: string): ContentSegment {
+    return {
+      id,
+      index,
+      label,
+      type: 'paragraph',
+      slideIndex: 0,
+      ...(mergeGroupId ? { mergeGroupId } : {}),
+    }
+  }
+
+  it('returns empty array for empty input', () => {
+    expect(collapseMergedSegments([])).toEqual([])
+  })
+
+  it('passes through segments without mergeGroupId unchanged', () => {
+    const segments: ContentSegment[] = [createSegment('seg-1', 0, 'First'), createSegment('seg-2', 1, 'Second')]
+
+    const result = collapseMergedSegments(segments)
+
+    expect(result).toHaveLength(2)
+    expect(result[0].id).toBe('seg-1')
+    expect(result[1].id).toBe('seg-2')
+    expect(result[0].mergedCount).toBeUndefined()
+  })
+
+  it('collapses consecutive segments with same mergeGroupId', () => {
+    const segments: ContentSegment[] = [
+      createSegment('seg-1', 0, 'First', 'merge-1'),
+      createSegment('seg-2', 1, 'Second', 'merge-1'),
+      createSegment('seg-3', 2, 'Third', 'merge-1'),
+    ]
+
+    const result = collapseMergedSegments(segments)
+
+    expect(result).toHaveLength(1)
+    expect(result[0].id).toBe('seg-1')
+    expect(result[0].mergedCount).toBe(3)
+    expect(result[0].mergedSegmentIds).toEqual(['seg-1', 'seg-2', 'seg-3'])
+  })
+
+  it('keeps first segment label for collapsed group', () => {
+    const segments: ContentSegment[] = [
+      createSegment('seg-1', 0, 'First Label', 'merge-1'),
+      createSegment('seg-2', 1, 'Second Label', 'merge-1'),
+    ]
+
+    const result = collapseMergedSegments(segments)
+
+    expect(result[0].label).toBe('First Label')
+  })
+
+  it('re-indexes collapsed segments', () => {
+    const segments: ContentSegment[] = [
+      createSegment('seg-1', 0, 'Solo'),
+      createSegment('seg-2', 1, 'Merged 1', 'merge-1'),
+      createSegment('seg-3', 2, 'Merged 2', 'merge-1'),
+      createSegment('seg-4', 3, 'Another Solo'),
+    ]
+
+    const result = collapseMergedSegments(segments)
+
+    expect(result).toHaveLength(3)
+    expect(result[0].index).toBe(0)
+    expect(result[1].index).toBe(1)
+    expect(result[2].index).toBe(2)
+  })
+
+  it('handles multiple separate merge groups', () => {
+    const segments: ContentSegment[] = [
+      createSegment('seg-1', 0, 'Group A 1', 'merge-a'),
+      createSegment('seg-2', 1, 'Group A 2', 'merge-a'),
+      createSegment('seg-3', 2, 'Solo'),
+      createSegment('seg-4', 3, 'Group B 1', 'merge-b'),
+      createSegment('seg-5', 4, 'Group B 2', 'merge-b'),
+    ]
+
+    const result = collapseMergedSegments(segments)
+
+    expect(result).toHaveLength(3)
+    expect(result[0].mergedCount).toBe(2)
+    expect(result[0].mergedSegmentIds).toEqual(['seg-1', 'seg-2'])
+    expect(result[1].mergedCount).toBeUndefined()
+    expect(result[2].mergedCount).toBe(2)
+    expect(result[2].mergedSegmentIds).toEqual(['seg-4', 'seg-5'])
+  })
+
+  it('treats non-consecutive segments with same mergeGroupId as separate groups', () => {
+    const segments: ContentSegment[] = [
+      createSegment('seg-1', 0, 'Group 1', 'merge-1'),
+      createSegment('seg-2', 1, 'Solo'),
+      createSegment('seg-3', 2, 'Group 1 again', 'merge-1'), // Same ID but separated
+    ]
+
+    const result = collapseMergedSegments(segments)
+
+    // Since they're not consecutive, they become separate entries
+    expect(result).toHaveLength(3)
+    expect(result[0].mergedCount).toBeUndefined() // Single segment
+    expect(result[1].mergedCount).toBeUndefined()
+    expect(result[2].mergedCount).toBeUndefined() // Single segment
+  })
+
+  it('preserves original segment properties in collapsed result', () => {
+    const segments: ContentSegment[] = [
+      {
+        id: 'seg-1',
+        index: 0,
+        label: 'Heading',
+        type: 'heading',
+        level: 1,
+        slideIndex: 0,
+        mergeGroupId: 'merge-1',
+      },
+      {
+        id: 'seg-2',
+        index: 1,
+        label: 'Paragraph',
+        type: 'paragraph',
+        slideIndex: 0,
+        mergeGroupId: 'merge-1',
+      },
+    ]
+
+    const result = collapseMergedSegments(segments)
+
+    expect(result[0].type).toBe('heading')
+    expect(result[0].level).toBe(1)
+    expect(result[0].slideIndex).toBe(0)
   })
 })

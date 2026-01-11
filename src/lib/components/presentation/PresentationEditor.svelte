@@ -112,6 +112,33 @@
     background-color: rgba(139, 92, 246, 0.5);
   }
 
+  /* Merged segments - light blue background with border */
+  .editor-content :global(.merged-segment) {
+    background-color: rgba(59, 130, 246, 0.1);
+    border-left: 3px solid rgba(59, 130, 246, 0.5);
+    margin-left: -3px;
+    padding-left: 3px;
+  }
+
+  .editor-content :global(.merged-segment::before) {
+    /* Override normal segment boundary indicator for merged segments */
+    background-color: rgba(59, 130, 246, 0.5);
+  }
+
+  .editor-content :global(.merged-segment-start) {
+    border-top-left-radius: 4px;
+    border-top: 2px solid rgba(59, 130, 246, 0.5);
+    margin-top: -2px;
+    padding-top: 2px;
+  }
+
+  .editor-content :global(.merged-segment-end) {
+    border-bottom-left-radius: 4px;
+    border-bottom: 2px solid rgba(59, 130, 246, 0.5);
+    margin-bottom: -2px;
+    padding-bottom: 2px;
+  }
+
   /* Sentence segments are inline - subtle background */
   .editor-content :global(.ProseMirror span[data-sentence]) {
     position: relative;
