@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
+  import * as Y from 'yjs'
   import { createPresentationDoc } from '$lib/stores/documents/presentation.svelte'
   import { createThemeDoc } from '$lib/stores/documents/theme.svelte'
   import { createEventDoc } from '$lib/stores/documents/event.svelte'
@@ -49,6 +50,22 @@
     status = 'idle'
   }
 
+  // Helper to extract text from XmlElement recursively
+  function extractTextFromElement(element: Y.XmlElement | Y.XmlText): string {
+    if (element instanceof Y.XmlText) {
+      return element.toString()
+    }
+    let text = ''
+    element.forEach((child) => {
+      if (child instanceof Y.XmlText) {
+        text += child.toString()
+      } else if (child instanceof Y.XmlElement) {
+        text += extractTextFromElement(child)
+      }
+    })
+    return text
+  }
+
   // Expose methods for e2e testing via window
   $effect(() => {
     if (typeof window !== 'undefined' && isTestEnv) {
@@ -72,10 +89,29 @@
         setTitle: (title: string) => (activeDoc as PresentationDocument)?.setTitle(title),
         getThemeId: () => (activeDoc as PresentationDocument)?.themeId ?? null,
         setThemeId: (id: string | null) => (activeDoc as PresentationDocument)?.setThemeId(id),
-        getContent: () => (activeDoc as PresentationDocument)?.content?.toString() ?? '',
-        insertContent: (text: string, pos?: number) => {
+        getContent: () => {
           const content = (activeDoc as PresentationDocument)?.content
-          content?.insert(pos ?? 0, text)
+          if (!content) return ''
+          // Extract text from all XmlElements
+          let result = ''
+          content.forEach((item) => {
+            if (item instanceof Y.XmlElement) {
+              result += extractTextFromElement(item)
+            } else if (item instanceof Y.XmlText) {
+              result += item.toString()
+            }
+          })
+          return result
+        },
+        insertContent: (text: string) => {
+          const content = (activeDoc as PresentationDocument)?.content
+          if (!content) return
+          // Create a paragraph element with the text
+          const paragraph = new Y.XmlElement('paragraph')
+          const textNode = new Y.XmlText()
+          textNode.insert(0, text)
+          paragraph.insert(0, [textNode])
+          content.insert(content.length, [paragraph])
         },
         // Theme methods
         getFont: () => (activeDoc as ThemeDocument)?.font ?? '',

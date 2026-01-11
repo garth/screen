@@ -2,6 +2,7 @@
 export type {
   DocumentType,
   DocumentOptions,
+  UserInfo,
   PresentationDocument,
   ThemeDocument,
   EventDocument,

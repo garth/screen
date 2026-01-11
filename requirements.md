@@ -96,6 +96,20 @@
 * allows the presentation title and theme to be edited
 * the presentation content can be edited as richtext
 
+#### Rich Text Editor component
+
+* has the following content types
+  - paragraph
+  - h1, h2, h3
+  - bold
+  - italic
+  - underline
+  - strikethrough
+  - ordered and unordered lists
+  - images (stored inline)
+  - slide divider (behaves like a page break, but forces a new presentation slide to start)
+  - quote (including an attribution line)
+
 #### Presentation Viewer
 
 * can be accessed via /presentation/[documentId]
@@ -108,6 +122,17 @@
 * has controls to let the user move forwards or backwards in the presentation points
 * lets the user tap/click on a presentation point to jump to it
 * lets the user scroll to find points to jump to
+
+### Events
+
+* lets users organise several presentations for a single event
+* lets users organise several channels for an event
+* presentations can be added or removed from the event
+* presentations can be ordered
+* channels can be created for the event
+* presentations can be mapped to a channel
+* presentations mapped to a channel are shown to viewers of the channel
+* themes for presentations in a channel can be overridden for the presentation/channel relation
 
 ### Channels
 

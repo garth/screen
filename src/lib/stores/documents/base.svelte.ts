@@ -1,9 +1,26 @@
 import { HocuspocusProvider } from '@hocuspocus/provider'
 import * as Y from 'yjs'
-import type { DocumentOptions } from './types'
+import type { DocumentOptions, UserInfo } from './types'
 
 export interface BaseDocumentOptions extends DocumentOptions {
   onDocumentSynced?: () => void
+}
+
+/**
+ * Generate a deterministic color from a user ID
+ */
+function generateUserColor(userId: string): string {
+  // Hash the user ID to get a consistent number
+  let hash = 0
+  for (let i = 0; i < userId.length; i++) {
+    const char = userId.charCodeAt(i)
+    hash = ((hash << 5) - hash) + char
+    hash = hash & hash // Convert to 32bit integer
+  }
+
+  // Use the hash to generate HSL color with good saturation and lightness
+  const hue = Math.abs(hash) % 360
+  return `hsl(${hue}, 70%, 50%)`
 }
 
 export interface BaseDocument {
@@ -44,6 +61,15 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
       options.onDocumentSynced?.()
     },
   })
+
+  // Set user awareness state for collaborative cursors
+  if (options.user) {
+    const color = options.user.color || generateUserColor(options.user.id)
+    provider.awareness?.setLocalStateField('user', {
+      name: options.user.name,
+      color,
+    })
+  }
 
   // Handle base document if specified (for theme inheritance)
   let baseYdoc: Y.Doc | null = null

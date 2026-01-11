@@ -6,10 +6,11 @@
 
   let { data } = $props()
 
-  // Create presentation document store
+  // Create presentation document store with user info for collaborative cursors
   const doc = createPresentationDoc({
     documentId: data.document.id,
     baseDocumentId: data.document.baseDocumentId ?? undefined,
+    user: data.user,
   })
 
   // Theme document (loaded when themeId is available)

@@ -49,5 +49,9 @@ export const load: PageServerLoad = async ({ locals, parent }) => {
         isOwner: t.userId === locals.user!.id,
       }
     }),
+    user: {
+      id: locals.user.id,
+      name: `${locals.user.firstName} ${locals.user.lastName}`.trim() || 'Anonymous',
+    },
   }
 }

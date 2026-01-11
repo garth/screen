@@ -14,7 +14,7 @@ describe('parseNavigationPoints', () => {
 
     const result = parseNavigationPoints(content)
 
-    expect(result).toEqual([{ index: 0, label: 'Slide 1', level: 1 }])
+    expect(result).toEqual([{ index: 0, label: 'Slide 1', level: 0, type: 'slide' }])
   })
 
   it('extracts headings as navigation points', () => {
@@ -39,8 +39,8 @@ describe('parseNavigationPoints', () => {
     const result = parseNavigationPoints(content)
 
     expect(result).toHaveLength(2)
-    expect(result[0]).toEqual({ index: 0, label: 'Introduction', level: 1 })
-    expect(result[1]).toEqual({ index: 1, label: 'Background', level: 2 })
+    expect(result[0]).toEqual({ index: 0, label: 'Introduction', level: 1, type: 'heading' })
+    expect(result[1]).toEqual({ index: 1, label: 'Background', level: 2, type: 'heading' })
   })
 
   it('handles different heading levels', () => {
@@ -129,27 +129,21 @@ describe('parseNavigationPoints', () => {
     expect(result[0].level).toBe(1)
   })
 
-  it('ignores non-heading elements', () => {
+  it('includes heading type in navigation points', () => {
     const ydoc = new Y.Doc()
     const content = ydoc.getXmlFragment('content')
 
-    const paragraph = new Y.XmlElement('paragraph')
-    const pText = new Y.XmlText()
-    pText.insert(0, 'This is a paragraph')
-    paragraph.insert(0, [pText])
-
     const heading = new Y.XmlElement('heading')
     heading.setAttribute('level', '1')
-    const hText = new Y.XmlText()
-    hText.insert(0, 'Heading')
-    heading.insert(0, [hText])
+    const text = new Y.XmlText()
+    text.insert(0, 'Test')
+    heading.insert(0, [text])
 
-    content.insert(0, [paragraph, heading])
+    content.insert(0, [heading])
 
     const result = parseNavigationPoints(content)
 
-    expect(result).toHaveLength(1)
-    expect(result[0].label).toBe('Heading')
+    expect(result[0].type).toBe('heading')
   })
 
   it('assigns sequential indices to navigation points', () => {
@@ -170,6 +164,137 @@ describe('parseNavigationPoints', () => {
     expect(result).toHaveLength(5)
     result.forEach((point, i) => {
       expect(point.index).toBe(i)
+    })
+  })
+
+  describe('slide dividers', () => {
+    it('creates slide navigation points for slide dividers', () => {
+      const ydoc = new Y.Doc()
+      const content = ydoc.getXmlFragment('content')
+
+      // Content: paragraph, divider, paragraph
+      const p1 = new Y.XmlElement('paragraph')
+      const t1 = new Y.XmlText()
+      t1.insert(0, 'First slide content')
+      p1.insert(0, [t1])
+
+      const divider = new Y.XmlElement('slide_divider')
+
+      const p2 = new Y.XmlElement('paragraph')
+      const t2 = new Y.XmlText()
+      t2.insert(0, 'Second slide content')
+      p2.insert(0, [t2])
+
+      content.insert(0, [p1, divider, p2])
+
+      const result = parseNavigationPoints(content)
+
+      expect(result).toHaveLength(2)
+      expect(result[0]).toEqual({ index: 0, label: 'Slide 1', level: 0, type: 'slide' })
+      expect(result[1]).toEqual({ index: 1, label: 'Slide 2', level: 0, type: 'slide' })
+    })
+
+    it('creates multiple slide points for multiple dividers', () => {
+      const ydoc = new Y.Doc()
+      const content = ydoc.getXmlFragment('content')
+
+      const p1 = new Y.XmlElement('paragraph')
+      const t1 = new Y.XmlText()
+      t1.insert(0, 'Slide 1')
+      p1.insert(0, [t1])
+
+      const div1 = new Y.XmlElement('slide_divider')
+
+      const p2 = new Y.XmlElement('paragraph')
+      const t2 = new Y.XmlText()
+      t2.insert(0, 'Slide 2')
+      p2.insert(0, [t2])
+
+      const div2 = new Y.XmlElement('slide_divider')
+
+      const p3 = new Y.XmlElement('paragraph')
+      const t3 = new Y.XmlText()
+      t3.insert(0, 'Slide 3')
+      p3.insert(0, [t3])
+
+      content.insert(0, [p1, div1, p2, div2, p3])
+
+      const result = parseNavigationPoints(content)
+
+      expect(result).toHaveLength(3)
+      expect(result[0].label).toBe('Slide 1')
+      expect(result[1].label).toBe('Slide 2')
+      expect(result[2].label).toBe('Slide 3')
+    })
+
+    it('mixes slide dividers and headings', () => {
+      const ydoc = new Y.Doc()
+      const content = ydoc.getXmlFragment('content')
+
+      // h1 -> divider -> h2
+      const h1 = new Y.XmlElement('heading')
+      h1.setAttribute('level', '1')
+      const t1 = new Y.XmlText()
+      t1.insert(0, 'Introduction')
+      h1.insert(0, [t1])
+
+      const divider = new Y.XmlElement('slide_divider')
+
+      const h2 = new Y.XmlElement('heading')
+      h2.setAttribute('level', '2')
+      const t2 = new Y.XmlText()
+      t2.insert(0, 'Details')
+      h2.insert(0, [t2])
+
+      content.insert(0, [h1, divider, h2])
+
+      const result = parseNavigationPoints(content)
+
+      expect(result).toHaveLength(4)
+      expect(result[0]).toEqual({ index: 0, label: 'Introduction', level: 1, type: 'heading' })
+      expect(result[1]).toEqual({ index: 1, label: 'Slide 1', level: 0, type: 'slide' })
+      expect(result[2]).toEqual({ index: 2, label: 'Slide 2', level: 0, type: 'slide' })
+      expect(result[3]).toEqual({ index: 3, label: 'Details', level: 2, type: 'heading' })
+    })
+
+    it('handles divider at start of content', () => {
+      const ydoc = new Y.Doc()
+      const content = ydoc.getXmlFragment('content')
+
+      const divider = new Y.XmlElement('slide_divider')
+
+      const p = new Y.XmlElement('paragraph')
+      const t = new Y.XmlText()
+      t.insert(0, 'Content')
+      p.insert(0, [t])
+
+      content.insert(0, [divider, p])
+
+      const result = parseNavigationPoints(content)
+
+      // Should only have Slide 2 since there's no content before divider
+      expect(result).toHaveLength(1)
+      expect(result[0].label).toBe('Slide 2')
+    })
+
+    it('slide dividers have level 0', () => {
+      const ydoc = new Y.Doc()
+      const content = ydoc.getXmlFragment('content')
+
+      const p = new Y.XmlElement('paragraph')
+      const t = new Y.XmlText()
+      t.insert(0, 'Content')
+      p.insert(0, [t])
+
+      const divider = new Y.XmlElement('slide_divider')
+
+      content.insert(0, [p, divider])
+
+      const result = parseNavigationPoints(content)
+
+      result.filter(p => p.type === 'slide').forEach(point => {
+        expect(point.level).toBe(0)
+      })
     })
   })
 })

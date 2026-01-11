@@ -6,9 +6,16 @@ import type * as Y from 'yjs'
 
 export type DocumentType = 'presentation' | 'theme' | 'event'
 
+export interface UserInfo {
+  id: string
+  name: string
+  color?: string
+}
+
 export interface DocumentOptions {
   documentId: string
   baseDocumentId?: string
+  user?: UserInfo
   onMetaChange?: (meta: Record<string, unknown>) => void | Promise<void>
 }
 
