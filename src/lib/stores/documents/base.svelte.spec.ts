@@ -51,7 +51,7 @@ describe('createBaseDocument', () => {
 
     expect(doc.connected).toBe(false)
     expect(doc.synced).toBe(false)
-    expect(doc.readOnly).toBe(true)
+    expect(doc.readOnly).toBe(false) // Default to writable - server enforces readonly
     expect(doc.ydoc).toBeInstanceOf(Y.Doc)
     expect(doc.meta).toBeInstanceOf(Y.Map)
 

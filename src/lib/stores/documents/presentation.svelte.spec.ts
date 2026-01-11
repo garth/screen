@@ -179,66 +179,6 @@ describe('createPresentationDoc', () => {
     doc.destroy()
   })
 
-  describe('readonly mode', () => {
-    it('throws when setting title on readonly document', async () => {
-      mockReadOnly = true
-
-      const doc = createPresentationDoc({ documentId: 'readonly-presentation' })
-
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      expect(doc.readOnly).toBe(true)
-      expect(() => doc.setTitle('Test')).toThrow('Document is readonly')
-
-      doc.destroy()
-    })
-
-    it('throws when setting themeId on readonly document', async () => {
-      mockReadOnly = true
-
-      const doc = createPresentationDoc({ documentId: 'readonly-presentation' })
-
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      expect(() => doc.setThemeId('theme-123')).toThrow('Document is readonly')
-
-      doc.destroy()
-    })
-
-    it('throws when setting font on readonly document', async () => {
-      mockReadOnly = true
-
-      const doc = createPresentationDoc({ documentId: 'readonly-presentation' })
-
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      expect(() => doc.setFont('Arial')).toThrow('Document is readonly')
-
-      doc.destroy()
-    })
-
-    it('throws when setting backgroundColor on readonly document', async () => {
-      mockReadOnly = true
-
-      const doc = createPresentationDoc({ documentId: 'readonly-presentation' })
-
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      expect(() => doc.setBackgroundColor('#000')).toThrow('Document is readonly')
-
-      doc.destroy()
-    })
-
-    it('throws when setting textColor on readonly document', async () => {
-      mockReadOnly = true
-
-      const doc = createPresentationDoc({ documentId: 'readonly-presentation' })
-
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      expect(() => doc.setTextColor('#fff')).toThrow('Document is readonly')
-
-      doc.destroy()
-    })
-  })
+  // Note: readonly enforcement is now done server-side, not client-side.
+  // See e2e/document-api.test.ts for readonly behavior tests.
 })

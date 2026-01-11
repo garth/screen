@@ -22,7 +22,7 @@ export interface BaseDocument {
 export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
   let connected = $state(false)
   let synced = $state(false)
-  let readOnly = $state(true)
+  let readOnly = $state(false)
 
   const ydoc = new Y.Doc()
   const meta = ydoc.getMap('meta')
@@ -39,9 +39,8 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
     onDisconnect: () => {
       connected = false
     },
-    onSynced: ({ state }) => {
+    onSynced: () => {
       synced = true
-      readOnly = state
       options.onDocumentSynced?.()
     },
   })

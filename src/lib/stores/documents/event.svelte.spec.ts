@@ -358,70 +358,8 @@ describe('createEventDoc', () => {
     })
   })
 
-  describe('readonly mode', () => {
-    it('throws when adding presentation on readonly event', async () => {
-      mockReadOnly = true
-
-      const doc = createEventDoc({ documentId: 'readonly-event' })
-
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      expect(doc.readOnly).toBe(true)
-      expect(() => doc.addPresentation('pres-1')).toThrow('Document is readonly')
-
-      doc.destroy()
-    })
-
-    it('throws when removing presentation on readonly event', async () => {
-      mockReadOnly = true
-
-      const doc = createEventDoc({ documentId: 'readonly-event' })
-
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      expect(() => doc.removePresentation('pres-1')).toThrow('Document is readonly')
-
-      doc.destroy()
-    })
-
-    it('throws when adding channel on readonly event', async () => {
-      mockReadOnly = true
-
-      const doc = createEventDoc({ documentId: 'readonly-event' })
-
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      expect(() => doc.addChannel('Channel')).toThrow('Document is readonly')
-
-      doc.destroy()
-    })
-
-    it('throws when removing channel on readonly event', async () => {
-      mockReadOnly = true
-
-      const doc = createEventDoc({ documentId: 'readonly-event' })
-
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      expect(() => doc.removeChannel('channel-1')).toThrow('Document is readonly')
-
-      doc.destroy()
-    })
-
-    it('throws when assigning presentation to channel on readonly event', async () => {
-      mockReadOnly = true
-
-      const doc = createEventDoc({ documentId: 'readonly-event' })
-
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      expect(() => doc.assignPresentationToChannel('channel-1', 'pres-1')).toThrow(
-        'Document is readonly',
-      )
-
-      doc.destroy()
-    })
-  })
+  // Note: readonly enforcement is now done server-side, not client-side.
+  // See e2e/document-api.test.ts for readonly behavior tests.
 
   it('provides access to raw ydoc and meta', async () => {
     const doc = createEventDoc({ documentId: 'test-event' })

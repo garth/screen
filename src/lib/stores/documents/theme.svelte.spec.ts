@@ -245,70 +245,8 @@ describe('createThemeDoc', () => {
     })
   })
 
-  describe('readonly mode', () => {
-    it('throws when modifying a readonly theme', async () => {
-      mockReadOnly = true
-
-      const doc = createThemeDoc({ documentId: 'readonly-theme' })
-
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      expect(doc.readOnly).toBe(true)
-      expect(() => doc.setFont('Arial')).toThrow('Document is readonly')
-
-      doc.destroy()
-    })
-
-    it('throws when setting backgroundColor on readonly theme', async () => {
-      mockReadOnly = true
-
-      const doc = createThemeDoc({ documentId: 'readonly-theme' })
-
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      expect(() => doc.setBackgroundColor('#000')).toThrow('Document is readonly')
-
-      doc.destroy()
-    })
-
-    it('throws when setting textColor on readonly theme', async () => {
-      mockReadOnly = true
-
-      const doc = createThemeDoc({ documentId: 'readonly-theme' })
-
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      expect(() => doc.setTextColor('#fff')).toThrow('Document is readonly')
-
-      doc.destroy()
-    })
-
-    it('throws when setting viewport on readonly theme', async () => {
-      mockReadOnly = true
-
-      const doc = createThemeDoc({ documentId: 'readonly-theme' })
-
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      expect(() => doc.setViewport({ x: 0, y: 0, width: 100, height: 100 })).toThrow(
-        'Document is readonly',
-      )
-
-      doc.destroy()
-    })
-
-    it('throws when setting backgroundImage on readonly theme', async () => {
-      mockReadOnly = true
-
-      const doc = createThemeDoc({ documentId: 'readonly-theme' })
-
-      await new Promise((resolve) => setTimeout(resolve, 10))
-
-      expect(() => doc.setBackgroundImage(new Uint8Array([1]))).toThrow('Document is readonly')
-
-      doc.destroy()
-    })
-  })
+  // Note: readonly enforcement is now done server-side, not client-side.
+  // See e2e/document-api.test.ts for readonly behavior tests.
 
   it('provides access to raw ydoc and meta', async () => {
     const doc = createThemeDoc({ documentId: 'test-theme' })
