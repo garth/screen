@@ -27,46 +27,62 @@ export function createSegmentPlugin(schema: Schema): Plugin {
      * Append transaction to assign segment IDs and dissolve broken merge groups
      */
     appendTransaction(transactions, oldState, newState) {
-      // Only process if document changed
-      if (!transactions.some((tr) => tr.docChanged)) return null
-
       let tr = newState.tr
       let modified = false
 
-      // Get previous merge group counts from plugin state
-      const oldPluginState = segmentPluginKey.getState(oldState)
-      const oldMergeGroupCounts = oldPluginState?.mergeGroupCounts ?? new Map<string, number>()
+      // Check if any nodes need segment IDs (handles both docChanged and initial load)
+      let needsSegmentIds = false
+      newState.doc.descendants((node) => {
+        if (isSegmentNode(node) && !node.attrs.segmentId) {
+          needsSegmentIds = true
+          return false // Stop iteration
+        }
+      })
 
-      // Count current merge groups
-      const newMergeGroupCounts = countMergeGroups(newState.doc)
+      // Only process merge group dissolution if document actually changed
+      const docChanged = transactions.some((t) => t.docChanged)
 
-      // Find merge groups that have been reduced (a segment was deleted)
-      const groupsToDissolve: string[] = []
-      for (const [groupId, oldCount] of oldMergeGroupCounts) {
-        const newCount = newMergeGroupCounts.get(groupId) ?? 0
-        if (newCount > 0 && newCount < oldCount) {
-          // Group was reduced - dissolve it
-          groupsToDissolve.push(groupId)
+      if (docChanged) {
+        // Get previous merge group counts from plugin state
+        const oldPluginState = segmentPluginKey.getState(oldState)
+        const oldMergeGroupCounts = oldPluginState?.mergeGroupCounts ?? new Map<string, number>()
+
+        // Count current merge groups
+        const newMergeGroupCounts = countMergeGroups(newState.doc)
+
+        // Find merge groups that have been reduced (a segment was deleted)
+        const groupsToDissolve: string[] = []
+        for (const [groupId, oldCount] of oldMergeGroupCounts) {
+          const newCount = newMergeGroupCounts.get(groupId) ?? 0
+          if (newCount > 0 && newCount < oldCount) {
+            // Group was reduced - dissolve it
+            groupsToDissolve.push(groupId)
+          }
+        }
+
+        // Dissolve broken merge groups
+        if (groupsToDissolve.length > 0) {
+          const nodesToClear: { pos: number; node: Node }[] = []
+          newState.doc.descendants((node, pos) => {
+            if (node.attrs.mergeGroupId && groupsToDissolve.includes(node.attrs.mergeGroupId)) {
+              nodesToClear.push({ pos, node })
+            }
+          })
+
+          // Clear in reverse order
+          for (const { pos, node } of nodesToClear.reverse()) {
+            tr = tr.setNodeMarkup(pos, null, {
+              ...node.attrs,
+              mergeGroupId: null,
+            })
+            modified = true
+          }
         }
       }
 
-      // Dissolve broken merge groups
-      if (groupsToDissolve.length > 0) {
-        const nodesToClear: { pos: number; node: Node }[] = []
-        newState.doc.descendants((node, pos) => {
-          if (node.attrs.mergeGroupId && groupsToDissolve.includes(node.attrs.mergeGroupId)) {
-            nodesToClear.push({ pos, node })
-          }
-        })
-
-        // Clear in reverse order
-        for (const { pos, node } of nodesToClear.reverse()) {
-          tr = tr.setNodeMarkup(pos, null, {
-            ...node.attrs,
-            mergeGroupId: null,
-          })
-          modified = true
-        }
+      // Skip segment ID assignment if no nodes need it
+      if (!needsSegmentIds) {
+        return modified ? tr : null
       }
 
       // Collect nodes that need segment IDs
@@ -213,6 +229,11 @@ function createSegmentDecorations(doc: Node): DecorationSet {
       // Skip paragraphs that contain sentences (they're containers, not segments)
       // This is for backwards compatibility with existing documents
       if (node.type.name === 'paragraph' && hasSentenceChildren(node)) {
+        return
+      }
+
+      // Skip list_item nodes - the paragraph inside already has the segment boundary
+      if (node.type.name === 'list_item') {
         return
       }
 

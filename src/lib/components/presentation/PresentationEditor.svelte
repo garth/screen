@@ -44,6 +44,10 @@
     })
 
     view = new EditorView(editorElement, { state })
+
+    // Dispatch a no-op transaction to trigger segment ID assignment on initial load
+    // This is needed because appendTransaction only runs when there are transactions
+    view.dispatch(view.state.tr)
   })
 
   onDestroy(() => {
@@ -73,60 +77,42 @@
     min-height: 300px;
   }
 
-  /* Segment boundary indicators - subtle left border */
+  /* Segment boundary indicators - left border */
   .editor-content :global(.segment-boundary) {
-    position: relative;
+    border-left: 3px solid rgba(99, 102, 241, 0.5);
+    transition: border-color 0.2s ease;
   }
 
-  .editor-content :global(.segment-boundary::before) {
-    content: '';
-    position: absolute;
-    left: -0.75rem;
-    top: 0;
-    bottom: 0;
-    width: 3px;
-    background-color: color-mix(in oklch, oklch(var(--p)) 15%, transparent);
-    border-radius: 2px;
-    transition: background-color 0.2s ease;
+  /* Brighter on hover */
+  .editor-content :global(.segment-boundary:hover) {
+    border-left-color: rgba(99, 102, 241, 0.8);
   }
 
-  /* More visible on hover */
-  .editor-content :global(.segment-boundary:hover::before) {
-    background-color: color-mix(in oklch, oklch(var(--p)) 40%, transparent);
+  /* Heading segments get secondary color */
+  .editor-content :global(.segment-boundary[data-segment-type='heading']) {
+    border-left-color: rgba(139, 92, 246, 0.55);
   }
 
-  /* Heading segments get secondary tint */
-  .editor-content :global(.segment-boundary[data-segment-type='heading']::before) {
-    background-color: color-mix(in oklch, oklch(var(--s)) 20%, transparent);
-  }
-
-  .editor-content :global(.segment-boundary[data-segment-type='heading']:hover::before) {
-    background-color: color-mix(in oklch, oklch(var(--s)) 50%, transparent);
+  .editor-content :global(.segment-boundary[data-segment-type='heading']:hover) {
+    border-left-color: rgba(139, 92, 246, 0.85);
   }
 
   /* Merged segments - light primary background with border */
   .editor-content :global(.merged-segment) {
-    background-color: color-mix(in oklch, oklch(var(--p)) 10%, transparent);
-    border-left: 3px solid color-mix(in oklch, oklch(var(--p)) 50%, transparent);
-    margin-left: -3px;
-    padding-left: 3px;
-  }
-
-  .editor-content :global(.merged-segment::before) {
-    /* Override normal segment boundary indicator for merged segments */
-    background-color: color-mix(in oklch, oklch(var(--p)) 50%, transparent);
+    background-color: oklch(var(--p) / 0.1);
+    border-left-color: oklch(var(--p) / 0.5);
   }
 
   .editor-content :global(.merged-segment-start) {
     border-top-left-radius: 4px;
-    border-top: 2px solid color-mix(in oklch, oklch(var(--p)) 50%, transparent);
+    border-top: 2px solid oklch(var(--p) / 0.5);
     margin-top: -2px;
     padding-top: 2px;
   }
 
   .editor-content :global(.merged-segment-end) {
     border-bottom-left-radius: 4px;
-    border-bottom: 2px solid color-mix(in oklch, oklch(var(--p)) 50%, transparent);
+    border-bottom: 2px solid oklch(var(--p) / 0.5);
     margin-bottom: -2px;
     padding-bottom: 2px;
   }
