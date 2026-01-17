@@ -48,6 +48,8 @@
     /** The merge group ID that should be highlighted (if current segment is in a merge group) */
     activeMergeGroupId: string | null
     inPresenterMode: boolean
+    /** Track if we're inside a list_item (paragraphs inside shouldn't be segments) */
+    insideListItem: boolean
   }
 
   /**
@@ -172,14 +174,22 @@
     if (node instanceof Y.XmlElement) {
       const tagName = node.nodeName.toLowerCase()
 
-      // Build children HTML, passing context through
-      let children = ''
-      node.forEach((child) => {
-        children += xmlToHtml(child as Y.XmlElement | Y.XmlText | string, ctx)
-      })
+      // Helper to build children with current context
+      const buildChildren = (childCtx?: SegmentContext): string => {
+        let result = ''
+        node.forEach((child) => {
+          result += xmlToHtml(child as Y.XmlElement | Y.XmlText | string, childCtx)
+        })
+        return result
+      }
 
       switch (tagName) {
         case 'paragraph': {
+          const children = buildChildren(ctx)
+          // Skip wrapping paragraphs inside list items - the list_item is the segment
+          if (ctx?.insideListItem) {
+            return `<p>${children || '&nbsp;'}</p>`
+          }
           // Check if this paragraph should be split into sentence segments
           if (ctx && shouldSplitIntoSentences(ctx, 'paragraph')) {
             const sentenceHtml = renderSentenceSegments(children, ctx)
@@ -190,20 +200,28 @@
         }
 
         case 'heading': {
+          const children = buildChildren(ctx)
           const level = node.getAttribute('level') || 1
           const html = `<h${level}>${children}</h${level}>`
           return ctx ? wrapWithSegment(html, ctx) : html
         }
 
-        case 'bullet_list':
+        case 'bullet_list': {
+          const children = buildChildren(ctx)
           return `<ul>${children}</ul>`
+        }
 
         case 'ordered_list': {
+          const children = buildChildren(ctx)
           const start = node.getAttribute('order')
           return start && start !== 1 ? `<ol start="${start}">${children}</ol>` : `<ol>${children}</ol>`
         }
 
         case 'list_item': {
+          // Build children with insideListItem flag so nested paragraphs don't become segments
+          const listItemCtx = ctx ? { ...ctx, insideListItem: true } : undefined
+          const children = buildChildren(listItemCtx)
+
           // Check if this list item should be split into sentence segments
           if (ctx && shouldSplitIntoSentences(ctx, 'list-item')) {
             const sentenceHtml = renderSentenceSegments(children, ctx)
@@ -225,19 +243,24 @@
           return `<hr class="slide-divider" data-slide-divider="true" />`
 
         case 'blockquote': {
+          const children = buildChildren(ctx)
           const html = `<blockquote>${children}</blockquote>`
           return ctx ? wrapWithSegment(html, ctx) : html
         }
 
-        case 'attribution':
+        case 'attribution': {
+          const children = buildChildren(ctx)
           return `<cite>${children}</cite>`
+        }
 
         case 'hard_break':
           return '<br />'
 
-        default:
+        default: {
           // For any unknown elements, just return children
+          const children = buildChildren(ctx)
           return children
+        }
       }
     }
 
@@ -268,6 +291,7 @@
         currentSegmentId,
         activeMergeGroupId,
         inPresenterMode: true,
+        insideListItem: false,
       }
       return xmlToHtml(content, ctx)
     }
