@@ -87,13 +87,14 @@ describe('createSegmentPlugin', () => {
     })
   })
 
-  describe('sentence splitting', () => {
-    it('splits long paragraphs into sentence nodes', () => {
+  describe('backwards compatibility with sentence nodes', () => {
+    it('does not split paragraphs into sentence nodes', () => {
+      // With the new architecture, the editor no longer splits paragraphs
       const longText =
         'This is the first sentence with enough content. This is the second sentence that continues. And here is a third sentence to make it longer!'
       const state = createState(longText)
 
-      // The plugin should split this on the next transaction
+      // The plugin should NOT split this on transactions
       const tr = state.tr.insertText(' ', 1) // Minor edit to trigger
       const newState = state.apply(tr)
 
@@ -104,59 +105,39 @@ describe('createSegmentPlugin', () => {
         }
       })
 
-      expect(hasSentenceNode).toBe(true)
-    })
-
-    it('does not split short paragraphs', () => {
-      const shortText = 'Short text.'
-      const state = createState(shortText)
-
-      const tr = state.tr.insertText(' ', 1)
-      const newState = state.apply(tr)
-
-      let hasSentenceNode = false
-      newState.doc.descendants((node) => {
-        if (node.type.name === 'sentence') {
-          hasSentenceNode = true
-        }
-      })
-
+      // Should NOT have sentence nodes - splitting now happens in the viewer
       expect(hasSentenceNode).toBe(false)
     })
 
-    it('assigns derived IDs to sentence nodes', () => {
-      // Create a paragraph WITHOUT segmentId - the plugin will assign one
-      // Text must be >100 chars to trigger sentence splitting
-      const longText =
-        'This is the first sentence with quite a bit of content to make it longer. This is the second sentence that continues the paragraph. And here is the third one that makes it even longer than before!'
-      const para = presentationSchema.nodes.paragraph.create(
-        null, // No segmentId - plugin will assign
-        presentationSchema.text(longText),
+    it('preserves existing sentence nodes from old documents', () => {
+      // Create a document with existing sentence nodes (backwards compatibility)
+      const sentence1 = presentationSchema.nodes.sentence.create(
+        { segmentId: 'seg-test-s0' },
+        presentationSchema.text('First sentence.'),
       )
+      const sentence2 = presentationSchema.nodes.sentence.create(
+        { segmentId: 'seg-test-s1' },
+        presentationSchema.text('Second sentence.'),
+      )
+      const para = presentationSchema.nodes.paragraph.create({ segmentId: 'seg-test' }, [sentence1, sentence2])
       const doc = presentationSchema.nodes.doc.create(null, para)
       const plugin = createSegmentPlugin(presentationSchema)
+
       const state = EditorState.create({
         doc,
         schema: presentationSchema,
         plugins: [plugin],
       })
 
-      // First transaction assigns IDs and splits
-      const tr = state.tr.insertText(' ', 1)
-      const newState = state.apply(tr)
-
-      const sentenceIds: string[] = []
-      newState.doc.descendants((node) => {
-        if (node.type.name === 'sentence' && node.attrs.segmentId) {
-          sentenceIds.push(node.attrs.segmentId)
+      // Existing sentence nodes should be preserved
+      let sentenceCount = 0
+      state.doc.descendants((node) => {
+        if (node.type.name === 'sentence') {
+          sentenceCount++
         }
       })
 
-      // Should have sentence IDs with -s suffix
-      expect(sentenceIds.length).toBeGreaterThan(1)
-      sentenceIds.forEach((id) => {
-        expect(id).toContain('-s')
-      })
+      expect(sentenceCount).toBe(2)
     })
   })
 

@@ -2,7 +2,7 @@
   import type { EditorView } from 'prosemirror-view'
   import type { EditorState, Transaction } from 'prosemirror-state'
   import { toggleMark, setBlockType } from 'prosemirror-commands'
-  import { wrapInList } from 'prosemirror-schema-list'
+  import { wrapInList, liftListItem } from 'prosemirror-schema-list'
   import { undo, redo } from 'prosemirror-history'
   import { presentationSchema } from '$lib/editor/schema'
   import { insertSlideDivider, wrapInBlockquote, fileToDataUrl } from '$lib/editor/setup'
@@ -15,6 +15,27 @@
   let { view }: Props = $props()
 
   let fileInput: HTMLInputElement
+
+  // Reactive state to track editor state changes
+  let editorState = $state<EditorState | null>(null)
+
+  // Sync editorState when view changes or updates
+  $effect(() => {
+    if (!view) {
+      editorState = null
+      return
+    }
+
+    // Initial state
+    editorState = view.state
+
+    // Override updateState to track state changes
+    const originalUpdateState = view.updateState.bind(view)
+    view.updateState = (state: EditorState) => {
+      originalUpdateState(state)
+      editorState = state
+    }
+  })
 
   function isMarkActive(state: EditorState, markType: typeof presentationSchema.marks.strong) {
     const { from, to, empty } = state.selection
@@ -43,6 +64,16 @@
     return active
   }
 
+  function isInList(state: EditorState, listType: typeof presentationSchema.nodes.bullet_list) {
+    const resolvedPos = state.selection.$from
+    for (let depth = resolvedPos.depth; depth > 0; depth--) {
+      if (resolvedPos.node(depth).type === listType) {
+        return true
+      }
+    }
+    return false
+  }
+
   function runCommand(command: (state: EditorState, dispatch?: (tr: Transaction) => void) => boolean) {
     if (!view) return
     command(view.state, view.dispatch)
@@ -69,13 +100,21 @@
 
   function toggleBulletList() {
     if (!view) return
-    wrapInList(presentationSchema.nodes.bullet_list)(view.state, view.dispatch)
+    if (isInList(view.state, presentationSchema.nodes.bullet_list)) {
+      liftListItem(presentationSchema.nodes.list_item)(view.state, view.dispatch)
+    } else {
+      wrapInList(presentationSchema.nodes.bullet_list)(view.state, view.dispatch)
+    }
     view.focus()
   }
 
   function toggleOrderedList() {
     if (!view) return
-    wrapInList(presentationSchema.nodes.ordered_list)(view.state, view.dispatch)
+    if (isInList(view.state, presentationSchema.nodes.ordered_list)) {
+      liftListItem(presentationSchema.nodes.list_item)(view.state, view.dispatch)
+    } else {
+      wrapInList(presentationSchema.nodes.ordered_list)(view.state, view.dispatch)
+    }
     view.focus()
   }
 
@@ -98,8 +137,8 @@
   }
 
   // Reactive check for merge button state
-  const canMerge = $derived(view ? canMergeSegments(view.state) : false)
-  const canUnmerge = $derived(view ? canUnmergeSegments(view.state) : false)
+  const canMerge = $derived(editorState ? canMergeSegments(editorState) : false)
+  const canUnmerge = $derived(editorState ? canUnmergeSegments(editorState) : false)
 
   function triggerImageUpload() {
     fileInput?.click()
@@ -160,7 +199,7 @@
     <button
       type="button"
       onclick={() => toggleFormat(presentationSchema.marks.strong)}
-      class="btn btn-xs join-item {view && isMarkActive(view.state, presentationSchema.marks.strong)
+      class="btn btn-xs join-item {editorState && isMarkActive(editorState, presentationSchema.marks.strong)
         ? 'btn-active'
         : 'btn-ghost'}"
       title="Bold (Ctrl+B)">
@@ -169,7 +208,7 @@
     <button
       type="button"
       onclick={() => toggleFormat(presentationSchema.marks.em)}
-      class="btn btn-xs join-item {view && isMarkActive(view.state, presentationSchema.marks.em)
+      class="btn btn-xs join-item {editorState && isMarkActive(editorState, presentationSchema.marks.em)
         ? 'btn-active'
         : 'btn-ghost'}"
       title="Italic (Ctrl+I)">
@@ -178,7 +217,7 @@
     <button
       type="button"
       onclick={() => toggleFormat(presentationSchema.marks.underline)}
-      class="btn btn-xs join-item {view && isMarkActive(view.state, presentationSchema.marks.underline)
+      class="btn btn-xs join-item {editorState && isMarkActive(editorState, presentationSchema.marks.underline)
         ? 'btn-active'
         : 'btn-ghost'}"
       title="Underline (Ctrl+U)">
@@ -187,7 +226,7 @@
     <button
       type="button"
       onclick={() => toggleFormat(presentationSchema.marks.strikethrough)}
-      class="btn btn-xs join-item {view && isMarkActive(view.state, presentationSchema.marks.strikethrough)
+      class="btn btn-xs join-item {editorState && isMarkActive(editorState, presentationSchema.marks.strikethrough)
         ? 'btn-active'
         : 'btn-ghost'}"
       title="Strikethrough (Ctrl+Shift+S)">
@@ -196,7 +235,7 @@
     <button
       type="button"
       onclick={() => toggleFormat(presentationSchema.marks.code)}
-      class="btn btn-xs join-item {view && isMarkActive(view.state, presentationSchema.marks.code)
+      class="btn btn-xs join-item {editorState && isMarkActive(editorState, presentationSchema.marks.code)
         ? 'btn-active'
         : 'btn-ghost'}"
       title="Code (Ctrl+`)">
@@ -216,7 +255,7 @@
     <button
       type="button"
       onclick={() => setHeading(1)}
-      class="btn btn-xs join-item {view && isBlockActive(view.state, presentationSchema.nodes.heading, { level: 1 })
+      class="btn btn-xs join-item {editorState && isBlockActive(editorState, presentationSchema.nodes.heading, { level: 1 })
         ? 'btn-active'
         : 'btn-ghost'}"
       title="Heading 1 (Ctrl+1)">
@@ -225,7 +264,7 @@
     <button
       type="button"
       onclick={() => setHeading(2)}
-      class="btn btn-xs join-item {view && isBlockActive(view.state, presentationSchema.nodes.heading, { level: 2 })
+      class="btn btn-xs join-item {editorState && isBlockActive(editorState, presentationSchema.nodes.heading, { level: 2 })
         ? 'btn-active'
         : 'btn-ghost'}"
       title="Heading 2 (Ctrl+2)">
@@ -234,7 +273,7 @@
     <button
       type="button"
       onclick={() => setHeading(3)}
-      class="btn btn-xs join-item {view && isBlockActive(view.state, presentationSchema.nodes.heading, { level: 3 })
+      class="btn btn-xs join-item {editorState && isBlockActive(editorState, presentationSchema.nodes.heading, { level: 3 })
         ? 'btn-active'
         : 'btn-ghost'}"
       title="Heading 3 (Ctrl+3)">
@@ -247,7 +286,9 @@
     <button
       type="button"
       onclick={toggleBulletList}
-      class="btn btn-ghost btn-xs join-item"
+      class="btn btn-xs join-item {editorState && isInList(editorState, presentationSchema.nodes.bullet_list)
+        ? 'btn-active'
+        : 'btn-ghost'}"
       title="Bullet List (Ctrl+Shift+8)">
       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -256,7 +297,9 @@
     <button
       type="button"
       onclick={toggleOrderedList}
-      class="btn btn-ghost btn-xs join-item"
+      class="btn btn-xs join-item {editorState && isInList(editorState, presentationSchema.nodes.ordered_list)
+        ? 'btn-active'
+        : 'btn-ghost'}"
       title="Numbered List (Ctrl+Shift+9)">
       <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
         <text x="2" y="8" font-size="6" font-family="monospace">1.</text>

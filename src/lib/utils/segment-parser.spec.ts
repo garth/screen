@@ -253,9 +253,9 @@ describe('parseContentSegments', () => {
     })
   })
 
-  describe('sentence handling', () => {
-    // Note: Sentence splitting now happens in the editor plugin, not the parser.
-    // The parser reads sentence nodes that were created by the editor.
+  describe('sentence handling - stored sentences (backwards compatibility)', () => {
+    // Note: The editor no longer creates sentence nodes. These tests verify
+    // backwards compatibility with existing documents that have sentence nodes.
 
     function addParagraphWithSentences(content: Y.XmlFragment, sentences: string[]) {
       const p = new Y.XmlElement('paragraph')
@@ -274,7 +274,7 @@ describe('parseContentSegments', () => {
       return p
     }
 
-    it('parses sentence nodes within a paragraph', () => {
+    it('parses stored sentence nodes within a paragraph', () => {
       const content = createContent()
       addParagraphWithSentences(content, [
         'This is the first sentence.',
@@ -290,14 +290,16 @@ describe('parseContentSegments', () => {
       expect(segments[2].type).toBe('sentence')
     })
 
-    it('extracts sentence text for labels', () => {
+    it('extracts sentence text for labels and sentenceText field', () => {
       const content = createContent()
       addParagraphWithSentences(content, ['First sentence.', 'Second sentence.'])
 
       const segments = parseContentSegments(content)
 
       expect(segments[0].label).toBe('First sentence.')
+      expect(segments[0].sentenceText).toBe('First sentence.')
       expect(segments[1].label).toBe('Second sentence.')
+      expect(segments[1].sentenceText).toBe('Second sentence.')
     })
 
     it('paragraph without sentences is a single segment', () => {
@@ -308,6 +310,116 @@ describe('parseContentSegments', () => {
 
       expect(segments).toHaveLength(1)
       expect(segments[0].type).toBe('paragraph')
+    })
+  })
+
+  describe('virtual sentence segments', () => {
+    // Virtual sentences are created at parse time for long paragraphs
+    // without stored sentence nodes
+
+    it('creates virtual sentence segments for long paragraphs with multiple sentences', () => {
+      const content = createContent()
+      const longText =
+        'This is the first sentence with enough words. This is the second sentence that continues. And here is the third!'
+      addParagraph(content, longText)
+
+      const segments = parseContentSegments(content)
+
+      // Should have 3 sentence segments
+      expect(segments).toHaveLength(3)
+      expect(segments[0].type).toBe('sentence')
+      expect(segments[1].type).toBe('sentence')
+      expect(segments[2].type).toBe('sentence')
+    })
+
+    it('assigns virtual IDs with colon separator', () => {
+      const content = createContent()
+      const longText =
+        'First sentence with many words to make it long. Second sentence with more words. Third sentence here!'
+      addParagraph(content, longText)
+
+      const segments = parseContentSegments(content)
+
+      // Virtual IDs use colon separator (e.g., seg-xxx:s0)
+      expect(segments[0].id).toMatch(/:s0$/)
+      expect(segments[1].id).toMatch(/:s1$/)
+      expect(segments[2].id).toMatch(/:s2$/)
+    })
+
+    it('populates parentSegmentId for virtual sentences', () => {
+      const content = createContent()
+      // Text must be > 100 chars to trigger virtual sentence creation
+      const longText =
+        'First sentence with enough content to make it longer. Second sentence continues here with more words. Third sentence ends it all!'
+      addParagraph(content, longText)
+
+      const segments = parseContentSegments(content)
+
+      // All virtual sentences should have same parentSegmentId
+      const parentId = segments[0].parentSegmentId
+      expect(parentId).toBeDefined()
+      expect(parentId).toMatch(/^seg-/)
+      expect(segments[1].parentSegmentId).toBe(parentId)
+      expect(segments[2].parentSegmentId).toBe(parentId)
+    })
+
+    it('populates sentenceText with full sentence', () => {
+      const content = createContent()
+      // Text must be > 100 chars to trigger virtual sentence creation
+      const longText =
+        'First sentence here with many words to make it long. Second sentence with more content continues. Third one too with extra words!'
+      addParagraph(content, longText)
+
+      const segments = parseContentSegments(content)
+
+      expect(segments[0].sentenceText).toBe('First sentence here with many words to make it long.')
+      expect(segments[1].sentenceText).toBe('Second sentence with more content continues.')
+      expect(segments[2].sentenceText).toBe('Third one too with extra words!')
+    })
+
+    it('does not create virtual sentences for short paragraphs', () => {
+      const content = createContent()
+      addParagraph(content, 'Short text. Another short one.')
+
+      const segments = parseContentSegments(content)
+
+      // Short text - should remain as single paragraph
+      expect(segments).toHaveLength(1)
+      expect(segments[0].type).toBe('paragraph')
+    })
+
+    it('does not create virtual sentences for long text without sentence breaks', () => {
+      const content = createContent()
+      addParagraph(content, 'A'.repeat(150)) // Long but no sentences
+
+      const segments = parseContentSegments(content)
+
+      // No sentence breaks - should remain as single paragraph
+      expect(segments).toHaveLength(1)
+      expect(segments[0].type).toBe('paragraph')
+    })
+
+    it('preserves mergeGroupId on virtual sentences', () => {
+      const content = createContent()
+      const p = new Y.XmlElement('paragraph')
+      const parentId = generateSegmentId()
+      p.setAttribute('segmentId', parentId)
+      p.setAttribute('mergeGroupId', 'merge-test')
+      const t = new Y.XmlText()
+      // Text must be > 100 chars to trigger virtual sentence creation
+      t.insert(
+        0,
+        'First sentence with content and enough words. Second sentence continues with more content. Third sentence ends it with additional words!',
+      )
+      p.insert(0, [t])
+      content.push([p])
+
+      const segments = parseContentSegments(content)
+
+      expect(segments).toHaveLength(3)
+      expect(segments[0].mergeGroupId).toBe('merge-test')
+      expect(segments[1].mergeGroupId).toBe('merge-test')
+      expect(segments[2].mergeGroupId).toBe('merge-test')
     })
   })
 
@@ -459,6 +571,16 @@ describe('splitIntoSentences', () => {
   it('filters empty strings', () => {
     const result = splitIntoSentences('Only one.  ')
     expect(result).toEqual(['Only one.'])
+  })
+
+  it('splits when no space after punctuation but next starts with uppercase', () => {
+    const result = splitIntoSentences('First sentence.Second sentence.')
+    expect(result).toEqual(['First sentence.', 'Second sentence.'])
+  })
+
+  it('handles mixed spacing patterns', () => {
+    const result = splitIntoSentences('Normal space. No space.Uppercase start.')
+    expect(result).toEqual(['Normal space.', 'No space.', 'Uppercase start.'])
   })
 })
 

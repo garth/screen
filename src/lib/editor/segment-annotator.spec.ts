@@ -6,7 +6,6 @@ import {
   isSegmentNode,
   shouldHaveSegmentId,
   hasSentenceChildren,
-  shouldSplitParagraph,
   mapNodeTypeToSegmentType,
   extractSegmentsFromDoc,
 } from './segment-annotator'
@@ -62,7 +61,7 @@ describe('isSegmentNode', () => {
     expect(isSegmentNode(node)).toBe(true)
   })
 
-  it('returns true for sentence nodes', () => {
+  it('returns true for sentence nodes (backwards compatibility)', () => {
     const node = presentationSchema.nodes.sentence.create()
     expect(isSegmentNode(node)).toBe(true)
   })
@@ -157,42 +156,6 @@ describe('hasSentenceChildren', () => {
   it('returns false for non-paragraph nodes', () => {
     const node = presentationSchema.nodes.heading.create({ level: 1 })
     expect(hasSentenceChildren(node)).toBe(false)
-  })
-})
-
-describe('shouldSplitParagraph', () => {
-  it('returns false for non-paragraph nodes', () => {
-    const node = presentationSchema.nodes.heading.create({ level: 1 })
-    expect(shouldSplitParagraph(node)).toBe(false)
-  })
-
-  it('returns false for paragraph that already has sentence children', () => {
-    const sentence = presentationSchema.nodes.sentence.create(
-      { segmentId: 'seg-test' },
-      presentationSchema.text('A sentence.'),
-    )
-    const node = presentationSchema.nodes.paragraph.create(null, sentence)
-    expect(shouldSplitParagraph(node)).toBe(false)
-  })
-
-  it('returns false for short paragraphs (under 100 chars)', () => {
-    const text = presentationSchema.text('Short text.')
-    const node = presentationSchema.nodes.paragraph.create(null, text)
-    expect(shouldSplitParagraph(node)).toBe(false)
-  })
-
-  it('returns false for long text without sentence boundaries', () => {
-    const text = presentationSchema.text('A'.repeat(150))
-    const node = presentationSchema.nodes.paragraph.create(null, text)
-    expect(shouldSplitParagraph(node)).toBe(false)
-  })
-
-  it('returns true for long paragraphs with multiple sentences', () => {
-    const longText =
-      'This is the first sentence with enough text. This is the second sentence that continues. And here is the third one that makes it long enough!'
-    const text = presentationSchema.text(longText)
-    const node = presentationSchema.nodes.paragraph.create(null, text)
-    expect(shouldSplitParagraph(node)).toBe(true)
   })
 })
 
@@ -304,7 +267,7 @@ describe('extractSegmentsFromDoc', () => {
     expect(segments[2].slideIndex).toBe(2)
   })
 
-  it('extracts sentence segments from paragraphs', () => {
+  it('extracts sentence segments from paragraphs (backwards compatibility)', () => {
     const sentence1 = presentationSchema.nodes.sentence.create(
       { segmentId: 'seg-p1-s0' },
       presentationSchema.text('First sentence.'),

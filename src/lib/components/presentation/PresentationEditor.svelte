@@ -188,6 +188,7 @@
   }
 
   .editor-content :global(.ProseMirror li p) {
+    margin-top: 0.25rem;
     margin-bottom: 0.25rem;
   }
 

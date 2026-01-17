@@ -1,14 +1,7 @@
-import { Plugin, PluginKey, type Transaction } from 'prosemirror-state'
+import { Plugin, PluginKey } from 'prosemirror-state'
 import { Decoration, DecorationSet } from 'prosemirror-view'
 import type { Node, Schema } from 'prosemirror-model'
-import {
-  generateSegmentId,
-  isSegmentNode,
-  hasSentenceChildren,
-  shouldSplitParagraph,
-  extractSegmentsFromDoc,
-} from './segment-annotator'
-import { splitIntoSentences } from '$lib/utils/segment-parser'
+import { generateSegmentId, isSegmentNode, extractSegmentsFromDoc } from './segment-annotator'
 import type { ContentSegment } from '$lib/utils/segment-parser'
 
 export const segmentPluginKey = new PluginKey<SegmentPluginState>('segments')
@@ -24,16 +17,14 @@ interface SegmentPluginState {
  * Create the segment plugin for ProseMirror
  * This plugin:
  * 1. Assigns segment IDs to new nodes
- * 2. Splits long paragraphs into sentence nodes
- * 3. Adds visual decorations for segment boundaries
+ * 2. Adds visual decorations for segment boundaries
  */
 export function createSegmentPlugin(schema: Schema): Plugin {
   return new Plugin({
     key: segmentPluginKey,
 
     /**
-     * Append transaction to assign segment IDs, handle sentence splitting,
-     * and dissolve broken merge groups
+     * Append transaction to assign segment IDs and dissolve broken merge groups
      */
     appendTransaction(transactions, oldState, newState) {
       // Only process if document changed
@@ -78,14 +69,14 @@ export function createSegmentPlugin(schema: Schema): Plugin {
         }
       }
 
-      // Collect nodes that need segment IDs or sentence splitting
+      // Collect nodes that need segment IDs
       const nodesToUpdate: { pos: number; node: Node }[] = []
 
       // Use the potentially modified doc from tr
       const docToScan = modified ? tr.doc : newState.doc
 
       docToScan.descendants((node, pos) => {
-        // Skip nodes that already have IDs and don't need splitting
+        // Skip sentence nodes - they're handled by backwards compatibility only
         if (node.type.name === 'sentence') {
           if (!node.attrs.segmentId) {
             nodesToUpdate.push({ pos, node })
@@ -96,20 +87,17 @@ export function createSegmentPlugin(schema: Schema): Plugin {
         if (isSegmentNode(node) && !node.attrs.segmentId) {
           nodesToUpdate.push({ pos, node })
         }
-
-        // Check if paragraph needs sentence splitting
-        if (shouldSplitParagraph(node)) {
-          nodesToUpdate.push({ pos, node })
-        }
       })
 
       // Process nodes in reverse order to avoid position shifts
-      for (const { pos, node } of nodesToUpdate.reverse()) {
-        if (shouldSplitParagraph(node)) {
-          // Convert paragraph to contain sentence nodes
-          tr = splitParagraphToSentences(tr, pos, node, schema)
-          modified = true
-        } else if (!node.attrs.segmentId) {
+      for (const { pos } of nodesToUpdate.reverse()) {
+        // Re-resolve node from current tr.doc in case previous iterations modified it
+        const $pos = tr.doc.resolve(pos)
+        // Handle edge case: if position no longer valid or node type changed, skip
+        if ($pos.pos !== pos || $pos.nodeAfter === null) continue
+        const node = $pos.nodeAfter
+
+        if (!node.attrs.segmentId) {
           // Assign segment ID
           tr = tr.setNodeMarkup(pos, null, {
             ...node.attrs,
@@ -155,31 +143,6 @@ export function createSegmentPlugin(schema: Schema): Plugin {
 }
 
 /**
- * Split a paragraph into sentence nodes
- */
-function splitParagraphToSentences(tr: Transaction, pos: number, node: Node, schema: Schema): Transaction {
-  const text = node.textContent
-  const sentences = splitIntoSentences(text)
-
-  if (sentences.length <= 1) return tr
-
-  // Generate parent segment ID if not present
-  const parentSegmentId = node.attrs.segmentId || generateSegmentId()
-
-  // Create sentence nodes
-  const sentenceNodes = sentences.map((sentenceText, index) => {
-    return schema.nodes.sentence.create({ segmentId: `${parentSegmentId}-s${index}` }, schema.text(sentenceText))
-  })
-
-  // Replace paragraph content with sentence nodes
-  // The paragraph keeps its segmentId, sentences get derived IDs
-  const newParagraph = schema.nodes.paragraph.create({ segmentId: parentSegmentId }, sentenceNodes)
-
-  // Replace the old paragraph with the new one
-  return tr.replaceWith(pos, pos + node.nodeSize, newParagraph)
-}
-
-/**
  * Count how many nodes belong to each merge group
  */
 function countMergeGroups(doc: Node): Map<string, number> {
@@ -193,6 +156,20 @@ function countMergeGroups(doc: Node): Map<string, number> {
   })
 
   return counts
+}
+
+/**
+ * Check if a paragraph contains sentence children (for backwards compatibility)
+ */
+function hasSentenceChildren(node: Node): boolean {
+  if (node.type.name !== 'paragraph') return false
+  let hasSentence = false
+  node.forEach((child) => {
+    if (child.type.name === 'sentence') {
+      hasSentence = true
+    }
+  })
+  return hasSentence
 }
 
 /**
@@ -234,6 +211,7 @@ function createSegmentDecorations(doc: Node): DecorationSet {
     // Add decoration to segment nodes
     if (isSegmentNode(node) && node.attrs.segmentId) {
       // Skip paragraphs that contain sentences (they're containers, not segments)
+      // This is for backwards compatibility with existing documents
       if (node.type.name === 'paragraph' && hasSentenceChildren(node)) {
         return
       }
@@ -272,7 +250,7 @@ function createSegmentDecorations(doc: Node): DecorationSet {
 /**
  * Get the current segments from the editor state
  */
-export function getSegments(state: { plugins: Plugin[] }): ContentSegment[] {
+export function getSegments(state: { readonly plugins: readonly Plugin[] }): ContentSegment[] {
   const pluginState = segmentPluginKey.getState(state as never)
   return pluginState?.segments ?? []
 }

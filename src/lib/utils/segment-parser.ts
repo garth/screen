@@ -19,10 +19,14 @@ export interface ContentSegment {
   slideIndex: number
   /** ID of the merge group this segment belongs to (if merged with other segments) */
   mergeGroupId?: string
+  /** For virtual sentence segments: ID of the parent paragraph segment */
+  parentSegmentId?: string
+  /** For virtual sentence segments: full sentence text (label may be truncated) */
+  sentenceText?: string
 }
 
 /** Threshold for splitting long text into sentences */
-const _SENTENCE_SPLIT_THRESHOLD = 100 // Reserved for future use
+const SENTENCE_SPLIT_THRESHOLD = 100
 
 /** Maximum label length for display */
 const MAX_LABEL_LENGTH = 50
@@ -76,6 +80,9 @@ function mapNodeTypeToSegmentType(nodeName: string): ContentSegment['type'] {
  * Parse content into navigable segments by reading stored segment IDs.
  * Segments are extracted from nodes that have segmentId attributes.
  * This reads the structure created by the editor's segment plugin.
+ *
+ * For long paragraphs without stored sentence nodes, creates virtual
+ * sentence segments at parse time for sentence-level navigation.
  */
 export function parseContentSegments(content: Y.XmlFragment | null): ContentSegment[] {
   if (!content) return []
@@ -92,7 +99,7 @@ export function parseContentSegments(content: Y.XmlFragment | null): ContentSegm
       return
     }
 
-    // Handle sentence nodes within paragraphs
+    // Handle sentence nodes within paragraphs (backwards compatibility with stored sentences)
     if (tagName === 'sentence') {
       const segmentId = element.getAttribute('segmentId')
       if (segmentId) {
@@ -104,13 +111,14 @@ export function parseContentSegments(content: Y.XmlFragment | null): ContentSegm
           label: createLabel(text, 'sentence'),
           type: 'sentence',
           slideIndex,
+          sentenceText: text,
           ...(mergeGroupId ? { mergeGroupId: String(mergeGroupId) } : {}),
         })
       }
       return
     }
 
-    // Handle paragraph with sentence children - skip the paragraph itself
+    // Handle paragraph with stored sentence children (backwards compatibility)
     if (tagName === 'paragraph' && hasSentenceChildren(element)) {
       // Recurse to process sentence children
       element.forEach((child) => {
@@ -129,6 +137,29 @@ export function parseContentSegments(content: Y.XmlFragment | null): ContentSegm
       const level = tagName === 'heading' ? parseInt(String(element.getAttribute('level') || '1'), 10) : undefined
       const mergeGroupId = element.getAttribute('mergeGroupId')
 
+      // Check if this is a long paragraph that should have virtual sentence segments
+      if (tagName === 'paragraph' && text.length > SENTENCE_SPLIT_THRESHOLD) {
+        const sentences = splitIntoSentences(text)
+        if (sentences.length > 1) {
+          // Create virtual sentence segments
+          for (let i = 0; i < sentences.length; i++) {
+            const sentenceText = sentences[i]
+            segments.push({
+              id: `${segmentId}:s${i}`,
+              index: segments.length,
+              label: createLabel(sentenceText, 'sentence'),
+              type: 'sentence',
+              slideIndex,
+              parentSegmentId: String(segmentId),
+              sentenceText: sentenceText,
+              ...(mergeGroupId ? { mergeGroupId: String(mergeGroupId) } : {}),
+            })
+          }
+          return
+        }
+      }
+
+      // Regular segment (short paragraph or other types)
       segments.push({
         id: String(segmentId),
         index: segments.length,
@@ -201,7 +232,7 @@ function extractText(element: Y.XmlElement | Y.XmlText): string {
 
 /**
  * Split text into sentences.
- * Handles common sentence-ending punctuation (.!?) followed by space or end of string.
+ * Handles common sentence-ending punctuation (.!?) followed by space, newline, or uppercase letter.
  */
 export function splitIntoSentences(text: string): string[] {
   // Common abbreviations to avoid splitting on
@@ -214,8 +245,9 @@ export function splitIntoSentences(text: string): string[] {
     processed = processed.replace(regex, `${abbr}<<<DOT>>>`)
   }
 
-  // Split on sentence boundaries
-  const parts = processed.split(/(?<=[.!?])\s+/)
+  // Split on sentence boundaries: .!? followed by space, newline, or uppercase letter
+  // Also handle multiple spaces/newlines
+  const parts = processed.split(/(?<=[.!?])(?:\s+|(?=[A-Z]))/)
 
   // Restore abbreviation periods and filter empty
   return parts.map((s) => s.replace(/<<<DOT>>>/g, '.').trim()).filter((s) => s.length > 0)

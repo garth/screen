@@ -102,8 +102,8 @@
       const isActive = isSegmentActive(segment, ctx)
       const activeClass = isActive ? ' segment-active' : ''
 
-      // Get the sentence text from the segment label (it contains the actual sentence)
-      const sentenceHtml = escapeHtml(segment.label)
+      // Use sentenceText for full sentence (label may be truncated), fall back to label
+      const sentenceHtml = escapeHtml(segment.sentenceText || segment.label)
 
       html += `<span class="segment${activeClass}" data-segment-index="${segment.index}" data-segment-id="${segment.id}">${sentenceHtml}</span> `
       ctx.segmentIndex++

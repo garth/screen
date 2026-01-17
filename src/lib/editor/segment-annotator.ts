@@ -1,10 +1,7 @@
 import { nanoid } from 'nanoid'
 import type { Node } from 'prosemirror-model'
 import type { ContentSegment } from '$lib/utils/segment-parser'
-import { splitIntoSentences, createLabel } from '$lib/utils/segment-parser'
-
-/** Threshold for splitting long text into sentences */
-const SENTENCE_SPLIT_THRESHOLD = 100
+import { createLabel } from '$lib/utils/segment-parser'
 
 /**
  * Generate a short stable segment ID using nanoid
@@ -15,6 +12,7 @@ export function generateSegmentId(): string {
 
 /**
  * Node types that should be segments
+ * Note: 'sentence' is kept for backwards compatibility with existing documents
  */
 const SEGMENT_NODE_TYPES = ['paragraph', 'heading', 'list_item', 'image', 'blockquote', 'sentence']
 
@@ -36,7 +34,7 @@ export function shouldHaveSegmentId(node: Node): boolean {
 }
 
 /**
- * Check if a paragraph contains sentence children
+ * Check if a paragraph contains sentence children (for backwards compatibility)
  */
 export function hasSentenceChildren(node: Node): boolean {
   if (node.type.name !== 'paragraph') return false
@@ -47,20 +45,6 @@ export function hasSentenceChildren(node: Node): boolean {
     }
   })
   return hasSentence
-}
-
-/**
- * Check if a paragraph should be split into sentences
- */
-export function shouldSplitParagraph(node: Node): boolean {
-  if (node.type.name !== 'paragraph') return false
-  if (hasSentenceChildren(node)) return false
-
-  const text = node.textContent
-  if (text.length <= SENTENCE_SPLIT_THRESHOLD) return false
-
-  const sentences = splitIntoSentences(text)
-  return sentences.length > 1
 }
 
 /**
@@ -110,7 +94,7 @@ export function extractSegmentsFromDoc(doc: Node): ContentSegment[] {
       return
     }
 
-    // Handle sentence nodes within paragraphs
+    // Handle sentence nodes within paragraphs (backwards compatibility)
     if (node.type.name === 'sentence' && node.attrs.segmentId) {
       segments.push({
         id: node.attrs.segmentId,
@@ -122,7 +106,7 @@ export function extractSegmentsFromDoc(doc: Node): ContentSegment[] {
       return
     }
 
-    // Handle paragraph with sentence children - skip the paragraph itself
+    // Handle paragraph with sentence children - skip the paragraph itself (backwards compatibility)
     if (node.type.name === 'paragraph' && hasSentenceChildren(node)) {
       // Sentences will be added by the recursion above
       return
