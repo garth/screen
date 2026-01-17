@@ -36,8 +36,8 @@ describe('resolveTheme', () => {
 
     expect(result).toEqual({
       font: 'sans-serif',
-      backgroundColor: '#ffffff',
-      textColor: '#000000',
+      backgroundColor: '#1f2937',
+      textColor: '#f3f4f6',
       viewport: undefined,
       backgroundImage: undefined,
     })
@@ -89,7 +89,7 @@ describe('resolveTheme', () => {
 
     expect(result.font).toBe('Courier')
     expect(result.backgroundColor).toBe('#123456')
-    expect(result.textColor).toBe('#000000') // Falls back to default
+    expect(result.textColor).toBe('#f3f4f6') // Falls back to default (dark mode)
   })
 
   it('handles partial overrides with theme fallback', () => {
@@ -144,11 +144,11 @@ describe('resolveTheme', () => {
 })
 
 describe('defaultTheme', () => {
-  it('has correct default values', () => {
+  it('has correct default values (dark mode)', () => {
     expect(defaultTheme).toEqual({
       font: 'sans-serif',
-      backgroundColor: '#ffffff',
-      textColor: '#000000',
+      backgroundColor: '#1f2937',
+      textColor: '#f3f4f6',
     })
   })
 

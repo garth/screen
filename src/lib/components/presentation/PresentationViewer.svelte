@@ -505,20 +505,22 @@
   }
 
   .presentation-viewer :global(code) {
-    background-color: rgba(0, 0, 0, 0.1);
+    /* Use currentColor with low opacity for theme-aware background */
+    background-color: color-mix(in srgb, currentColor 10%, transparent);
     padding: 0.125rem 0.375rem;
     border-radius: 0.25rem;
     font-family: ui-monospace, monospace;
     font-size: 0.875em;
   }
 
-  /* Links */
+  /* Links - use currentColor with opacity for theme compatibility */
   .presentation-viewer :global(a) {
-    color: #3b82f6;
+    color: inherit;
+    opacity: 0.8;
     text-decoration: underline;
   }
 
   .presentation-viewer :global(a:hover) {
-    color: #2563eb;
+    opacity: 1;
   }
 </style>

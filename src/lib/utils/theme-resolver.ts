@@ -23,18 +23,18 @@ export interface PresentationOverrides {
 export function resolveTheme(overrides: PresentationOverrides, theme: ThemeDocument | null): ResolvedTheme {
   return {
     font: overrides.font || theme?.effectiveFont || 'sans-serif',
-    backgroundColor: overrides.backgroundColor || theme?.effectiveBackgroundColor || '#ffffff',
-    textColor: overrides.textColor || theme?.effectiveTextColor || '#000000',
+    backgroundColor: overrides.backgroundColor || theme?.effectiveBackgroundColor || '#1f2937',
+    textColor: overrides.textColor || theme?.effectiveTextColor || '#f3f4f6',
     viewport: theme?.viewport ?? undefined,
     backgroundImage: theme?.backgroundImage,
   }
 }
 
 /**
- * Default theme for when no theme is selected
+ * Default theme for when no theme is selected (dark mode)
  */
 export const defaultTheme: ResolvedTheme = {
   font: 'sans-serif',
-  backgroundColor: '#ffffff',
-  textColor: '#000000',
+  backgroundColor: '#1f2937',
+  textColor: '#f3f4f6',
 }

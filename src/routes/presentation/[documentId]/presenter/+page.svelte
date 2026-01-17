@@ -173,7 +173,7 @@
     </header>
 
     <!-- Viewer -->
-    <main class="flex-1 overflow-hidden">
+    <main class="relative flex-1 overflow-hidden">
       {#if doc.synced}
         <PresentationViewer
           content={doc.content}
@@ -182,6 +182,28 @@
           {segments}
           {currentSegmentId}
           onSegmentClick={handleNavigateById} />
+
+        <!-- Floating Navigation Buttons -->
+        <div class="nav-buttons">
+          <button
+            type="button"
+            onclick={() => handleNavigateByIndex(currentSegmentIndex - 1)}
+            disabled={currentSegmentIndex <= 0}
+            class="btn btn-lg btn-circle bg-base-100/80 hover:bg-base-100 backdrop-blur-sm shadow-lg border-base-300 disabled:cursor-not-allowed disabled:opacity-50">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            onclick={() => handleNavigateByIndex(currentSegmentIndex + 1)}
+            disabled={currentSegmentIndex >= segments.length - 1}
+            class="btn btn-lg btn-circle bg-base-100/80 hover:bg-base-100 backdrop-blur-sm shadow-lg border-base-300 disabled:cursor-not-allowed disabled:opacity-50">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
       {:else}
         <div class="flex h-full items-center justify-center">
           <span class="loading loading-spinner loading-lg"></span>
@@ -210,3 +232,15 @@
     {/if}
   </aside>
 </div>
+
+<style>
+  .nav-buttons {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 1rem;
+    z-index: 50;
+  }
+</style>
