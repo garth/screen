@@ -101,6 +101,16 @@ export function createSegmentPlugin(schema: Schema): Plugin {
         }
 
         if (isSegmentNode(node) && !node.attrs.segmentId) {
+          // Skip paragraphs inside list items - the list_item is the segment
+          if (node.type.name === 'paragraph') {
+            const $pos = docToScan.resolve(pos)
+            for (let d = $pos.depth; d > 0; d--) {
+              if ($pos.node(d).type.name === 'list_item') {
+                return // Skip this paragraph
+              }
+            }
+          }
+
           nodesToUpdate.push({ pos, node })
         }
       })
@@ -232,9 +242,14 @@ function createSegmentDecorations(doc: Node): DecorationSet {
         return
       }
 
-      // Skip list_item nodes - the paragraph inside already has the segment boundary
-      if (node.type.name === 'list_item') {
-        return
+      // Skip paragraphs inside list items - the list_item gets the decoration
+      if (node.type.name === 'paragraph') {
+        const $pos = doc.resolve(pos)
+        for (let d = $pos.depth; d > 0; d--) {
+          if ($pos.node(d).type.name === 'list_item') {
+            return // Skip this paragraph
+          }
+        }
       }
 
       // Build class list

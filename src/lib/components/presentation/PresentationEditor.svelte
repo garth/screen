@@ -97,24 +97,29 @@
     border-left-color: rgba(139, 92, 246, 0.85);
   }
 
-  /* Merged segments - light primary background with border */
+  /* Merged segments - light background with connected border */
   .editor-content :global(.merged-segment) {
-    background-color: oklch(var(--p) / 0.1);
-    border-left-color: oklch(var(--p) / 0.5);
+    background-color: rgba(99, 102, 241, 0.08);
+    border-left-color: rgba(99, 102, 241, 0.7);
+    border-left-width: 4px;
   }
 
   .editor-content :global(.merged-segment-start) {
-    border-top-left-radius: 4px;
-    border-top: 2px solid oklch(var(--p) / 0.5);
-    margin-top: -2px;
-    padding-top: 2px;
+    border-top-left-radius: 6px;
+    border-top: 2px solid rgba(99, 102, 241, 0.7);
+    padding-top: 4px;
   }
 
   .editor-content :global(.merged-segment-end) {
-    border-bottom-left-radius: 4px;
-    border-bottom: 2px solid oklch(var(--p) / 0.5);
-    margin-bottom: -2px;
-    padding-bottom: 2px;
+    border-bottom-left-radius: 6px;
+    border-bottom: 2px solid rgba(99, 102, 241, 0.7);
+    padding-bottom: 4px;
+  }
+
+  /* Middle segments in a merge group - no gap between them */
+  .editor-content :global(.merged-segment:not(.merged-segment-start)) {
+    margin-top: -1rem;
+    padding-top: 1rem;
   }
 
   /* Sentence segments are inline - subtle background */

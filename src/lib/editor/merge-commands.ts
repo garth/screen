@@ -40,6 +40,16 @@ function findSegmentNodesInSelection(state: EditorState): SegmentNodeInfo[] {
         return
       }
 
+      // Skip paragraphs inside list items - the list_item is the segment
+      if (node.type.name === 'paragraph') {
+        const $pos = state.doc.resolve(pos)
+        for (let d = $pos.depth; d > 0; d--) {
+          if ($pos.node(d).type.name === 'list_item') {
+            return // Skip this paragraph, it's inside a list item
+          }
+        }
+      }
+
       nodes.push({ pos, node, slideIndex })
     }
   })
