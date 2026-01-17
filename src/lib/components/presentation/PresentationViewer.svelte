@@ -183,6 +183,9 @@
         return result
       }
 
+      // Check if this element has a segment ID (empty elements won't have one)
+      const hasSegmentId = node.getAttribute('segmentId') != null
+
       switch (tagName) {
         case 'paragraph': {
           const children = buildChildren(ctx)
@@ -191,19 +194,19 @@
             return `<p>${children || '&nbsp;'}</p>`
           }
           // Check if this paragraph should be split into sentence segments
-          if (ctx && shouldSplitIntoSentences(ctx, 'paragraph')) {
+          if (ctx && hasSegmentId && shouldSplitIntoSentences(ctx, 'paragraph')) {
             const sentenceHtml = renderSentenceSegments(children, ctx)
             return `<p>${sentenceHtml || '&nbsp;'}</p>`
           }
           const html = `<p>${children || '&nbsp;'}</p>`
-          return ctx ? wrapWithSegment(html, ctx) : html
+          return ctx && hasSegmentId ? wrapWithSegment(html, ctx) : html
         }
 
         case 'heading': {
           const children = buildChildren(ctx)
           const level = node.getAttribute('level') || 1
           const html = `<h${level}>${children}</h${level}>`
-          return ctx ? wrapWithSegment(html, ctx) : html
+          return ctx && hasSegmentId ? wrapWithSegment(html, ctx) : html
         }
 
         case 'bullet_list': {
@@ -223,12 +226,12 @@
           const children = buildChildren(listItemCtx)
 
           // Check if this list item should be split into sentence segments
-          if (ctx && shouldSplitIntoSentences(ctx, 'list-item')) {
+          if (ctx && hasSegmentId && shouldSplitIntoSentences(ctx, 'list-item')) {
             const sentenceHtml = renderSentenceSegments(children, ctx)
             return `<li>${sentenceHtml}</li>`
           }
           const html = `<li>${children}</li>`
-          return ctx ? wrapWithSegment(html, ctx) : html
+          return ctx && hasSegmentId ? wrapWithSegment(html, ctx) : html
         }
 
         case 'image': {
@@ -236,6 +239,7 @@
           const alt = node.getAttribute('alt') || ''
           const title = node.getAttribute('title') || ''
           const html = `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" title="${escapeHtml(title)}" />`
+          // Images always have segment IDs (they can't be empty)
           return ctx ? wrapWithSegment(html, ctx) : html
         }
 
@@ -245,7 +249,7 @@
         case 'blockquote': {
           const children = buildChildren(ctx)
           const html = `<blockquote>${children}</blockquote>`
-          return ctx ? wrapWithSegment(html, ctx) : html
+          return ctx && hasSegmentId ? wrapWithSegment(html, ctx) : html
         }
 
         case 'attribution': {

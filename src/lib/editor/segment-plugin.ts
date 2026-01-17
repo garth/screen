@@ -78,6 +78,29 @@ export function createSegmentPlugin(schema: Schema): Plugin {
             modified = true
           }
         }
+
+        // Remove segment IDs from nodes that have become empty
+        const emptySegmentNodes: { pos: number; node: Node }[] = []
+        newState.doc.descendants((node, pos) => {
+          if (
+            isSegmentNode(node) &&
+            node.attrs.segmentId &&
+            node.type.name !== 'image' &&
+            !node.textContent.trim()
+          ) {
+            emptySegmentNodes.push({ pos, node })
+          }
+        })
+
+        // Clear segment IDs in reverse order
+        for (const { pos, node } of emptySegmentNodes.reverse()) {
+          tr = tr.setNodeMarkup(pos, null, {
+            ...node.attrs,
+            segmentId: null,
+            mergeGroupId: null,
+          })
+          modified = true
+        }
       }
 
       // Skip segment ID assignment if no nodes need it
@@ -101,6 +124,11 @@ export function createSegmentPlugin(schema: Schema): Plugin {
         }
 
         if (isSegmentNode(node) && !node.attrs.segmentId) {
+          // Skip empty nodes (except images which have no text content)
+          if (node.type.name !== 'image' && !node.textContent.trim()) {
+            return
+          }
+
           // Skip paragraphs inside list items - the list_item is the segment
           if (node.type.name === 'paragraph') {
             const $pos = docToScan.resolve(pos)
