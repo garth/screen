@@ -87,6 +87,176 @@ describe('createSegmentPlugin', () => {
     })
   })
 
+  describe('empty element handling', () => {
+    it('does not assign segment IDs to empty paragraphs', () => {
+      const state = createState('', 'Has content', '')
+
+      // Apply a no-op transaction to trigger appendTransaction
+      const newState = state.apply(state.tr)
+
+      // Check that only non-empty paragraphs have segment IDs
+      const paragraphs: { text: string; hasSegmentId: boolean }[] = []
+      newState.doc.descendants((node) => {
+        if (node.type.name === 'paragraph') {
+          paragraphs.push({
+            text: node.textContent,
+            hasSegmentId: !!node.attrs.segmentId,
+          })
+        }
+      })
+
+      expect(paragraphs).toHaveLength(3)
+      expect(paragraphs[0].hasSegmentId).toBe(false) // empty
+      expect(paragraphs[1].hasSegmentId).toBe(true) // has content
+      expect(paragraphs[2].hasSegmentId).toBe(false) // empty
+    })
+
+    it('does not assign segment IDs to whitespace-only paragraphs', () => {
+      const state = createState('   ', '\t\n', 'Real content')
+
+      // Apply a no-op transaction to trigger appendTransaction
+      const newState = state.apply(state.tr)
+
+      const paragraphs: { text: string; hasSegmentId: boolean }[] = []
+      newState.doc.descendants((node) => {
+        if (node.type.name === 'paragraph') {
+          paragraphs.push({
+            text: node.textContent,
+            hasSegmentId: !!node.attrs.segmentId,
+          })
+        }
+      })
+
+      expect(paragraphs).toHaveLength(3)
+      expect(paragraphs[0].hasSegmentId).toBe(false) // whitespace only
+      expect(paragraphs[1].hasSegmentId).toBe(false) // whitespace only
+      expect(paragraphs[2].hasSegmentId).toBe(true) // has content
+    })
+
+    it('removes segment ID when paragraph becomes empty', () => {
+      // Create a paragraph with content and segment ID
+      const para = presentationSchema.nodes.paragraph.create(
+        { segmentId: 'seg-existing' },
+        presentationSchema.text('Some content'),
+      )
+      const doc = presentationSchema.nodes.doc.create(null, para)
+      const plugin = createSegmentPlugin(presentationSchema)
+      const state = EditorState.create({
+        doc,
+        schema: presentationSchema,
+        plugins: [plugin],
+      })
+
+      // Delete all content from the paragraph
+      const tr = state.tr.delete(1, state.doc.content.size - 1)
+      const newState = state.apply(tr)
+
+      // The paragraph should no longer have a segment ID
+      let segmentId: string | null = null
+      newState.doc.descendants((node) => {
+        if (node.type.name === 'paragraph') {
+          segmentId = node.attrs.segmentId
+        }
+      })
+
+      expect(segmentId).toBeNull()
+    })
+
+    it('removes merge group ID when paragraph becomes empty', () => {
+      // Create a paragraph with content, segment ID, and merge group ID
+      const para = presentationSchema.nodes.paragraph.create(
+        { segmentId: 'seg-existing', mergeGroupId: 'merge-group-1' },
+        presentationSchema.text('Some content'),
+      )
+      const doc = presentationSchema.nodes.doc.create(null, para)
+      const plugin = createSegmentPlugin(presentationSchema)
+      const state = EditorState.create({
+        doc,
+        schema: presentationSchema,
+        plugins: [plugin],
+      })
+
+      // Delete all content from the paragraph
+      const tr = state.tr.delete(1, state.doc.content.size - 1)
+      const newState = state.apply(tr)
+
+      // The paragraph should no longer have segment ID or merge group ID
+      let attrs: { segmentId: string | null; mergeGroupId: string | null } | null = null
+      newState.doc.descendants((node) => {
+        if (node.type.name === 'paragraph') {
+          attrs = { segmentId: node.attrs.segmentId, mergeGroupId: node.attrs.mergeGroupId }
+        }
+      })
+
+      expect(attrs?.segmentId).toBeNull()
+      expect(attrs?.mergeGroupId).toBeNull()
+    })
+
+    it('does not remove segment ID from empty images', () => {
+      // Images have no text content but should still be segments
+      const image = presentationSchema.nodes.image.create({
+        segmentId: 'seg-image',
+        src: 'test.jpg',
+        alt: '',
+      })
+      const doc = presentationSchema.nodes.doc.create(null, image)
+      const plugin = createSegmentPlugin(presentationSchema)
+      const state = EditorState.create({
+        doc,
+        schema: presentationSchema,
+        plugins: [plugin],
+      })
+
+      // Apply a transaction to trigger the plugin
+      const newState = state.apply(state.tr)
+
+      let segmentId: string | null = null
+      newState.doc.descendants((node) => {
+        if (node.type.name === 'image') {
+          segmentId = node.attrs.segmentId
+        }
+      })
+
+      expect(segmentId).toBe('seg-image')
+    })
+
+    it('assigns segment ID when empty paragraph gets content', () => {
+      // Start with an empty paragraph (no segment ID)
+      const emptyPara = presentationSchema.nodes.paragraph.create()
+      const doc = presentationSchema.nodes.doc.create(null, emptyPara)
+      const plugin = createSegmentPlugin(presentationSchema)
+      const state = EditorState.create({
+        doc,
+        schema: presentationSchema,
+        plugins: [plugin],
+      })
+
+      // Verify it has no segment ID initially
+      let initialSegmentId: string | null = null
+      state.doc.descendants((node) => {
+        if (node.type.name === 'paragraph') {
+          initialSegmentId = node.attrs.segmentId
+        }
+      })
+      expect(initialSegmentId).toBeNull()
+
+      // Add content to the paragraph
+      const tr = state.tr.insertText('Now has content', 1)
+      const newState = state.apply(tr)
+
+      // Now it should have a segment ID
+      let newSegmentId: string | null = null
+      newState.doc.descendants((node) => {
+        if (node.type.name === 'paragraph') {
+          newSegmentId = node.attrs.segmentId
+        }
+      })
+
+      expect(newSegmentId).not.toBeNull()
+      expect(newSegmentId).toMatch(/^seg-/)
+    })
+  })
+
   describe('backwards compatibility with sentence nodes', () => {
     it('does not split paragraphs into sentence nodes', () => {
       // With the new architecture, the editor no longer splits paragraphs
