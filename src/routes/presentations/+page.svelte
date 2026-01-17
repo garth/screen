@@ -61,22 +61,19 @@
 <div class="mx-auto max-w-4xl p-6">
   <div class="mb-6 flex items-center justify-between">
     <div class="flex items-center gap-3">
-      <h1 class="text-2xl font-bold text-gray-200">Presentations</h1>
+      <h1 class="text-2xl font-bold">Presentations</h1>
       {#if !synced}
-        <span class="text-sm text-gray-500">Loading...</span>
+        <span class="text-sm text-base-content/50">Loading...</span>
       {:else if !connected}
-        <span class="flex items-center gap-1 text-sm text-yellow-500">
-          <span class="inline-block h-2 w-2 rounded-full bg-yellow-500"></span>
+        <span class="badge badge-warning gap-1">
+          <span class="inline-block h-2 w-2 rounded-full bg-warning"></span>
           Offline
         </span>
       {/if}
     </div>
-    <button
-      type="button"
-      onclick={createPresentation}
-      disabled={creating}
-      class="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-500 disabled:opacity-50">
+    <button type="button" onclick={createPresentation} disabled={creating} class="btn btn-primary">
       {#if creating}
+        <span class="loading loading-spinner loading-sm"></span>
         Creating...
       {:else}
         New Presentation
@@ -85,61 +82,54 @@
   </div>
 
   {#if !synced}
-    <div class="rounded-lg border border-gray-700 bg-gray-800 p-12 text-center">
-      <p class="text-gray-400">Loading presentations...</p>
+    <div class="card bg-base-200">
+      <div class="card-body items-center text-center py-12">
+        <span class="loading loading-spinner loading-lg"></span>
+        <p class="text-base-content/70">Loading presentations...</p>
+      </div>
     </div>
   {:else if presentations.length === 0}
-    <div class="rounded-lg border border-gray-700 bg-gray-800 p-12 text-center">
-      <p class="mb-4 text-gray-400">You don't have any presentations yet.</p>
-      <button
-        type="button"
-        onclick={createPresentation}
-        disabled={creating}
-        class="rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-500 disabled:opacity-50">
-        Create your first presentation
-      </button>
+    <div class="card bg-base-200">
+      <div class="card-body items-center text-center py-12">
+        <p class="mb-4 text-base-content/70">You don't have any presentations yet.</p>
+        <button type="button" onclick={createPresentation} disabled={creating} class="btn btn-primary">
+          Create your first presentation
+        </button>
+      </div>
     </div>
   {:else}
     <div class="space-y-3">
       {#each presentations as presentation (presentation.id)}
-        <div class="flex items-center justify-between rounded-lg border border-gray-700 bg-gray-800 p-4">
-          <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-2">
-              <h2 class="truncate text-lg font-medium text-gray-100">
-                {presentation.title || 'Untitled'}
-              </h2>
-              {#if presentation.isPublic}
-                <span class="rounded bg-green-900 px-2 py-0.5 text-xs text-green-300">Public</span>
-              {:else}
-                <span class="rounded bg-gray-700 px-2 py-0.5 text-xs text-gray-400">Private</span>
-              {/if}
-              {#if !presentation.isOwner}
-                <span class="rounded bg-blue-900 px-2 py-0.5 text-xs text-blue-300">Shared</span>
+        <div class="card bg-base-200">
+          <div class="card-body flex-row items-center justify-between p-4">
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <h2 class="truncate text-lg font-medium">
+                  {presentation.title || 'Untitled'}
+                </h2>
+                {#if presentation.isPublic}
+                  <span class="badge badge-success badge-sm">Public</span>
+                {:else}
+                  <span class="badge badge-ghost badge-sm">Private</span>
+                {/if}
+                {#if !presentation.isOwner}
+                  <span class="badge badge-info badge-sm">Shared</span>
+                {/if}
+              </div>
+              <p class="mt-1 text-sm text-base-content/50">
+                Updated {formatDate(presentation.updatedAt)}
+              </p>
+            </div>
+
+            <div class="ml-4 flex items-center gap-2">
+              <a href={resolve(`/presentation/${presentation.id}`)} class="btn btn-ghost btn-sm">View</a>
+              {#if presentation.canWrite}
+                <a href={resolve(`/presentation/${presentation.id}/edit`)} class="btn btn-ghost btn-sm">Edit</a>
+                <a href={resolve(`/presentation/${presentation.id}/presenter`)} class="btn btn-primary btn-sm">
+                  Present
+                </a>
               {/if}
             </div>
-            <p class="mt-1 text-sm text-gray-500">
-              Updated {formatDate(presentation.updatedAt)}
-            </p>
-          </div>
-
-          <div class="ml-4 flex items-center gap-2">
-            <a
-              href={resolve(`/presentation/${presentation.id}`)}
-              class="rounded border border-gray-600 px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-700">
-              View
-            </a>
-            {#if presentation.canWrite}
-              <a
-                href={resolve(`/presentation/${presentation.id}/edit`)}
-                class="rounded border border-gray-600 px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-700">
-                Edit
-              </a>
-              <a
-                href={resolve(`/presentation/${presentation.id}/presenter`)}
-                class="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500">
-                Present
-              </a>
-            {/if}
           </div>
         </div>
       {/each}

@@ -94,41 +94,38 @@
 <div class="presenter-controls flex flex-col gap-4">
   <!-- Navigation Header -->
   <div class="flex items-center justify-between">
-    <button
-      onclick={goPrevious}
-      disabled={currentCollapsedIndex === 0}
-      class="rounded border border-gray-600 px-4 py-2 text-gray-300 hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50">
+    <button onclick={goPrevious} disabled={currentCollapsedIndex === 0} class="btn btn-ghost btn-sm">
       &larr; Previous
     </button>
 
-    <span class="text-gray-400">
+    <span class="text-base-content/50">
       {currentCollapsedIndex + 1} / {collapsedSegments.length}
     </span>
 
     <button
       onclick={goNext}
       disabled={currentCollapsedIndex === collapsedSegments.length - 1}
-      class="rounded border border-gray-600 px-4 py-2 text-gray-300 hover:bg-gray-700 disabled:cursor-not-allowed disabled:opacity-50">
+      class="btn btn-ghost btn-sm">
       Next &rarr;
     </button>
   </div>
 
   <!-- Segments List -->
-  <div class="max-h-[50vh] overflow-y-auto rounded border border-gray-700 bg-gray-800/50">
+  <div class="max-h-[50vh] overflow-y-auto rounded-box border border-base-300 bg-base-300/50">
     {#each collapsedSegments as segment (segment.id)}
       <button
         onclick={() => handleSegmentClick(segment)}
         class="flex w-full items-start gap-2 px-3 py-2 text-left transition-colors {(
           segment.index === currentCollapsedIndex
         ) ?
-          'bg-blue-600 text-white'
-        : 'text-gray-300 hover:bg-gray-700'}"
+          'bg-primary text-primary-content'
+        : 'hover:bg-base-300'}"
         style:padding-left="{getIndentLevel(segment) * 0.75 + 0.75}rem">
         <span class="w-4 flex-shrink-0 text-center text-xs opacity-60">{getSegmentIcon(segment.type)}</span>
         <span class="flex-shrink-0 text-xs opacity-50">{segment.index + 1}.</span>
         <span class="truncate">{segment.label}</span>
         {#if segment.mergedCount && segment.mergedCount > 1}
-          <span class="ml-auto flex-shrink-0 rounded bg-blue-500/30 px-1.5 py-0.5 text-xs text-blue-300">
+          <span class="badge badge-info badge-sm ml-auto flex-shrink-0">
             {segment.mergedCount} merged
           </span>
         {/if}

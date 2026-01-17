@@ -7,6 +7,7 @@
   import { resolve } from '$app/paths'
   import { goto, invalidateAll } from '$app/navigation'
   import { logout } from './data.remote'
+  import '$lib/theme.svelte'
 
   // Register PWA service worker
   onMount(async () => {
@@ -44,7 +45,7 @@
 
   function handleClickOutside(event: MouseEvent) {
     const target = event.target as HTMLElement
-    if (!target.closest('.user-menu')) {
+    if (!target.closest('.dropdown')) {
       userMenuOpen = false
     }
   }
@@ -52,17 +53,15 @@
 
 <svelte:window onclick={handleClickOutside} />
 
-<nav class="border-b border-gray-700 bg-gray-800">
-  <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+<div class="navbar bg-base-200 border-b border-base-300">
+  <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-4">
     <div class="flex items-center gap-6">
-      <a href={resolve('/')} class="text-lg font-semibold text-gray-100">Chapel Screen</a>
+      <a href={resolve('/')} class="text-lg font-semibold">Chapel Screen</a>
       {#if data.user}
         <div class="flex gap-4">
           {#each navLinks as link (link.href)}
             {@const isActive = page.url.pathname === link.href}
-            <a
-              href={resolve(link.href)}
-              class={isActive ? 'font-medium text-blue-400' : 'text-gray-400 hover:text-gray-100'}>
+            <a href={resolve(link.href)} class="link link-hover {isActive ? 'text-primary font-medium' : ''}">
               {link.label}
             </a>
           {/each}
@@ -72,10 +71,8 @@
 
     <div class="flex items-center gap-4">
       {#if data.user}
-        <div class="user-menu relative">
-          <button
-            onclick={() => (userMenuOpen = !userMenuOpen)}
-            class="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-100">
+        <div class="dropdown dropdown-end">
+          <button onclick={() => (userMenuOpen = !userMenuOpen)} class="btn btn-ghost btn-sm gap-2">
             <img
               src={data.user.gravatarUrl}
               alt={`${data.user.firstName} ${data.user.lastName}`}
@@ -86,42 +83,36 @@
           </button>
 
           {#if userMenuOpen}
-            <div
-              class="absolute top-full right-0 z-20 mt-1 w-48 rounded border border-gray-700 bg-gray-800 py-1 shadow-lg">
-              <a
-                href={resolve('/preferences')}
-                onclick={() => (userMenuOpen = false)}
-                class="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">
-                Preferences
-              </a>
-              <button
-                onclick={handleLogout}
-                class="block w-full px-4 py-2 text-left text-sm text-red-400 hover:bg-gray-700">
-                Log out
-              </button>
-            </div>
+            <ul class="menu dropdown-content bg-base-200 rounded-box z-20 mt-1 w-48 p-2 shadow-lg border border-base-300">
+              <li>
+                <a href={resolve('/preferences')} onclick={() => (userMenuOpen = false)}>Preferences</a>
+              </li>
+              <li>
+                <button onclick={handleLogout} class="text-error">Log out</button>
+              </li>
+            </ul>
           {/if}
         </div>
       {:else}
-        <a href={resolve('/login')} class="text-sm text-gray-400 hover:text-gray-100">Log in</a>
-        <a href={resolve('/register')} class="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500">
-          Register
-        </a>
+        <a href={resolve('/login')} class="link link-hover">Log in</a>
+        <a href={resolve('/register')} class="btn btn-primary btn-sm">Register</a>
       {/if}
     </div>
   </div>
-</nav>
+</div>
 
 {@render children()}
 
-<footer class="border-t border-gray-700 bg-gray-800 py-4 text-center text-sm text-gray-400">
-  <div class="mb-2 flex justify-center gap-4">
-    <a href={resolve('/privacy')} class="hover:text-gray-100">Privacy</a>
-    <a href={resolve('/terms')} class="hover:text-gray-100">Terms</a>
-    <a href={resolve('/support')} class="hover:text-gray-100">Support</a>
+<footer class="footer footer-center bg-base-200 border-t border-base-300 p-4 text-base-content">
+  <div class="flex gap-4">
+    <a href={resolve('/privacy')} class="link link-hover">Privacy</a>
+    <a href={resolve('/terms')} class="link link-hover">Terms</a>
+    <a href={resolve('/support')} class="link link-hover">Support</a>
   </div>
-  &copy; {new Date().getFullYear()}
-  <a href="https://nordstack.co.uk" class="text-blue-400 hover:underline">NordStack Ltd</a>
+  <p>
+    &copy; {new Date().getFullYear()}
+    <a href="https://nordstack.co.uk" class="link link-primary">NordStack Ltd</a>
+  </p>
 </footer>
 
 <Toasts />

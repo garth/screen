@@ -1,11 +1,26 @@
 @import 'tailwindcss';
-@plugin '@tailwindcss/forms';
 @plugin '@tailwindcss/typography';
+@plugin 'daisyui' {
+  themes: false;
+  log: false;
+}
+@plugin './catppuccin-latte.ts';
+@plugin './catppuccin-mocha.ts';
 
-html {
-  color-scheme: dark;
+@utility input {
+  @apply rounded-xs;
+}
+@utility select {
+  @apply rounded-xs;
+}
+@utility textarea {
+  @apply rounded-xs;
+  min-height: 0;
 }
 
-body {
-  @apply bg-gray-900 text-gray-100;
+.input-ghost:focus,
+.textarea-ghost:focus,
+.select-ghost:focus {
+  border-color: transparent;
+  outline-color: color-mix(in oklch, var(--color-base-content) 50%, transparent);
 }

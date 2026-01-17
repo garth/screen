@@ -81,23 +81,21 @@
 
 <div class="flex h-screen flex-col">
   <!-- Header -->
-  <header class="flex items-center justify-between border-b border-gray-700 bg-gray-800 px-4 py-3">
-    <div class="flex items-center gap-4">
-      <h1 class="text-lg font-medium text-gray-100">
+  <header class="navbar bg-base-200 border-b border-base-300 min-h-0 px-4 py-2">
+    <div class="flex-1">
+      <h1 class="text-lg font-medium">
         {doc.synced && doc.title ? doc.title : data.document.title || 'Untitled'}
       </h1>
     </div>
 
-    <div class="flex items-center gap-3">
+    <div class="flex-none flex items-center gap-3">
       {#if activePresenter}
         <button
           type="button"
           onclick={() => (followMode = !followMode)}
-          class="flex items-center gap-2 rounded px-3 py-1.5 text-sm {followMode ? 'bg-purple-600 text-white' : (
-            'border border-gray-600 text-gray-300 hover:bg-gray-700'
-          )}">
+          class="btn btn-sm {followMode ? 'btn-secondary' : 'btn-ghost'}">
           {#if followMode}
-            <span class="h-2 w-2 animate-pulse rounded-full bg-green-400"></span>
+            <span class="h-2 w-2 animate-pulse rounded-full bg-success"></span>
             Following presenter
           {:else}
             Follow presenter
@@ -106,16 +104,8 @@
       {/if}
 
       {#if data.permissions.canWrite}
-        <a
-          href={resolve(`/presentation/${data.document.id}/edit`)}
-          class="rounded border border-gray-600 px-3 py-1.5 text-sm text-gray-300 hover:bg-gray-700">
-          Edit
-        </a>
-        <a
-          href={resolve(`/presentation/${data.document.id}/presenter`)}
-          class="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500">
-          Present
-        </a>
+        <a href={resolve(`/presentation/${data.document.id}/edit`)} class="btn btn-ghost btn-sm">Edit</a>
+        <a href={resolve(`/presentation/${data.document.id}/presenter`)} class="btn btn-primary btn-sm">Present</a>
       {/if}
     </div>
   </header>
@@ -131,7 +121,7 @@
         currentSegmentId={isFollowing ? currentSegmentId : null} />
     {:else}
       <div class="flex h-full items-center justify-center">
-        <p class="text-gray-500">Loading presentation...</p>
+        <span class="loading loading-spinner loading-lg"></span>
       </div>
     {/if}
   </main>

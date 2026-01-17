@@ -12,31 +12,33 @@
 </script>
 
 <div class="mx-auto max-w-md p-6">
-  <h1 class="mb-6 text-2xl font-bold text-gray-200">Create Account</h1>
+  <h1 class="mb-6 text-2xl font-bold">Create Account</h1>
 
   {#if inviteToken}
-    <p class="mb-6 text-gray-400">Create an account to accept the colleague invitation.</p>
+    <p class="mb-6 text-base-content/70">Create an account to accept the colleague invitation.</p>
   {/if}
 
   {#if registeredEmail}
-    <div class="rounded-lg border border-green-700 bg-green-900/30 p-6 text-center">
-      <svg class="mx-auto mb-4 h-12 w-12 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-      </svg>
-      <h2 class="mb-2 text-xl font-semibold text-gray-100">Check your email</h2>
-      <p class="mb-4 text-gray-300">
-        We've sent a verification link to <strong class="text-gray-100">{registeredEmail}</strong>
-      </p>
-      <p class="text-sm text-gray-400">Click the link in the email to verify your account and log in.</p>
-      {#if inviteToken}
-        <p class="mt-4 text-sm text-gray-400">
-          After verifying your email, click the invitation link again to complete the connection.
+    <div class="card bg-success/10 border border-success">
+      <div class="card-body items-center text-center">
+        <svg class="h-12 w-12 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+        </svg>
+        <h2 class="card-title">Check your email</h2>
+        <p>
+          We've sent a verification link to <strong>{registeredEmail}</strong>
         </p>
-      {/if}
+        <p class="text-sm text-base-content/70">Click the link in the email to verify your account and log in.</p>
+        {#if inviteToken}
+          <p class="mt-4 text-sm text-base-content/70">
+            After verifying your email, click the invitation link again to complete the connection.
+          </p>
+        {/if}
+      </div>
     </div>
   {:else}
     <form
@@ -62,57 +64,58 @@
           // Server error - don't show success
         }
       })}
-      class="space-y-4">
+      class="flex flex-col gap-4">
       <div class="grid grid-cols-2 gap-4">
-        <label class="block">
-          <span class="mb-1 block text-sm font-medium text-gray-200">First Name</span>
+        <div>
+          <label for="firstName" class="label">
+            <span class="label-text">First Name</span>
+          </label>
           {#each register.fields.firstName.issues() as issue (issue.message)}
-            <p class="text-sm text-red-400">{issue.message}</p>
+            <p class="text-sm text-error">{issue.message}</p>
           {/each}
-          <input
-            {...register.fields.firstName.as('text')}
-            class="w-full rounded border border-gray-600 bg-gray-700 px-3 py-2 text-gray-100 placeholder-gray-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
-        </label>
+          <input id="firstName" {...register.fields.firstName.as('text')} class="input input-bordered w-full" />
+        </div>
 
-        <label class="block">
-          <span class="mb-1 block text-sm font-medium text-gray-200">Last Name</span>
+        <div>
+          <label for="lastName" class="label">
+            <span class="label-text">Last Name</span>
+          </label>
           {#each register.fields.lastName.issues() as issue (issue.message)}
-            <p class="text-sm text-red-400">{issue.message}</p>
+            <p class="text-sm text-error">{issue.message}</p>
           {/each}
-          <input
-            {...register.fields.lastName.as('text')}
-            class="w-full rounded border border-gray-600 bg-gray-700 px-3 py-2 text-gray-100 placeholder-gray-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
-        </label>
+          <input id="lastName" {...register.fields.lastName.as('text')} class="input input-bordered w-full" />
+        </div>
       </div>
 
-      <label class="block">
-        <span class="mb-1 block text-sm font-medium text-gray-200">Email</span>
+      <div>
+        <label for="email" class="label">
+          <span class="label-text">Email</span>
+        </label>
         {#each register.fields.email.issues() as issue (issue.message)}
-          <p class="text-sm text-red-400">{issue.message}</p>
+          <p class="text-sm text-error">{issue.message}</p>
         {/each}
         <input
+          id="email"
           {...register.fields.email.as('email')}
           value={prefillEmail || undefined}
-          class="w-full rounded border border-gray-600 bg-gray-700 px-3 py-2 text-gray-100 placeholder-gray-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
-      </label>
+          class="input input-bordered w-full" />
+      </div>
 
-      <label class="block">
-        <span class="mb-1 block text-sm font-medium text-gray-200">Password</span>
+      <div>
+        <label for="password" class="label">
+          <span class="label-text">Password</span>
+        </label>
         {#each register.fields._password.issues() as issue (issue.message)}
-          <p class="text-sm text-red-400">{issue.message}</p>
+          <p class="text-sm text-error">{issue.message}</p>
         {/each}
-        <input
-          {...register.fields._password.as('password')}
-          class="w-full rounded border border-gray-600 bg-gray-700 px-3 py-2 text-gray-100 placeholder-gray-400 focus:border-blue-400 focus:ring-1 focus:ring-blue-400" />
-      </label>
+        <input id="password" {...register.fields._password.as('password')} class="input input-bordered w-full" />
+      </div>
 
-      <button type="submit" class="w-full rounded bg-blue-600 px-4 py-2 font-medium text-white hover:bg-blue-500">
-        Register
-      </button>
+      <button type="submit" class="btn btn-primary w-full">Register</button>
     </form>
 
-    <p class="mt-4 text-center text-sm text-gray-400">
-      Already have an account? <a href={resolve('/login')} class="text-blue-400 hover:underline">Log in</a>
+    <p class="mt-4 text-center text-sm">
+      Already have an account? <a href={resolve('/login')} class="link link-primary">Log in</a>
     </p>
   {/if}
 </div>

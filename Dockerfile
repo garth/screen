@@ -1,6 +1,6 @@
 FROM node:24.12-slim AS base
 RUN apt-get update -y && apt-get install -y openssl
-RUN corepack enable && corepack prepare pnpm@10.27.0 --activate
+RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
 WORKDIR /app
 
 # Install dependencies

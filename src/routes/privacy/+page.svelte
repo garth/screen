@@ -9,99 +9,97 @@
 </svelte:head>
 
 <div class="mx-auto max-w-4xl px-6 py-12">
-  <h1 class="mb-2 text-3xl font-bold text-gray-100">Privacy Policy</h1>
-  <p class="mb-8 text-sm text-gray-400">Last updated: 7th January 2026</p>
+  <h1 class="mb-2 text-3xl font-bold">Privacy Policy</h1>
+  <p class="mb-8 text-sm text-base-content/50">Last updated: 7th January 2026</p>
 
-  <div class="space-y-8 text-gray-300">
+  <div class="prose prose-sm max-w-none">
     <section>
       <p>
         This Privacy Policy describes Our policies and procedures on the collection, use and disclosure of Your
         information when You use the Service and tells You about Your privacy rights and how the law protects You.
       </p>
-      <p class="mt-4">
+      <p>
         We use Your Personal data to provide and improve the Service. By using the Service, You agree to the collection
         and use of information in accordance with this Privacy Policy.
       </p>
     </section>
 
     <section>
-      <h2 class="mb-4 text-xl font-semibold text-gray-100">Interpretation and Definitions</h2>
+      <h2>Interpretation and Definitions</h2>
 
-      <h3 class="mb-2 text-lg font-medium text-gray-200">Interpretation</h3>
-      <p class="mb-4">
+      <h3>Interpretation</h3>
+      <p>
         The words of which the initial letter is capitalized have meanings defined under the following conditions. The
         following definitions shall have the same meaning regardless of whether they appear in singular or in plural.
       </p>
 
-      <h3 class="mb-2 text-lg font-medium text-gray-200">Definitions</h3>
-      <p class="mb-2">For the purposes of this Privacy Policy:</p>
-      <ul class="ml-6 list-disc space-y-2">
+      <h3>Definitions</h3>
+      <p>For the purposes of this Privacy Policy:</p>
+      <ul>
         <li>
-          <strong class="text-gray-100">Account</strong> means a unique account created for You to access our Service or parts
-          of our Service.
+          <strong>Account</strong> means a unique account created for You to access our Service or parts of our Service.
         </li>
         <li>
-          <strong class="text-gray-100">Company</strong> (referred to as either "the Company", "We", "Us" or "Our" in this
-          Agreement) refers to NordStack Ltd, 71-75 Shelton Street, Covent Garden, London WC2H 9JQ, United Kingdom. For the
-          purpose of the GDPR, the Company is the Data Controller.
+          <strong>Company</strong> (referred to as either "the Company", "We", "Us" or "Our" in this Agreement) refers
+          to NordStack Ltd, 71-75 Shelton Street, Covent Garden, London WC2H 9JQ, United Kingdom. For the purpose of the
+          GDPR, the Company is the Data Controller.
         </li>
         <li>
-          <strong class="text-gray-100">Cookies</strong> are small files that are placed on Your computer, mobile device or
-          any other device by a website, containing the details of Your browsing history on that website among its many uses.
+          <strong>Cookies</strong> are small files that are placed on Your computer, mobile device or any other device by
+          a website, containing the details of Your browsing history on that website among its many uses.
         </li>
         <li>
-          <strong class="text-gray-100">Data Controller</strong> refers to the Company as the legal person which alone or
-          jointly with others determines the purposes and means of the processing of Personal Data.
+          <strong>Data Controller</strong> refers to the Company as the legal person which alone or jointly with others
+          determines the purposes and means of the processing of Personal Data.
         </li>
         <li>
-          <strong class="text-gray-100">Device</strong> means any device that can access the Service such as a computer, a
-          cellphone or a digital tablet.
+          <strong>Device</strong> means any device that can access the Service such as a computer, a cellphone or a digital
+          tablet.
         </li>
         <li>
-          <strong class="text-gray-100">Personal Data</strong> is any information that relates to an identified or identifiable
-          individual. For the purposes of GDPR, Personal Data means any information relating to You such as a name, an identification
-          number, location data, online identifier or to one or more factors specific to the physical, physiological, genetic,
-          mental, economic, cultural or social identity.
+          <strong>Personal Data</strong> is any information that relates to an identified or identifiable individual. For
+          the purposes of GDPR, Personal Data means any information relating to You such as a name, an identification number,
+          location data, online identifier or to one or more factors specific to the physical, physiological, genetic, mental,
+          economic, cultural or social identity.
         </li>
         <li>
-          <strong class="text-gray-100">Service</strong> refers to the Chapel Screen website, accessible from
-          <a href="https://chapelscreen.com" class="text-blue-400 hover:underline">https://chapelscreen.com</a>.
+          <strong>Service</strong> refers to the Chapel Screen website, accessible from
+          <a href="https://chapelscreen.com" class="link link-primary">https://chapelscreen.com</a>.
         </li>
         <li>
-          <strong class="text-gray-100">Service Provider</strong> means any natural or legal person who processes the data
-          on behalf of the Company. It refers to third-party companies or individuals employed by the Company to facilitate
-          the Service, to provide the Service on behalf of the Company, to perform services related to the Service or to assist
-          the Company in analyzing how the Service is used. For the purpose of the GDPR, Service Providers are considered
-          Data Processors.
+          <strong>Service Provider</strong> means any natural or legal person who processes the data on behalf of the Company.
+          It refers to third-party companies or individuals employed by the Company to facilitate the Service, to provide
+          the Service on behalf of the Company, to perform services related to the Service or to assist the Company in analyzing
+          how the Service is used. For the purpose of the GDPR, Service Providers are considered Data Processors.
         </li>
         <li>
-          <strong class="text-gray-100">Usage Data</strong> refers to data collected automatically, either generated by the
-          use of the Service or from the Service infrastructure itself.
+          <strong>Usage Data</strong> refers to data collected automatically, either generated by the use of the Service
+          or from the Service infrastructure itself.
         </li>
         <li>
-          <strong class="text-gray-100">You</strong> means the individual accessing or using the Service, or the company,
-          or other legal entity on behalf of which such individual is accessing or using the Service, as applicable.
+          <strong>You</strong> means the individual accessing or using the Service, or the company, or other legal entity
+          on behalf of which such individual is accessing or using the Service, as applicable.
         </li>
       </ul>
     </section>
 
     <section>
-      <h2 class="mb-4 text-xl font-semibold text-gray-100">Collecting and Using Your Personal Data</h2>
+      <h2>Collecting and Using Your Personal Data</h2>
 
-      <h3 class="mb-2 text-lg font-medium text-gray-200">Types of Data Collected</h3>
+      <h3>Types of Data Collected</h3>
 
-      <h4 class="mb-2 font-medium text-gray-200">Personal Data</h4>
-      <p class="mb-2">
+      <h4>Personal Data</h4>
+      <p>
         While using Our Service, We may ask You to provide Us with certain personally identifiable information that can
         be used to contact or identify You. Personally identifiable information may include, but is not limited to:
       </p>
-      <ul class="mb-4 ml-6 list-disc space-y-1">
+      <ul>
         <li>Email address</li>
         <li>First name and last name</li>
         <li>Usage Data</li>
       </ul>
 
-      <h4 class="mb-2 font-medium text-gray-200">Usage Data</h4>
+      <h4>Usage Data</h4>
       <p>
         Usage Data is collected automatically when using the Service. Usage Data may include information such as Your
         Device's Internet Protocol address (e.g. IP address), browser type, browser version, the pages of our Service
@@ -109,50 +107,47 @@
         other diagnostic data.
       </p>
 
-      <h4 class="mt-4 mb-2 font-medium text-gray-200">Tracking Technologies and Cookies</h4>
-      <p class="mb-2">We use Cookies to manage your login status only. The types of Cookies We use:</p>
-      <ul class="ml-6 list-disc space-y-2">
+      <h4>Tracking Technologies and Cookies</h4>
+      <p>We use Cookies to manage your login status only. The types of Cookies We use:</p>
+      <ul>
         <li>
-          <strong class="text-gray-100">Necessary / Essential Cookies:</strong> These Cookies are essential to provide You
-          with services available through the Website and to enable You to use some of its features. They help to authenticate
-          users and prevent fraudulent use of user accounts. Without these Cookies, the services that You have asked for cannot
-          be provided.
+          <strong>Necessary / Essential Cookies:</strong> These Cookies are essential to provide You with services available
+          through the Website and to enable You to use some of its features. They help to authenticate users and prevent
+          fraudulent use of user accounts. Without these Cookies, the services that You have asked for cannot be provided.
         </li>
         <li>
-          <strong class="text-gray-100">Functionality Cookies:</strong> These Cookies allow us to remember choices You make
-          when You use the Website, such as remembering your login details. The purpose of these Cookies is to provide You
-          with a more personal experience.
+          <strong>Functionality Cookies:</strong> These Cookies allow us to remember choices You make when You use the Website,
+          such as remembering your login details. The purpose of these Cookies is to provide You with a more personal experience.
         </li>
       </ul>
     </section>
 
     <section>
-      <h2 class="mb-4 text-xl font-semibold text-gray-100">Use of Your Personal Data</h2>
-      <p class="mb-2">The Company may use Personal Data for the following purposes:</p>
-      <ul class="ml-6 list-disc space-y-2">
+      <h2>Use of Your Personal Data</h2>
+      <p>The Company may use Personal Data for the following purposes:</p>
+      <ul>
         <li>
-          <strong class="text-gray-100">To provide and maintain our Service</strong>, including to monitor the usage of
-          our Service.
+          <strong>To provide and maintain our Service</strong>, including to monitor the usage of our Service.
         </li>
         <li>
-          <strong class="text-gray-100">To manage Your Account:</strong> to manage Your registration as a user of the Service.
+          <strong>To manage Your Account:</strong> to manage Your registration as a user of the Service.
         </li>
         <li>
-          <strong class="text-gray-100">To contact You:</strong> To contact You by email regarding updates or informative
-          communications related to the Service, including security updates.
+          <strong>To contact You:</strong> To contact You by email regarding updates or informative communications related
+          to the Service, including security updates.
         </li>
         <li>
-          <strong class="text-gray-100">To manage Your requests:</strong> To attend and manage Your requests to Us.
+          <strong>To manage Your requests:</strong> To attend and manage Your requests to Us.
         </li>
         <li>
-          <strong class="text-gray-100">For other purposes:</strong> We may use Your information for other purposes, such
-          as data analysis, identifying usage trends, and to evaluate and improve our Service.
+          <strong>For other purposes:</strong> We may use Your information for other purposes, such as data analysis, identifying
+          usage trends, and to evaluate and improve our Service.
         </li>
       </ul>
     </section>
 
     <section>
-      <h2 class="mb-4 text-xl font-semibold text-gray-100">Retention of Your Personal Data</h2>
+      <h2>Retention of Your Personal Data</h2>
       <p>
         The Company will retain Your Personal Data only for as long as is necessary for the purposes set out in this
         Privacy Policy. We will retain and use Your Personal Data to the extent necessary to comply with our legal
@@ -161,7 +156,7 @@
     </section>
 
     <section>
-      <h2 class="mb-4 text-xl font-semibold text-gray-100">Transfer of Your Personal Data</h2>
+      <h2>Transfer of Your Personal Data</h2>
       <p>
         Your information, including Personal Data, may be transferred to — and maintained on — computers located outside
         of Your state, province, country or other governmental jurisdiction where the data protection laws may differ.
@@ -171,19 +166,17 @@
     </section>
 
     <section>
-      <h2 class="mb-4 text-xl font-semibold text-gray-100">Disclosure of Your Personal Data</h2>
+      <h2>Disclosure of Your Personal Data</h2>
 
-      <h3 class="mb-2 text-lg font-medium text-gray-200">Law enforcement</h3>
-      <p class="mb-4">
+      <h3>Law enforcement</h3>
+      <p>
         Under certain circumstances, the Company may be required to disclose Your Personal Data if required to do so by
         law or in response to valid requests by public authorities.
       </p>
 
-      <h3 class="mb-2 text-lg font-medium text-gray-200">Other legal requirements</h3>
-      <p class="mb-2">
-        The Company may disclose Your Personal Data in the good faith belief that such action is necessary to:
-      </p>
-      <ul class="ml-6 list-disc space-y-1">
+      <h3>Other legal requirements</h3>
+      <p>The Company may disclose Your Personal Data in the good faith belief that such action is necessary to:</p>
+      <ul>
         <li>Comply with a legal obligation</li>
         <li>Protect and defend the rights or property of the Company</li>
         <li>Prevent or investigate possible wrongdoing in connection with the Service</li>
@@ -193,7 +186,7 @@
     </section>
 
     <section>
-      <h2 class="mb-4 text-xl font-semibold text-gray-100">Security of Your Personal Data</h2>
+      <h2>Security of Your Personal Data</h2>
       <p>
         The security of Your Personal Data is important to Us, but remember that no method of transmission over the
         Internet, or method of electronic storage is 100% secure. While We strive to use commercially acceptable means
@@ -202,47 +195,45 @@
     </section>
 
     <section>
-      <h2 class="mb-4 text-xl font-semibold text-gray-100">Third-Party Service Providers</h2>
+      <h2>Third-Party Service Providers</h2>
 
-      <h3 class="mb-2 text-lg font-medium text-gray-200">Analytics</h3>
-      <p class="mb-4">
+      <h3>Analytics</h3>
+      <p>
         We use Plausible Analytics, a privacy-focused analytics service provided by Plausible Insights OÜ. You can view
         their privacy policy at
-        <a href="https://plausible.io/privacy" class="text-blue-400 hover:underline">https://plausible.io/privacy</a>.
+        <a href="https://plausible.io/privacy" class="link link-primary">https://plausible.io/privacy</a>.
       </p>
     </section>
 
     <section>
-      <h2 class="mb-4 text-xl font-semibold text-gray-100">GDPR Privacy</h2>
+      <h2>GDPR Privacy</h2>
 
-      <h3 class="mb-2 text-lg font-medium text-gray-200">Legal Basis for Processing Personal Data</h3>
-      <p class="mb-2">We may process Personal Data under the following conditions:</p>
-      <ul class="mb-4 ml-6 list-disc space-y-1">
+      <h3>Legal Basis for Processing Personal Data</h3>
+      <p>We may process Personal Data under the following conditions:</p>
+      <ul>
         <li>
-          <strong class="text-gray-100">Consent:</strong> You have given Your consent for processing Personal Data for one
-          or more specific purposes.
+          <strong>Consent:</strong> You have given Your consent for processing Personal Data for one or more specific purposes.
         </li>
         <li>
-          <strong class="text-gray-100">Performance of a contract:</strong> Provision of Personal Data is necessary for the
-          performance of an agreement with You.
+          <strong>Performance of a contract:</strong> Provision of Personal Data is necessary for the performance of an
+          agreement with You.
         </li>
         <li>
-          <strong class="text-gray-100">Legal obligations:</strong> Processing Personal Data is necessary for compliance with
-          a legal obligation.
+          <strong>Legal obligations:</strong> Processing Personal Data is necessary for compliance with a legal obligation.
         </li>
         <li>
-          <strong class="text-gray-100">Vital interests:</strong> Processing Personal Data is necessary to protect Your vital
-          interests or those of another natural person.
+          <strong>Vital interests:</strong> Processing Personal Data is necessary to protect Your vital interests or those
+          of another natural person.
         </li>
         <li>
-          <strong class="text-gray-100">Legitimate interests:</strong> Processing Personal Data is necessary for the purposes
-          of the legitimate interests pursued by the Company.
+          <strong>Legitimate interests:</strong> Processing Personal Data is necessary for the purposes of the legitimate
+          interests pursued by the Company.
         </li>
       </ul>
 
-      <h3 class="mb-2 text-lg font-medium text-gray-200">Your Rights under the GDPR</h3>
-      <p class="mb-2">You have the right to:</p>
-      <ul class="ml-6 list-disc space-y-1">
+      <h3>Your Rights under the GDPR</h3>
+      <p>You have the right to:</p>
+      <ul>
         <li>Request access to Your Personal Data</li>
         <li>Request correction of any incomplete or inaccurate Personal Data</li>
         <li>Request erasure of Your Personal Data</li>
@@ -251,7 +242,7 @@
         <li>Request transfer of Your Personal Data</li>
         <li>Withdraw Your consent</li>
       </ul>
-      <p class="mt-4">
+      <p>
         You may exercise these rights by contacting Us. We may ask You to verify Your identity before responding to such
         requests. You have the right to complain to a Data Protection Authority about Our collection and use of Your
         Personal Data.
@@ -259,7 +250,7 @@
     </section>
 
     <section>
-      <h2 class="mb-4 text-xl font-semibold text-gray-100">Links to Other Websites</h2>
+      <h2>Links to Other Websites</h2>
       <p>
         Our Service may contain links to other websites that are not operated by Us. We strongly advise You to review
         the Privacy Policy of every site You visit. We have no control over and assume no responsibility for the
@@ -268,7 +259,7 @@
     </section>
 
     <section>
-      <h2 class="mb-4 text-xl font-semibold text-gray-100">Changes to this Privacy Policy</h2>
+      <h2>Changes to this Privacy Policy</h2>
       <p>
         We may update Our Privacy Policy from time to time. We will notify You of any changes by posting the new Privacy
         Policy on this page and updating the "Last updated" date. We will let You know via email prior to the change
@@ -277,10 +268,10 @@
     </section>
 
     <section>
-      <h2 class="mb-4 text-xl font-semibold text-gray-100">Contact Us</h2>
+      <h2>Contact Us</h2>
       <p>
         If you have any questions about this Privacy Policy, You can contact us by email:
-        <a href="mailto:support@chapelscreen.com" class="text-blue-400 hover:underline">support@chapelscreen.com</a>
+        <a href="mailto:support@chapelscreen.com" class="link link-primary">support@chapelscreen.com</a>
       </p>
     </section>
   </div>

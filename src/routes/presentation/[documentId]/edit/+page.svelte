@@ -82,19 +82,11 @@
 
   // Delete handling
   let deleting = $state(false)
-  let deleteDialog = $state<HTMLDialogElement | null>(null)
-
-  function showDeleteDialog() {
-    deleteDialog?.showModal()
-  }
-
-  function closeDeleteDialog() {
-    deleteDialog?.close()
-  }
+  let showDeleteDialog = $state(false)
 
   async function confirmDelete() {
     deleting = true
-    closeDeleteDialog()
+    showDeleteDialog = false
     try {
       const response = await fetch(`/api/presentations?id=${data.document.id}`, {
         method: 'DELETE',
@@ -123,31 +115,29 @@
 
 <div class="flex h-screen flex-col">
   <!-- Header -->
-  <header class="flex items-center justify-between border-b border-gray-700 bg-gray-800 px-4 py-3">
-    <div class="flex items-center gap-4">
-      <div class="flex items-center gap-2">
-        <input
-          type="text"
-          bind:value={titleInput}
-          oninput={handleTitleChange}
-          placeholder="Untitled"
-          class="rounded bg-transparent px-2 py-1 text-lg font-medium text-gray-100 placeholder-gray-500 outline-none focus:ring-1 focus:ring-blue-500"
-          disabled={!doc.synced || doc.readOnly} />
-        {#if !doc.synced}
-          <span class="text-xs text-gray-500">Connecting...</span>
-        {/if}
-      </div>
+  <header class="navbar bg-base-200 border-b border-base-300 min-h-0 px-4 py-2">
+    <div class="flex-1 flex items-center gap-2">
+      <input
+        type="text"
+        bind:value={titleInput}
+        oninput={handleTitleChange}
+        placeholder="Untitled"
+        class="input input-ghost text-lg font-medium w-auto"
+        disabled={!doc.synced || doc.readOnly} />
+      {#if !doc.synced}
+        <span class="text-xs text-base-content/50">Connecting...</span>
+      {/if}
     </div>
 
-    <div class="flex items-center gap-4">
+    <div class="flex-none flex items-center gap-4">
       <!-- Theme Picker -->
       <div class="flex items-center gap-2">
-        <label for="theme-select" class="text-sm text-gray-400">Theme:</label>
+        <label for="theme-select" class="text-sm text-base-content/70">Theme:</label>
         <select
           id="theme-select"
           onchange={handleThemeChange}
           disabled={!doc.synced || doc.readOnly}
-          class="rounded border border-gray-600 bg-gray-700 px-2 py-1 text-sm text-gray-200 outline-none focus:border-blue-500">
+          class="select select-bordered select-sm">
           <option value="">No theme</option>
           {#each data.themes as theme (theme.id)}
             <option value={theme.id} selected={doc.themeId === theme.id}>
@@ -158,17 +148,13 @@
         </select>
       </div>
 
-      <a
-        href={resolve(`/presentation/${data.document.id}/presenter`)}
-        class="rounded bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-500">
-        Present
-      </a>
+      <a href={resolve(`/presentation/${data.document.id}/presenter`)} class="btn btn-primary btn-sm">Present</a>
 
       <button
         type="button"
-        onclick={showDeleteDialog}
+        onclick={() => (showDeleteDialog = true)}
         disabled={deleting}
-        class="rounded border border-red-600 px-3 py-1.5 text-sm text-red-400 hover:bg-red-900/50 disabled:opacity-50">
+        class="btn btn-outline btn-error btn-sm">
         {deleting ? 'Deleting...' : 'Delete'}
       </button>
     </div>
@@ -180,74 +166,25 @@
       <PresentationEditor {doc} theme={resolvedTheme} />
     {:else}
       <div class="flex h-full items-center justify-center">
-        <p class="text-gray-500">Loading editor...</p>
+        <span class="loading loading-spinner loading-lg"></span>
       </div>
     {/if}
   </main>
 </div>
 
 <!-- Delete Confirmation Dialog -->
-<dialog
-  bind:this={deleteDialog}
-  class="delete-dialog fixed inset-0 m-auto rounded-lg border border-gray-700 bg-gray-800 p-0 text-gray-100 shadow-xl backdrop:bg-black/50">
-  <div class="p-6">
-    <h2 class="mb-2 text-lg font-semibold">Delete Presentation</h2>
-    <p class="mb-6 text-gray-400">
-      Are you sure you want to delete "{titleInput || 'Untitled'}"? This action cannot be undone.
-    </p>
-    <div class="flex justify-end gap-3">
-      <button
-        type="button"
-        onclick={closeDeleteDialog}
-        class="rounded border border-gray-600 px-4 py-2 text-sm text-gray-300 hover:bg-gray-700">
-        Cancel
-      </button>
-      <button
-        type="button"
-        onclick={confirmDelete}
-        class="rounded bg-red-600 px-4 py-2 text-sm text-white hover:bg-red-500">
-        Delete
-      </button>
+{#if showDeleteDialog}
+  <div class="modal modal-open">
+    <div class="modal-box">
+      <h3 class="text-lg font-bold">Delete Presentation</h3>
+      <p class="py-4 text-base-content/70">
+        Are you sure you want to delete "{titleInput || 'Untitled'}"? This action cannot be undone.
+      </p>
+      <div class="modal-action">
+        <button type="button" onclick={() => (showDeleteDialog = false)} class="btn btn-ghost">Cancel</button>
+        <button type="button" onclick={confirmDelete} class="btn btn-error">Delete</button>
+      </div>
     </div>
+    <div class="modal-backdrop" onclick={() => (showDeleteDialog = false)}></div>
   </div>
-</dialog>
-
-<style>
-  .delete-dialog {
-    opacity: 0;
-    transform: scale(0.95);
-    transition:
-      opacity 150ms ease-out,
-      transform 150ms ease-out,
-      overlay 150ms ease-out allow-discrete,
-      display 150ms ease-out allow-discrete;
-  }
-
-  .delete-dialog[open] {
-    opacity: 1;
-    transform: scale(1);
-  }
-
-  .delete-dialog::backdrop {
-    opacity: 0;
-    transition:
-      opacity 150ms ease-out,
-      overlay 150ms ease-out allow-discrete,
-      display 150ms ease-out allow-discrete;
-  }
-
-  .delete-dialog[open]::backdrop {
-    opacity: 1;
-  }
-
-  @starting-style {
-    .delete-dialog[open] {
-      opacity: 0;
-      transform: scale(0.95);
-    }
-
-    .delete-dialog[open]::backdrop {
-      opacity: 0;
-    }
-  }
-</style>
+{/if}

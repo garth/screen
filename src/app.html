@@ -46,6 +46,13 @@
         ]
       }
     </script>
+    <script>
+      (function () {
+        const pref = localStorage.getItem('theme-preference') || 'system'
+        const dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.setAttribute('data-theme', dark ? 'mocha' : 'latte')
+      })()
+    </script>
     %sveltekit.head%
   </head>
   <body data-sveltekit-preload-data="off">
