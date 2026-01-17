@@ -6,7 +6,7 @@
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" href="/pwa-192x192.png" type="image/png" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <meta name="theme-color" content="#1f2937" />
+    <meta name="theme-color" id="theme-color" content="#eff1f5" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Chapel Screen" />
@@ -51,11 +51,14 @@
         const pref = localStorage.getItem('theme-preference') || 'system'
         const dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
         document.documentElement.setAttribute('data-theme', dark ? 'mocha' : 'latte')
+        // Update theme-color meta tag (Catppuccin base colors)
+        const themeColor = document.getElementById('theme-color')
+        if (themeColor) themeColor.content = dark ? '#1e1e2e' : '#eff1f5'
       })()
     </script>
     %sveltekit.head%
   </head>
-  <body data-sveltekit-preload-data="off">
+  <body class="bg-base-100 text-base-content" data-sveltekit-preload-data="off">
     <div style="display: contents">%sveltekit.body%</div>
   </body>
 </html>

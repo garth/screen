@@ -16,8 +16,11 @@ function getSystemTheme(): 'dark' | 'light' {
 
 function applyTheme(preference: ThemePreference) {
   if (!browser) return
-  const theme = preference === 'system' ? getSystemTheme() : preference
-  document.documentElement.setAttribute('data-theme', theme === 'dark' ? 'mocha' : 'latte')
+  const isDark = preference === 'system' ? getSystemTheme() === 'dark' : preference === 'dark'
+  document.documentElement.setAttribute('data-theme', isDark ? 'mocha' : 'latte')
+  // Update theme-color meta tag (Catppuccin base colors)
+  const themeColor = document.getElementById('theme-color')
+  if (themeColor) themeColor.setAttribute('content', isDark ? '#1e1e2e' : '#eff1f5')
 }
 
 class ThemeStore {

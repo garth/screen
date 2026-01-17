@@ -53,15 +53,15 @@
 
 <svelte:window onclick={handleClickOutside} />
 
-<div class="navbar bg-base-200 border-b border-base-300">
-  <div class="mx-auto flex w-full max-w-6xl items-center justify-between px-4">
+<div class="navbar border-b border-base-300 bg-base-200 px-4">
+  <div class="flex w-full items-center justify-between">
     <div class="flex items-center gap-6">
       <a href={resolve('/')} class="text-lg font-semibold">Chapel Screen</a>
       {#if data.user}
         <div class="flex gap-4">
           {#each navLinks as link (link.href)}
             {@const isActive = page.url.pathname === link.href}
-            <a href={resolve(link.href)} class="link link-hover {isActive ? 'text-primary font-medium' : ''}">
+            <a href={resolve(link.href)} class="link link-hover {isActive ? 'font-medium text-primary' : ''}">
               {link.label}
             </a>
           {/each}
@@ -72,7 +72,7 @@
     <div class="flex items-center gap-4">
       {#if data.user}
         <div class="dropdown dropdown-end">
-          <button onclick={() => (userMenuOpen = !userMenuOpen)} class="btn btn-ghost btn-sm gap-2">
+          <button onclick={() => (userMenuOpen = !userMenuOpen)} class="btn gap-2 btn-ghost btn-sm">
             <img
               src={data.user.gravatarUrl}
               alt={`${data.user.firstName} ${data.user.lastName}`}
@@ -83,7 +83,8 @@
           </button>
 
           {#if userMenuOpen}
-            <ul class="menu dropdown-content bg-base-200 rounded-box z-20 mt-1 w-48 p-2 shadow-lg border border-base-300">
+            <ul
+              class="dropdown-content menu z-20 mt-1 w-48 rounded-box border border-base-300 bg-base-200 p-2 shadow-lg">
               <li>
                 <a href={resolve('/preferences')} onclick={() => (userMenuOpen = false)}>Preferences</a>
               </li>
@@ -95,7 +96,7 @@
         </div>
       {:else}
         <a href={resolve('/login')} class="link link-hover">Log in</a>
-        <a href={resolve('/register')} class="btn btn-primary btn-sm">Register</a>
+        <a href={resolve('/register')} class="btn btn-sm btn-primary">Register</a>
       {/if}
     </div>
   </div>
@@ -103,14 +104,14 @@
 
 {@render children()}
 
-<footer class="footer footer-center bg-base-200 border-t border-base-300 p-4 text-base-content">
+<footer class="footer-center footer bg-base-200 p-5 text-base-content">
   <div class="flex gap-4">
     <a href={resolve('/privacy')} class="link link-hover">Privacy</a>
     <a href={resolve('/terms')} class="link link-hover">Terms</a>
     <a href={resolve('/support')} class="link link-hover">Support</a>
   </div>
-  <p>
-    &copy; {new Date().getFullYear()}
+  <p class="flex">
+    <span>&copy; {new Date().getFullYear()}</span>
     <a href="https://nordstack.co.uk" class="link link-primary">NordStack Ltd</a>
   </p>
 </footer>

@@ -64,7 +64,7 @@
   <div class="mx-auto max-w-4xl px-6 py-16">
     <div class="animate-fade-in-up text-center">
       <h1
-        class="mb-4 bg-gradient-to-r from-primary via-secondary to-primary bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
+        class="mb-4 bg-gradient-to-r from-primary via-accent/70 to-primary bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
         Collaborative Presentations,<br />Real-Time Sync
       </h1>
       <p class="mx-auto mb-8 max-w-2xl text-lg text-base-content/70">
@@ -73,11 +73,11 @@
       </p>
 
       {#if data.user}
-        <a href={resolve('/presentations')} class="btn btn-secondary btn-lg">My Presentations</a>
+        <a href={resolve('/presentations')} class="btn btn-lg btn-secondary">My Presentations</a>
       {:else}
         <div class="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-          <a href={resolve('/register')} class="btn btn-secondary btn-lg w-full sm:w-auto">Get Started Free</a>
-          <a href={resolve('/login')} class="btn btn-outline btn-lg w-full sm:w-auto">Log In</a>
+          <a href={resolve('/register')} class="btn w-full btn-lg btn-secondary sm:w-auto">Get Started Free</a>
+          <a href={resolve('/login')} class="btn w-full btn-outline btn-lg sm:w-auto">Log In</a>
         </div>
         <p class="mt-4 text-sm text-base-content/50">No credit card required</p>
       {/if}
@@ -85,7 +85,7 @@
 
     <!-- Presentation Editor Preview -->
     <div class="animate-fade-in-up-delay mt-12">
-      <div class="animate-float card bg-base-200/80 mx-auto max-w-2xl shadow-2xl backdrop-blur-sm">
+      <div class="animate-float card mx-auto max-w-2xl bg-base-200/80 shadow-2xl backdrop-blur-sm">
         <div class="card-body p-4">
           <div class="mb-3 flex items-center gap-2">
             <div class="h-3 w-3 rounded-full bg-error/60"></div>
@@ -165,7 +165,8 @@
           </div>
           <h3 class="card-title">Presenter Mode</h3>
           <p class="text-base-content/70">
-            Navigate content segment-by-segment with keyboard or click controls. Auto-scroll keeps your audience focused.
+            Navigate content segment-by-segment with keyboard or click controls. Auto-scroll keeps your audience
+            focused.
           </p>
         </div>
       </div>
@@ -288,7 +289,9 @@
         </div>
         <div>
           <h3 class="mb-1 font-semibold">Headings &amp; paragraphs</h3>
-          <p class="text-sm text-base-content/70">Structure your content with multiple heading levels and paragraphs.</p>
+          <p class="text-sm text-base-content/70">
+            Structure your content with multiple heading levels and paragraphs.
+          </p>
         </div>
       </div>
 
@@ -348,7 +351,9 @@
         </div>
         <div>
           <h3 class="mb-1 font-semibold">Slide dividers</h3>
-          <p class="text-sm text-base-content/70">Split your content into multiple slides for multi-page presentations.</p>
+          <p class="text-sm text-base-content/70">
+            Split your content into multiple slides for multi-page presentations.
+          </p>
         </div>
       </div>
 
@@ -424,7 +429,7 @@
           </li>
         </ul>
         {#if !data.user}
-          <a href={resolve('/register')} class="btn btn-secondary w-full">Get Started Free</a>
+          <a href={resolve('/register')} class="btn w-full btn-secondary">Get Started Free</a>
         {/if}
       </div>
     </div>
@@ -436,8 +441,10 @@
   <div class="border-t border-base-300 bg-base-200/50 py-16">
     <div class="mx-auto max-w-2xl px-6 text-center">
       <h2 class="mb-4 text-2xl font-bold">Ready to present?</h2>
-      <p class="mb-8 text-base-content/70">Create collaborative presentations with real-time sync and presenter mode.</p>
-      <a href={resolve('/register')} class="btn btn-secondary btn-lg">Create Your Free Account</a>
+      <p class="mb-8 text-base-content/70">
+        Create collaborative presentations with real-time sync and presenter mode.
+      </p>
+      <a href={resolve('/register')} class="btn btn-lg btn-secondary">Create Your Free Account</a>
     </div>
   </div>
 {/if}
