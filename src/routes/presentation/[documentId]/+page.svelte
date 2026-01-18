@@ -1,6 +1,5 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
-  import { resolve } from '$app/paths'
   import { createPresentationDoc, createThemeDoc, type ThemeDocument } from '$lib/stores/documents'
   import PresentationViewer from '$lib/components/presentation/PresentationViewer.svelte'
   import { resolveTheme, defaultTheme, type ResolvedTheme } from '$lib/utils/theme-resolver'
@@ -79,50 +78,17 @@
   <title>{data.document.title} - Presentation</title>
 </svelte:head>
 
-<div class="flex h-screen flex-col">
-  <!-- Header -->
-  <header class="navbar bg-base-200 border-b border-base-300 min-h-0 px-4 py-2">
-    <div class="flex-1">
-      <h1 class="text-lg font-medium">
-        {doc.synced && doc.title ? doc.title : data.document.title || 'Untitled'}
-      </h1>
+<div class="h-screen">
+  {#if doc.synced}
+    <PresentationViewer
+      content={doc.content}
+      theme={resolvedTheme}
+      mode={isFollowing ? 'present' : 'view'}
+      segments={isFollowing ? segments : []}
+      currentSegmentId={isFollowing ? currentSegmentId : null} />
+  {:else}
+    <div class="flex h-full items-center justify-center">
+      <span class="loading loading-spinner loading-lg"></span>
     </div>
-
-    <div class="flex-none flex items-center gap-3">
-      {#if activePresenter}
-        <button
-          type="button"
-          onclick={() => (followMode = !followMode)}
-          class="btn btn-sm {followMode ? 'btn-secondary' : 'btn-ghost'}">
-          {#if followMode}
-            <span class="h-2 w-2 animate-pulse rounded-full bg-success"></span>
-            Following presenter
-          {:else}
-            Follow presenter
-          {/if}
-        </button>
-      {/if}
-
-      {#if data.permissions.canWrite}
-        <a href={resolve(`/presentation/${data.document.id}/edit`)} class="btn btn-ghost btn-sm">Edit</a>
-        <a href={resolve(`/presentation/${data.document.id}/presenter`)} class="btn btn-primary btn-sm">Present</a>
-      {/if}
-    </div>
-  </header>
-
-  <!-- Viewer -->
-  <main class="flex-1 overflow-hidden">
-    {#if doc.synced}
-      <PresentationViewer
-        content={doc.content}
-        theme={resolvedTheme}
-        mode={isFollowing ? 'present' : 'view'}
-        segments={isFollowing ? segments : []}
-        currentSegmentId={isFollowing ? currentSegmentId : null} />
-    {:else}
-      <div class="flex h-full items-center justify-center">
-        <span class="loading loading-spinner loading-lg"></span>
-      </div>
-    {/if}
-  </main>
+  {/if}
 </div>

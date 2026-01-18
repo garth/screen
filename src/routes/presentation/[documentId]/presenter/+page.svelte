@@ -4,7 +4,6 @@
   import { resolve } from '$app/paths'
   import { createPresentationDoc, createThemeDoc, type ThemeDocument } from '$lib/stores/documents'
   import PresentationViewer from '$lib/components/presentation/PresentationViewer.svelte'
-  import PresenterControls from '$lib/components/presentation/PresenterControls.svelte'
   import { resolveTheme, defaultTheme, type ResolvedTheme } from '$lib/utils/theme-resolver'
   import { parseContentSegments, clampSegmentIndex, type ContentSegment } from '$lib/utils/segment-parser'
 
@@ -156,81 +155,58 @@
   <title>{data.document.title} - Presenter</title>
 </svelte:head>
 
-<div class="flex h-screen bg-base-300">
-  <!-- Main Presentation View -->
-  <div class="flex flex-1 flex-col">
-    <!-- Header -->
-    <header class="navbar bg-base-200 border-b border-base-300 min-h-0 px-4 py-2">
-      <div class="flex-1">
-        <h1 class="text-lg font-medium">
-          {doc.synced && doc.title ? doc.title : data.document.title || 'Untitled'}
-        </h1>
-      </div>
+<div class="flex h-screen flex-col">
+  <!-- Header -->
+  <header class="navbar bg-base-200 border-b border-base-300 min-h-0 px-4 py-2">
+    <div class="flex-1">
+      <h1 class="text-lg font-medium">
+        {doc.synced && doc.title ? doc.title : data.document.title || 'Untitled'}
+      </h1>
+    </div>
 
-      <div class="flex-none text-sm text-base-content/50">
-        <span>Use arrow keys to navigate</span>
-      </div>
-    </header>
+    <div class="flex-none flex items-center gap-3">
+      <a href={resolve(`/presentation/${data.document.id}`)} class="btn btn-ghost btn-sm">View</a>
+      <a href={resolve(`/presentation/${data.document.id}/edit`)} class="btn btn-ghost btn-sm">Edit</a>
+    </div>
+  </header>
 
-    <!-- Viewer -->
-    <main class="relative flex-1 overflow-hidden">
-      {#if doc.synced}
-        <PresentationViewer
-          content={doc.content}
-          theme={resolvedTheme}
-          mode="present"
-          {segments}
-          {currentSegmentId}
-          onSegmentClick={handleNavigateById} />
-
-        <!-- Floating Navigation Buttons -->
-        <div class="nav-buttons">
-          <button
-            type="button"
-            onclick={() => handleNavigateByIndex(currentSegmentIndex - 1)}
-            disabled={currentSegmentIndex <= 0}
-            class="btn btn-lg btn-circle bg-base-100/80 hover:bg-base-100 backdrop-blur-sm shadow-lg border-base-300 disabled:cursor-not-allowed disabled:opacity-50">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <button
-            type="button"
-            onclick={() => handleNavigateByIndex(currentSegmentIndex + 1)}
-            disabled={currentSegmentIndex >= segments.length - 1}
-            class="btn btn-lg btn-circle bg-base-100/80 hover:bg-base-100 backdrop-blur-sm shadow-lg border-base-300 disabled:cursor-not-allowed disabled:opacity-50">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        </div>
-      {:else}
-        <div class="flex h-full items-center justify-center">
-          <span class="loading loading-spinner loading-lg"></span>
-        </div>
-      {/if}
-    </main>
-  </div>
-
-  <!-- Sidebar with Controls -->
-  <aside class="w-80 border-l border-base-300 bg-base-200 p-4">
-    {#if doc.synced && segments.length > 0}
-      <PresenterControls
+  <main class="relative flex-1 overflow-hidden">
+    {#if doc.synced}
+      <PresentationViewer
+        content={doc.content}
+        theme={resolvedTheme}
+        mode="present"
         {segments}
-        currentIndex={currentSegmentIndex}
-        onNavigate={handleNavigateByIndex}
-        onNavigateById={handleNavigateById} />
-    {:else if doc.synced}
-      <div class="text-center text-base-content/50">
-        <p>No content segments found.</p>
-        <p class="mt-2 text-sm">Add content to your presentation.</p>
+        {currentSegmentId}
+        onSegmentClick={handleNavigateById} />
+
+      <!-- Floating Navigation Buttons -->
+      <div class="nav-buttons">
+        <button
+          type="button"
+          onclick={() => handleNavigateByIndex(currentSegmentIndex - 1)}
+          disabled={currentSegmentIndex <= 0}
+          class="btn btn-lg btn-circle bg-base-100/80 hover:bg-base-100 backdrop-blur-sm shadow-lg border-base-300 disabled:cursor-not-allowed disabled:opacity-50">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <button
+          type="button"
+          onclick={() => handleNavigateByIndex(currentSegmentIndex + 1)}
+          disabled={currentSegmentIndex >= segments.length - 1}
+          class="btn btn-lg btn-circle bg-base-100/80 hover:bg-base-100 backdrop-blur-sm shadow-lg border-base-300 disabled:cursor-not-allowed disabled:opacity-50">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
       </div>
     {:else}
-      <div class="text-center text-base-content/50">
-        <span class="loading loading-spinner loading-md"></span>
+      <div class="flex h-full items-center justify-center">
+        <span class="loading loading-spinner loading-lg"></span>
       </div>
     {/if}
-  </aside>
+  </main>
 </div>
 
 <style>
