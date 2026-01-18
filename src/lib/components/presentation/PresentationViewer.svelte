@@ -383,61 +383,53 @@
   .presentation-viewer :global(h1) {
     font-size: 2.5rem;
     font-weight: bold;
-    margin-bottom: 1rem;
-    margin-top: 1.5rem;
-  }
-
-  .presentation-viewer :global(h1:first-child) {
-    margin-top: 0;
+    margin: 0;
   }
 
   .presentation-viewer :global(h2) {
     font-size: 2rem;
     font-weight: bold;
-    margin-bottom: 0.75rem;
-    margin-top: 1.25rem;
+    margin: 0;
   }
 
   .presentation-viewer :global(h3) {
     font-size: 1.5rem;
     font-weight: bold;
-    margin-bottom: 0.5rem;
-    margin-top: 1rem;
+    margin: 0;
   }
 
   /* Paragraph */
   .presentation-viewer :global(p) {
-    margin-bottom: 1rem;
+    margin: 0;
     line-height: 1.6;
+    min-height: 1.6em;
   }
 
   /* Lists */
   .presentation-viewer :global(ul) {
-    margin-bottom: 1rem;
+    margin: 0;
     padding-left: 2rem;
     list-style-type: disc;
   }
 
   .presentation-viewer :global(ol) {
-    margin-bottom: 1rem;
+    margin: 0;
     padding-left: 2rem;
     list-style-type: decimal;
   }
 
   .presentation-viewer :global(li) {
-    margin-bottom: 0.25rem;
+    margin: 0;
   }
 
   .presentation-viewer :global(li p) {
-    margin-bottom: 0.25rem;
+    margin: 0;
   }
 
   /* Nested lists */
   .presentation-viewer :global(ul ul),
   .presentation-viewer :global(ol ul) {
     list-style-type: circle;
-    margin-top: 0.25rem;
-    margin-bottom: 0.25rem;
   }
 
   .presentation-viewer :global(ul ul ul),
@@ -471,7 +463,7 @@
   }
 
   .presentation-viewer :global(blockquote p) {
-    margin-bottom: 0.5rem;
+    margin: 0;
   }
 
   /* Attribution */

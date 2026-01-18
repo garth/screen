@@ -136,59 +136,56 @@
   }
 
   .editor-content :global(.ProseMirror p) {
-    margin-bottom: 1rem;
+    margin: 0;
     line-height: 1.6;
+    min-height: 1.6em;
+    padding: 0.1px 0;
   }
+
 
   .editor-content :global(.ProseMirror h1) {
     font-size: 2.5rem;
     font-weight: bold;
-    margin-bottom: 1rem;
-    margin-top: 1.5rem;
+    margin: 0;
   }
 
   .editor-content :global(.ProseMirror h2) {
     font-size: 2rem;
     font-weight: bold;
-    margin-bottom: 0.75rem;
-    margin-top: 1.25rem;
+    margin: 0;
   }
 
   .editor-content :global(.ProseMirror h3) {
     font-size: 1.5rem;
     font-weight: bold;
-    margin-bottom: 0.5rem;
-    margin-top: 1rem;
+    margin: 0;
   }
 
   /* Lists */
   .editor-content :global(.ProseMirror ul) {
-    margin-bottom: 1rem;
+    margin: 0;
     padding-left: 2rem;
     list-style-type: disc;
   }
 
   .editor-content :global(.ProseMirror ol) {
-    margin-bottom: 1rem;
+    margin: 0;
     padding-left: 2rem;
     list-style-type: decimal;
   }
 
   .editor-content :global(.ProseMirror li) {
-    margin-bottom: 0.25rem;
+    margin: 0;
   }
 
   .editor-content :global(.ProseMirror li p) {
-    margin-top: 0.25rem;
-    margin-bottom: 0.25rem;
+    margin: 0;
   }
 
   /* Nested lists */
   .editor-content :global(.ProseMirror ul ul),
   .editor-content :global(.ProseMirror ol ul) {
     list-style-type: circle;
-    margin-top: 0.25rem;
-    margin-bottom: 0.25rem;
   }
 
   .editor-content :global(.ProseMirror ul ul ul),
@@ -239,7 +236,7 @@
   }
 
   .editor-content :global(.ProseMirror blockquote p) {
-    margin-bottom: 0.5rem;
+    margin: 0;
   }
 
   /* Attribution */
@@ -274,10 +271,17 @@
     color: oklch(var(--pf));
   }
 
-  /* Hard break */
+  /* Hard break and trailing break in empty paragraphs */
   .editor-content :global(.ProseMirror br) {
-    display: block;
-    content: '';
+    display: inline;
+  }
+
+  .editor-content :global(.ProseMirror p > br:only-child),
+  .editor-content :global(.ProseMirror p > .ProseMirror-trailingBreak:only-child) {
+    display: inline-block;
+    width: 1px;
+    height: 1.6em;
+    vertical-align: top;
   }
 
   /* Cursor styles for collaborative editing */
