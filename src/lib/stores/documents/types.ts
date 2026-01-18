@@ -24,9 +24,12 @@ export interface DocumentOptions {
 // Presentation Types
 // =============================================================================
 
+export type PresentationFormat = 'minimal' | 'maximal' | 'scrolling'
+
 export interface PresentationMeta {
   title: string
   themeId: string | null
+  format?: PresentationFormat
   font?: string
   backgroundColor?: string
   textColor?: string
@@ -39,9 +42,11 @@ export interface PresentationDocument {
 
   readonly title: string
   readonly themeId: string | null
+  readonly format: PresentationFormat
 
   setTitle(value: string): void
   setThemeId(value: string | null): void
+  setFormat(value: PresentationFormat): void
 
   readonly font: string | undefined
   readonly backgroundColor: string | undefined

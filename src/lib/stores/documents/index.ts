@@ -4,6 +4,7 @@ export type {
   DocumentOptions,
   UserInfo,
   PresentationDocument,
+  PresentationFormat,
   ThemeDocument,
   EventDocument,
   ViewportArea,

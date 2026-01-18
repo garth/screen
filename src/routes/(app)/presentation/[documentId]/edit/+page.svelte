@@ -4,7 +4,9 @@
   import { resolve } from '$app/paths'
   import { toast } from '$lib/toast.svelte'
   import { createPresentationDoc, createThemeDoc, type ThemeDocument } from '$lib/stores/documents'
+  import type { PresentationFormat } from '$lib/stores/documents/types'
   import PresentationEditor from '$lib/components/presentation/PresentationEditor.svelte'
+  import OptionsPopup from '$lib/components/presentation/OptionsPopup.svelte'
   import { resolveTheme, defaultTheme, type ResolvedTheme } from '$lib/utils/theme-resolver'
 
   let { data } = $props()
@@ -71,12 +73,18 @@
     }, 300)
   }
 
-  // Theme selection
-  function handleThemeChange(event: Event) {
-    const target = event.target as HTMLSelectElement
-    const themeId = target.value || null
+  // Options popup
+  let showOptionsPopup = $state(false)
+
+  function handleThemeChange(themeId: string | null) {
     if (doc.synced && !doc.readOnly) {
       doc.setThemeId(themeId)
+    }
+  }
+
+  function handleFormatChange(format: PresentationFormat) {
+    if (doc.synced && !doc.readOnly) {
+      doc.setFormat(format)
     }
   }
 
@@ -115,46 +123,36 @@
 
 <div class="flex h-screen flex-col">
   <!-- Header -->
-  <header class="navbar bg-base-200 border-b border-base-300 min-h-0 px-4 py-2">
-    <div class="flex-1 flex items-center gap-2">
+  <header class="navbar min-h-0 border-b border-base-300 bg-base-200 px-4 py-2">
+    <div class="flex flex-1 items-center gap-2">
       <input
         type="text"
         bind:value={titleInput}
         oninput={handleTitleChange}
         placeholder="Untitled"
-        class="input input-ghost text-lg font-medium w-auto"
+        class="input w-auto input-ghost text-lg font-medium"
         disabled={!doc.synced || doc.readOnly} />
       {#if !doc.synced}
         <span class="text-xs text-base-content/50">Connecting...</span>
       {/if}
     </div>
 
-    <div class="flex-none flex items-center gap-4">
-      <!-- Theme Picker -->
-      <div class="flex items-center gap-2">
-        <label for="theme-select" class="text-sm text-base-content/70">Theme:</label>
-        <select
-          id="theme-select"
-          onchange={handleThemeChange}
-          disabled={!doc.synced || doc.readOnly}
-          class="select select-bordered select-sm">
-          <option value="">No theme</option>
-          {#each data.themes as theme (theme.id)}
-            <option value={theme.id} selected={doc.themeId === theme.id}>
-              {theme.name}
-              {#if theme.isSystemTheme}(System){/if}
-            </option>
-          {/each}
-        </select>
-      </div>
+    <div class="flex flex-none items-center gap-4">
+      <button
+        type="button"
+        onclick={() => (showOptionsPopup = true)}
+        disabled={!doc.synced}
+        class="btn btn-ghost btn-sm">
+        Options
+      </button>
 
-      <a href={resolve(`/presentation/${data.document.id}/presenter`)} class="btn btn-primary btn-sm">Present</a>
+      <a href={resolve(`/presentation/${data.document.id}/presenter`)} class="btn btn-sm btn-primary">Present</a>
 
       <button
         type="button"
         onclick={() => (showDeleteDialog = true)}
         disabled={deleting}
-        class="btn btn-outline btn-error btn-sm">
+        class="btn btn-outline btn-sm btn-error">
         {deleting ? 'Deleting...' : 'Delete'}
       </button>
     </div>
@@ -166,7 +164,7 @@
       <PresentationEditor {doc} theme={resolvedTheme} />
     {:else}
       <div class="flex h-full items-center justify-center">
-        <span class="loading loading-spinner loading-lg"></span>
+        <span class="loading loading-lg loading-spinner"></span>
       </div>
     {/if}
   </main>
@@ -174,7 +172,7 @@
 
 <!-- Delete Confirmation Dialog -->
 {#if showDeleteDialog}
-  <div class="modal modal-open">
+  <div class="modal-open modal">
     <div class="modal-box">
       <h3 class="text-lg font-bold">Delete Presentation</h3>
       <p class="py-4 text-base-content/70">
@@ -185,6 +183,21 @@
         <button type="button" onclick={confirmDelete} class="btn btn-error">Delete</button>
       </div>
     </div>
+    <!-- svelte-ignore a11y_click_events_have_key_events -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div class="modal-backdrop" onclick={() => (showDeleteDialog = false)}></div>
   </div>
+{/if}
+
+<!-- Options Popup -->
+{#if showOptionsPopup}
+  <OptionsPopup
+    open={showOptionsPopup}
+    themes={data.themes}
+    currentThemeId={doc.themeId}
+    currentFormat={doc.format}
+    disabled={!doc.synced || doc.readOnly}
+    onThemeChange={handleThemeChange}
+    onFormatChange={handleFormatChange}
+    onClose={() => (showOptionsPopup = false)} />
 {/if}

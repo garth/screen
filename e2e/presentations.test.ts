@@ -340,10 +340,13 @@ test.describe('Presentation Editor', () => {
     await page.goto(`/presentation/${doc.id}/edit`)
     await page.waitForLoadState('networkidle')
 
-    // Should display theme picker (label)
-    await expect(page.getByText('Theme:')).toBeVisible({ timeout: 10000 })
+    // Click Options button to open the popup
+    await page.getByRole('button', { name: 'Options' }).click()
 
-    // Theme picker should be visible
+    // Should display theme picker (label) in the options popup
+    await expect(page.getByText('Theme', { exact: true })).toBeVisible({ timeout: 10000 })
+
+    // Theme picker should be visible in the popup
     const themeSelect = page.locator('select#theme-select')
     await expect(themeSelect).toBeVisible()
   })
@@ -594,7 +597,7 @@ test.describe('Presentation Deletion', () => {
     await deleteButton.click()
 
     // Confirm dialog should appear
-    const dialog = page.locator('dialog')
+    const dialog = page.locator('.modal-open')
     await expect(dialog).toBeVisible()
     await expect(dialog.getByText('Delete Presentation')).toBeVisible()
 
@@ -631,7 +634,7 @@ test.describe('Presentation Deletion', () => {
     await page.getByRole('button', { name: 'Delete', exact: true }).click()
 
     // Dialog should appear
-    const dialog = page.locator('dialog')
+    const dialog = page.locator('.modal-open')
     await expect(dialog).toBeVisible()
 
     // Click cancel
@@ -662,7 +665,7 @@ test.describe('Presentation Deletion', () => {
 
     // Open and confirm the delete dialog
     await page.getByRole('button', { name: 'Delete', exact: true }).click()
-    const dialog = page.locator('dialog')
+    const dialog = page.locator('.modal-open')
     await expect(dialog).toBeVisible()
     await dialog.getByRole('button', { name: 'Delete' }).click()
 
@@ -691,7 +694,7 @@ test.describe('Presentation Deletion', () => {
 
     // Open and confirm delete dialog
     await page.getByRole('button', { name: 'Delete', exact: true }).click()
-    const dialog = page.locator('dialog')
+    const dialog = page.locator('.modal-open')
     await expect(dialog).toBeVisible()
     await dialog.getByRole('button', { name: 'Delete' }).click()
 

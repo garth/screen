@@ -65,8 +65,18 @@
     }
   })
 
-  // Derived: are we following someone?
+  // Default to first segment if no position is set
+  $effect(() => {
+    if (doc.synced && segments.length > 0 && currentSegmentId === null) {
+      currentSegmentId = segments[0].id
+    }
+  })
+
+  // Derived: are we actively following someone?
   const isFollowing = $derived(followMode && activePresenter !== null)
+
+  // Track if we have an active presentation state (either following or had a presenter)
+  const hasActiveState = $derived(currentSegmentId !== null)
 
   onDestroy(() => {
     themeDoc?.destroy()
@@ -83,12 +93,13 @@
     <PresentationViewer
       content={doc.content}
       theme={resolvedTheme}
-      mode={isFollowing ? 'present' : 'view'}
-      segments={isFollowing ? segments : []}
-      currentSegmentId={isFollowing ? currentSegmentId : null} />
+      mode={hasActiveState ? 'follow' : 'view'}
+      format={doc.format}
+      {segments}
+      {currentSegmentId} />
   {:else}
     <div class="flex h-full items-center justify-center">
-      <span class="loading loading-spinner loading-lg"></span>
+      <span class="loading loading-lg loading-spinner"></span>
     </div>
   {/if}
 </div>

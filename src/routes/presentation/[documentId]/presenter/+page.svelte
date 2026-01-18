@@ -157,14 +157,14 @@
 
 <div class="flex h-screen flex-col">
   <!-- Header -->
-  <header class="navbar bg-base-200 border-b border-base-300 min-h-0 px-4 py-2">
+  <header class="navbar min-h-0 border-b border-base-300 bg-base-200 px-4 py-2">
     <div class="flex-1">
       <h1 class="text-lg font-medium">
         {doc.synced && doc.title ? doc.title : data.document.title || 'Untitled'}
       </h1>
     </div>
 
-    <div class="flex-none flex items-center gap-3">
+    <div class="flex flex-none items-center gap-3">
       <a href={resolve(`/presentation/${data.document.id}`)} class="btn btn-ghost btn-sm">View</a>
       <a href={resolve(`/presentation/${data.document.id}/edit`)} class="btn btn-ghost btn-sm">Edit</a>
     </div>
@@ -176,6 +176,7 @@
         content={doc.content}
         theme={resolvedTheme}
         mode="present"
+        format={doc.format}
         {segments}
         {currentSegmentId}
         onSegmentClick={handleNavigateById} />
@@ -186,7 +187,7 @@
           type="button"
           onclick={() => handleNavigateByIndex(currentSegmentIndex - 1)}
           disabled={currentSegmentIndex <= 0}
-          class="btn btn-lg btn-circle bg-base-100/80 hover:bg-base-100 backdrop-blur-sm shadow-lg border-base-300 disabled:cursor-not-allowed disabled:opacity-50">
+          class="btn btn-circle border-base-300 bg-base-100/80 shadow-lg backdrop-blur-sm btn-lg hover:bg-base-100 disabled:cursor-not-allowed disabled:opacity-50">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
@@ -195,7 +196,7 @@
           type="button"
           onclick={() => handleNavigateByIndex(currentSegmentIndex + 1)}
           disabled={currentSegmentIndex >= segments.length - 1}
-          class="btn btn-lg btn-circle bg-base-100/80 hover:bg-base-100 backdrop-blur-sm shadow-lg border-base-300 disabled:cursor-not-allowed disabled:opacity-50">
+          class="btn btn-circle border-base-300 bg-base-100/80 shadow-lg backdrop-blur-sm btn-lg hover:bg-base-100 disabled:cursor-not-allowed disabled:opacity-50">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
@@ -203,7 +204,7 @@
       </div>
     {:else}
       <div class="flex h-full items-center justify-center">
-        <span class="loading loading-spinner loading-lg"></span>
+        <span class="loading loading-lg loading-spinner"></span>
       </div>
     {/if}
   </main>

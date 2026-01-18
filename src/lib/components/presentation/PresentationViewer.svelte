@@ -2,28 +2,49 @@
   import * as Y from 'yjs'
   import type { ResolvedTheme } from '$lib/utils/theme-resolver'
   import type { ContentSegment } from '$lib/utils/segment-parser'
+  import type { PresentationFormat } from '$lib/stores/documents/types'
 
   interface Props {
     content: Y.XmlFragment | null
     theme: ResolvedTheme
-    mode?: 'view' | 'present'
+    mode?: 'view' | 'present' | 'follow'
+    format?: PresentationFormat
     segments?: ContentSegment[]
     currentSegmentId?: string | null
     onSegmentClick?: (segmentId: string) => void
   }
 
-  let { content, theme, mode = 'view', segments = [], currentSegmentId = null, onSegmentClick }: Props = $props()
+  let {
+    content,
+    theme,
+    mode = 'view',
+    format = 'scrolling',
+    segments = [],
+    currentSegmentId = null,
+    onSegmentClick,
+  }: Props = $props()
 
   let viewerElement: HTMLElement | null = $state(null)
 
   // Scroll current segment into view when it changes
   $effect(() => {
-    if (mode !== 'present' || !viewerElement || !currentSegmentId) return
+    if (mode === 'view' || !viewerElement || !currentSegmentId) return
 
     const segmentEl = viewerElement.querySelector(`[data-segment-id="${currentSegmentId}"]`)
-    if (segmentEl) {
+    if (!segmentEl) return
+
+    if (format === 'scrolling') {
+      // Scrolling mode: position current segment near top (~20% from top)
+      const containerRect = viewerElement.getBoundingClientRect()
+      const elementRect = segmentEl.getBoundingClientRect()
+      const offsetTop = elementRect.top - containerRect.top + viewerElement.scrollTop
+      const targetScroll = offsetTop - containerRect.height * 0.2
+      viewerElement.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' })
+    } else if (format === 'maximal') {
+      // Maximal mode: center the current segment
       segmentEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
+    // Minimal mode: no scrolling needed, we hide other segments
   })
 
   /**
@@ -45,11 +66,22 @@
     segments: ContentSegment[]
     segmentIndex: number
     currentSegmentId: string | null
+    currentSegmentIndex: number
     /** The merge group ID that should be highlighted (if current segment is in a merge group) */
     activeMergeGroupId: string | null
     inPresenterMode: boolean
     /** Track if we're inside a list_item (paragraphs inside shouldn't be segments) */
     insideListItem: boolean
+    /** Format mode for display */
+    format: PresentationFormat
+    /** Set of segment IDs visible in minimal mode */
+    minimalVisibleIds: Set<string>
+    /** Whether to apply format display effects (hiding/fading) - only true in follow mode */
+    applyFormatEffects: boolean
+    /** Track if we've rendered at least one visible segment */
+    hasRenderedVisible: boolean
+    /** Track if we've finished the visible range (hit non-visible after visible) */
+    hasFinishedVisible: boolean
   }
 
   /**
@@ -64,6 +96,29 @@
   }
 
   /**
+   * Check if a segment should be visible (not hidden by format mode)
+   */
+  function isSegmentVisible(segment: ContentSegment, ctx: SegmentContext): boolean {
+    // All segments visible if not in follow mode
+    if (!ctx.applyFormatEffects) return true
+
+    // Scrolling mode: all segments visible (just faded)
+    if (ctx.format === 'scrolling') return true
+
+    // Minimal mode: only show segments in current pair
+    if (ctx.format === 'minimal') {
+      return ctx.minimalVisibleIds.has(segment.id)
+    }
+
+    // Maximal mode: only show active segment (and its merge group)
+    if (ctx.format === 'maximal') {
+      return isSegmentActive(segment, ctx)
+    }
+
+    return true
+  }
+
+  /**
    * Wrap content in a segment div if we're in presenter mode
    */
   function wrapWithSegment(html: string, ctx: SegmentContext): string {
@@ -72,11 +127,34 @@
     const segment = ctx.segments[ctx.segmentIndex]
     if (!segment) return html
 
-    const isActive = isSegmentActive(segment, ctx)
-    const activeClass = isActive ? ' segment-active' : ''
+    const segmentIdx = ctx.segmentIndex
     ctx.segmentIndex++
 
-    return `<div class="segment${activeClass}" data-segment-index="${segment.index}" data-segment-id="${segment.id}">${html}</div>`
+    // Check if segment is visible and track state
+    const visible = isSegmentVisible(segment, ctx)
+    if (visible) {
+      ctx.hasRenderedVisible = true
+    } else if (ctx.hasRenderedVisible) {
+      ctx.hasFinishedVisible = true
+    }
+
+    // Skip rendering if segment is not visible
+    if (!visible) {
+      return ''
+    }
+
+    const isActive = isSegmentActive(segment, ctx)
+
+    // Build CSS classes
+    const classes = ['segment']
+    if (isActive) classes.push('segment-active')
+
+    // Scrolling mode: add fade class for segments above current
+    if (ctx.applyFormatEffects && ctx.format === 'scrolling' && segmentIdx < ctx.currentSegmentIndex) {
+      classes.push('segment-faded')
+    }
+
+    return `<div class="${classes.join(' ')}" data-segment-index="${segment.index}" data-segment-id="${segment.id}">${html}</div>`
   }
 
   /**
@@ -101,14 +179,37 @@
 
     while (ctx.segmentIndex < ctx.segments.length && ctx.segments[ctx.segmentIndex].type === 'sentence') {
       const segment = ctx.segments[ctx.segmentIndex]
+      const segmentIdx = ctx.segmentIndex
+      ctx.segmentIndex++
+
+      // Check if segment is visible and track state
+      const visible = isSegmentVisible(segment, ctx)
+      if (visible) {
+        ctx.hasRenderedVisible = true
+      } else if (ctx.hasRenderedVisible) {
+        ctx.hasFinishedVisible = true
+      }
+
+      // Skip rendering if segment is not visible
+      if (!visible) {
+        continue
+      }
+
       const isActive = isSegmentActive(segment, ctx)
-      const activeClass = isActive ? ' segment-active' : ''
+
+      // Build CSS classes
+      const classes = ['segment']
+      if (isActive) classes.push('segment-active')
+
+      // Scrolling mode: add fade class for segments above current
+      if (ctx.applyFormatEffects && ctx.format === 'scrolling' && segmentIdx < ctx.currentSegmentIndex) {
+        classes.push('segment-faded')
+      }
 
       // Use sentenceText for full sentence (label may be truncated), fall back to label
       const sentenceHtml = escapeHtml(segment.sentenceText || segment.label)
 
-      html += `<span class="segment${activeClass}" data-segment-index="${segment.index}" data-segment-id="${segment.id}">${sentenceHtml}</span> `
-      ctx.segmentIndex++
+      html += `<span class="${classes.join(' ')}" data-segment-index="${segment.index}" data-segment-id="${segment.id}">${sentenceHtml}</span> `
     }
 
     return html.trim()
@@ -186,8 +287,17 @@
       // Check if this element has a segment ID (empty elements won't have one)
       const hasSegmentId = node.getAttribute('segmentId') != null
 
+      // In follow mode with format effects, skip elements without segmentIds
+      // only if they're before the first visible segment or after the last visible segment
+      const shouldSkipNonSegment =
+        ctx?.applyFormatEffects && !hasSegmentId && (!ctx.hasRenderedVisible || ctx.hasFinishedVisible)
+
       switch (tagName) {
         case 'paragraph': {
+          // Skip empty paragraphs outside the visible range
+          if (shouldSkipNonSegment && !ctx?.insideListItem) {
+            return ''
+          }
           const children = buildChildren(ctx)
           // Skip wrapping paragraphs inside list items - the list_item is the segment
           if (ctx?.insideListItem) {
@@ -203,6 +313,10 @@
         }
 
         case 'heading': {
+          // Skip empty headings in follow mode with format effects
+          if (shouldSkipNonSegment) {
+            return ''
+          }
           const children = buildChildren(ctx)
           const level = node.getAttribute('level') || 1
           const html = `<h${level}>${children}</h${level}>`
@@ -247,6 +361,10 @@
           return `<hr class="slide-divider" data-slide-divider="true" />`
 
         case 'blockquote': {
+          // Skip empty blockquotes in follow mode with format effects
+          if (shouldSkipNonSegment) {
+            return ''
+          }
           const children = buildChildren(ctx)
           const html = `<blockquote>${children}</blockquote>`
           return ctx && hasSegmentId ? wrapWithSegment(html, ctx) : html
@@ -280,28 +398,56 @@
     return ''
   }
 
-  const htmlContent = $derived.by(() => {
-    if (!content) return ''
+  // Compute HTML content - must be a function that reruns when props change
+  function computeHtmlContent(
+    _content: Y.XmlFragment | null,
+    _mode: 'view' | 'present' | 'follow',
+    _format: PresentationFormat,
+    _segments: ContentSegment[],
+    _currentSegmentId: string | null,
+  ): string {
+    if (!_content) return ''
 
-    // Create segment context when in presenter mode with segments
-    if (mode === 'present' && segments.length > 0) {
+    // Create segment context when in present or follow mode with segments
+    if ((_mode === 'present' || _mode === 'follow') && _segments.length > 0) {
+      // Compute segment index and pair inline to ensure freshness
+      const segIdx = _currentSegmentId ? _segments.findIndex((s) => s.id === _currentSegmentId) : -1
+      const pairIdx = Math.floor(Math.max(0, segIdx) / 2)
+
+      // Compute minimal visible IDs inline
+      const minimalIds = new Set<string>()
+      if (_format === 'minimal') {
+        const startIdx = pairIdx * 2
+        if (_segments[startIdx]) minimalIds.add(_segments[startIdx].id)
+        if (_segments[startIdx + 1]) minimalIds.add(_segments[startIdx + 1].id)
+      }
+
       // Find the merge group ID if the current segment is part of a merge group
-      const currentSegment = currentSegmentId ? segments.find((s) => s.id === currentSegmentId) : null
+      const currentSegment = _currentSegmentId ? _segments.find((s) => s.id === _currentSegmentId) : null
       const activeMergeGroupId = currentSegment?.mergeGroupId ?? null
 
       const ctx: SegmentContext = {
-        segments,
+        segments: _segments,
         segmentIndex: 0,
-        currentSegmentId,
+        currentSegmentId: _currentSegmentId,
+        currentSegmentIndex: segIdx,
         activeMergeGroupId,
         inPresenterMode: true,
         insideListItem: false,
+        format: _format,
+        minimalVisibleIds: minimalIds,
+        applyFormatEffects: _mode === 'follow',
+        hasRenderedVisible: false,
+        hasFinishedVisible: false,
       }
-      return xmlToHtml(content, ctx)
+      return xmlToHtml(_content, ctx)
     }
 
-    return xmlToHtml(content)
-  })
+    return xmlToHtml(_content)
+  }
+
+  // Use $derived with explicit prop access to ensure reactivity
+  const htmlContent = $derived(computeHtmlContent(content, mode, format, segments, currentSegmentId))
 </script>
 
 <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -354,7 +500,8 @@
   .presentation-viewer :global(.segment) {
     transition:
       background-color 0.2s ease,
-      outline-color 0.2s ease;
+      outline-color 0.2s ease,
+      opacity 0.3s ease;
     border-radius: 0.25rem;
     padding: 0.125rem 0.25rem;
     margin: -0.125rem -0.25rem;
@@ -364,6 +511,11 @@
     background-color: rgba(59, 130, 246, 0.15);
     outline: 2px solid rgba(59, 130, 246, 0.5);
     outline-offset: 2px;
+  }
+
+  /* Faded segments (scrolling mode - segments above current) */
+  .presentation-viewer :global(.segment-faded) {
+    opacity: 0.4;
   }
 
   /* Sentence segments (inline spans) */
@@ -377,6 +529,11 @@
     background-color: rgba(59, 130, 246, 0.2);
     outline: 1px solid rgba(59, 130, 246, 0.4);
     outline-offset: 1px;
+  }
+
+  /* Faded sentence segments (scrolling mode) */
+  .presentation-viewer :global(span.segment-faded) {
+    opacity: 0.4;
   }
 
   /* Headings */
