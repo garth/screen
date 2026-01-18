@@ -33,13 +33,14 @@ test.describe('Presenter Awareness Sync', () => {
     await page.waitForLoadState('networkidle')
 
     // Wait for loading to finish
-    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.loading')).not.toBeVisible({ timeout: 15000 })
 
     // Header should show title
     await expect(page.locator('header h1')).toContainText('Presenter Load Test', { timeout: 10000 })
 
-    // Keyboard navigation hint should be visible (always shown in header)
-    await expect(page.getByText('Use arrow keys to navigate')).toBeVisible()
+    // View and Edit links should be visible in header
+    await expect(page.getByRole('link', { name: 'View' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Edit' })).toBeVisible()
   })
 
   test('viewer page loads successfully', async ({ page }) => {
@@ -59,14 +60,9 @@ test.describe('Presenter Awareness Sync', () => {
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
 
-    // Wait for loading to finish
-    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
-
-    // Header should show title
-    await expect(page.locator('header h1')).toContainText('Viewer Load Test', { timeout: 10000 })
-
-    // Present button should be visible for owner
-    await expect(page.getByRole('link', { name: 'Present', exact: true })).toBeVisible()
+    // Viewer is fullscreen - presentation should be visible without header
+    await expect(page.locator('.presentation-viewer')).toBeVisible({ timeout: 15000 })
+    await expect(page.locator('header')).not.toBeVisible()
   })
 
   // Skip: Awareness sync tests are inherently flaky due to WebSocket timing
@@ -294,7 +290,7 @@ test.describe('Presenter Navigation', () => {
     password: 'password123',
   }
 
-  test('presenter shows sidebar with controls', async ({ page }) => {
+  test('presenter shows floating navigation buttons', async ({ page }) => {
     const email = `presenter-nav-${Date.now()}@example.com`
 
     const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
@@ -309,31 +305,33 @@ test.describe('Presenter Navigation', () => {
     await expect(page).toHaveURL('/presentations')
     await page.goto(`/presentation/${doc.id}/presenter`)
     await page.waitForLoadState('networkidle')
-    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.loading')).not.toBeVisible({ timeout: 15000 })
 
-    // Sidebar should be visible
-    await expect(page.locator('aside')).toBeVisible()
+    // Floating navigation buttons should be visible
+    const navButtons = page.locator('.nav-buttons button')
+    await expect(navButtons).toHaveCount(2)
   })
 
-  test('presenter has keyboard navigation hint', async ({ page }) => {
-    const email = `presenter-hint-${Date.now()}@example.com`
+  test('presenter has header with View and Edit links', async ({ page }) => {
+    const email = `presenter-header-${Date.now()}@example.com`
 
     const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
     const doc = await createDocument(page, {
       userId: user.id,
-      name: 'Hint Test',
+      name: 'Header Test',
       type: 'presentation',
-      meta: { title: 'Hint Test' },
+      meta: { title: 'Header Test' },
     })
 
     await loginUser(page, { email, password: testUser.password })
     await expect(page).toHaveURL('/presentations')
     await page.goto(`/presentation/${doc.id}/presenter`)
     await page.waitForLoadState('networkidle')
-    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.loading')).not.toBeVisible({ timeout: 15000 })
 
-    // Keyboard hint should be visible
-    await expect(page.getByText('Use arrow keys to navigate')).toBeVisible()
+    // Header should have View and Edit links
+    await expect(page.getByRole('link', { name: 'View' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Edit' })).toBeVisible()
   })
 })
 
@@ -344,50 +342,27 @@ test.describe('Viewer UI Elements', () => {
     password: 'password123',
   }
 
-  test('viewer shows Edit button for users with write access', async ({ page }) => {
-    const email = `viewer-edit-${Date.now()}@example.com`
+  test('viewer is fullscreen without header or navigation buttons', async ({ page }) => {
+    const email = `viewer-fullscreen-${Date.now()}@example.com`
 
     const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
     const doc = await createDocument(page, {
       userId: user.id,
-      name: 'Edit Button Test',
+      name: 'Fullscreen Test',
       type: 'presentation',
-      meta: { title: 'Edit Button Test' },
+      meta: { title: 'Fullscreen Test' },
     })
 
     await loginUser(page, { email, password: testUser.password })
     await expect(page).toHaveURL('/presentations')
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
-    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.presentation-viewer')).toBeVisible({ timeout: 15000 })
 
-    // Edit link should be visible for owner
-    const editLink = page.getByRole('link', { name: 'Edit' })
-    await expect(editLink).toBeVisible()
-    await expect(editLink).toHaveAttribute('href', `/presentation/${doc.id}/edit`)
-  })
-
-  test('viewer shows Present button for users with write access', async ({ page }) => {
-    const email = `viewer-present-${Date.now()}@example.com`
-
-    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
-    const doc = await createDocument(page, {
-      userId: user.id,
-      name: 'Present Button Test',
-      type: 'presentation',
-      meta: { title: 'Present Button Test' },
-    })
-
-    await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
-    await page.goto(`/presentation/${doc.id}`)
-    await page.waitForLoadState('networkidle')
-    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
-
-    // Present link should be visible for owner
-    const presentLink = page.getByRole('link', { name: 'Present', exact: true })
-    await expect(presentLink).toBeVisible()
-    await expect(presentLink).toHaveAttribute('href', `/presentation/${doc.id}/presenter`)
+    // Viewer is fullscreen - no header, no Edit/Present buttons
+    await expect(page.locator('header')).not.toBeVisible()
+    await expect(page.getByRole('link', { name: 'Edit' })).not.toBeVisible()
+    await expect(page.getByRole('link', { name: 'Present', exact: true })).not.toBeVisible()
   })
 
   test('read-only user does not see Edit or Present buttons', async ({ page }) => {
@@ -450,13 +425,13 @@ test.describe('Document Sync', () => {
     await expect(page.locator('header h1')).toContainText('Custom Presentation Title', { timeout: 10000 })
   })
 
-  test('viewer loads document title from server', async ({ page }) => {
-    const email = `sync-viewer-title-${Date.now()}@example.com`
+  test('viewer displays presentation in fullscreen mode', async ({ page }) => {
+    const email = `sync-viewer-fullscreen-${Date.now()}@example.com`
 
     const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
     const doc = await createDocument(page, {
       userId: user.id,
-      name: 'Viewer Title Test',
+      name: 'Viewer Fullscreen Test',
       type: 'presentation',
       meta: { title: 'Viewer Custom Title' },
     })
@@ -465,10 +440,10 @@ test.describe('Document Sync', () => {
     await expect(page).toHaveURL('/presentations')
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
-    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.presentation-viewer')).toBeVisible({ timeout: 15000 })
 
-    // Title should show the custom title from meta
-    await expect(page.locator('header h1')).toContainText('Viewer Custom Title', { timeout: 10000 })
+    // Viewer is fullscreen - no header with title
+    await expect(page.locator('header')).not.toBeVisible()
   })
 
   test('page title includes presentation name', async ({ page }) => {

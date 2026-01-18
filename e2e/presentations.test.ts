@@ -141,7 +141,7 @@ test.describe('Presentation Viewer', () => {
     password: 'password123',
   }
 
-  test('displays presentation content', async ({ page }) => {
+  test('displays fullscreen presentation without header', async ({ page }) => {
     const email = `viewer-${Date.now()}@example.com`
 
     const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
@@ -158,14 +158,12 @@ test.describe('Presentation Viewer', () => {
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
 
-    // Wait for loading to finish
-    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
-
-    // Should display the title in header (the header h1)
-    await expect(page.locator('header h1')).toContainText('Test Viewer Title', { timeout: 10000 })
+    // Viewer is fullscreen - no header or footer
+    await expect(page.locator('header')).not.toBeVisible()
+    await expect(page.locator('.presentation-viewer')).toBeVisible({ timeout: 10000 })
   })
 
-  test('shows edit and present buttons for owner', async ({ page }) => {
+  test('viewer has no edit or present buttons (fullscreen mode)', async ({ page }) => {
     const email = `viewer-owner-${Date.now()}@example.com`
 
     const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
@@ -181,41 +179,8 @@ test.describe('Presentation Viewer', () => {
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
 
-    // Owner should see Edit and Present buttons (exact match to avoid "Presentations")
-    await expect(page.getByRole('link', { name: 'Edit' })).toBeVisible({ timeout: 10000 })
-    await expect(page.getByRole('link', { name: 'Present', exact: true })).toBeVisible()
-  })
-
-  test('hides edit/present buttons for read-only users', async ({ page }) => {
-    const ownerEmail = `viewer-owner2-${Date.now()}@example.com`
-    const readerEmail = `viewer-reader-${Date.now()}@example.com`
-
-    // Create owner and presentation
-    const owner = await createVerifiedUser(page, { ...testUser, email: ownerEmail, password: testUser.password })
-    const doc = await createDocument(page, {
-      userId: owner.id,
-      name: 'Read Only Presentation',
-      type: 'presentation',
-    })
-
-    // Create reader with read-only access
-    const reader = await createVerifiedUser(page, {
-      firstName: 'Reader',
-      lastName: 'User',
-      email: readerEmail,
-      password: testUser.password,
-    })
-    await createDocumentUser(page, { documentId: doc.id, userId: reader.id, write: false })
-
-    await loginUser(page, { email: readerEmail, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
-
-    await page.goto(`/presentation/${doc.id}`)
-    await page.waitForLoadState('networkidle')
-
-    // Reader should NOT see Edit and Present buttons (wait for page to load, then check)
-    // Wait for the content to be visible first
-    await expect(page.getByText('Loading presentation')).not.toBeVisible({ timeout: 10000 })
+    // Viewer is fullscreen - no Edit or Present buttons
+    await expect(page.locator('.presentation-viewer')).toBeVisible({ timeout: 10000 })
     await expect(page.getByRole('link', { name: 'Edit' })).not.toBeVisible()
     await expect(page.getByRole('link', { name: 'Present', exact: true })).not.toBeVisible()
   })
@@ -236,11 +201,8 @@ test.describe('Presentation Viewer', () => {
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
 
-    // Wait for loading to finish
-    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
-
-    // Should display the title in header
-    await expect(page.locator('header h1')).toContainText('Public Content', { timeout: 10000 })
+    // Wait for loading to finish - viewer should be visible
+    await expect(page.locator('.presentation-viewer')).toBeVisible({ timeout: 15000 })
   })
 
   test('redirects to login for private presentations when not authenticated', async ({ page }) => {
@@ -533,16 +495,17 @@ test.describe('Presentation Presenter Mode', () => {
     await page.waitForLoadState('networkidle')
 
     // Wait for loading to finish
-    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.loading')).not.toBeVisible({ timeout: 15000 })
 
     // Should display title in header
     await expect(page.locator('header h1')).toContainText('Presenter Title', { timeout: 10000 })
 
-    // Should show navigation hint
-    await expect(page.getByText('Use arrow keys to navigate')).toBeVisible()
+    // Should show View and Edit links in header
+    await expect(page.getByRole('link', { name: 'View' })).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Edit' })).toBeVisible()
   })
 
-  test('displays navigation controls in sidebar', async ({ page }) => {
+  test('displays floating navigation buttons', async ({ page }) => {
     const email = `presenter-nav-${Date.now()}@example.com`
 
     const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
@@ -558,12 +521,13 @@ test.describe('Presentation Presenter Mode', () => {
     await page.goto(`/presentation/${doc.id}/presenter`)
     await page.waitForLoadState('networkidle')
 
-    // Should display navigation buttons (← Previous and Next →)
-    await expect(page.getByText('Previous')).toBeVisible({ timeout: 10000 })
-    await expect(page.getByText('Next')).toBeVisible()
+    // Should display floating navigation buttons (circular buttons with arrow icons)
+    const navButtons = page.locator('.nav-buttons button')
+    await expect(navButtons).toHaveCount(2, { timeout: 10000 })
 
-    // Should display slide counter
-    await expect(page.getByText(/1 \/ \d+/)).toBeVisible()
+    // Both buttons should be visible
+    await expect(navButtons.first()).toBeVisible()
+    await expect(navButtons.last()).toBeVisible()
   })
 
   test('allows users with write access to present', async ({ page }) => {
@@ -593,8 +557,8 @@ test.describe('Presentation Presenter Mode', () => {
     await page.goto(`/presentation/${doc.id}/presenter`)
     await page.waitForLoadState('networkidle')
 
-    // Should be able to access presenter mode (check for navigation elements)
-    await expect(page.getByText('Previous')).toBeVisible({ timeout: 10000 })
+    // Should be able to access presenter mode (check for navigation buttons)
+    await expect(page.locator('.nav-buttons button')).toHaveCount(2, { timeout: 10000 })
   })
 })
 

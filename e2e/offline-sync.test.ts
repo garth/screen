@@ -34,8 +34,8 @@ test.describe('Offline Editing with IndexedDB', () => {
     // First visit - loads from server and caches to IndexedDB
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
-    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
-    await expect(page.locator('header h1')).toContainText('Cached Presentation', { timeout: 10000 })
+    // Viewer is fullscreen - should show presentation viewer
+    await expect(page.locator('.presentation-viewer')).toBeVisible({ timeout: 15000 })
 
     // Wait for IndexedDB to persist
     await page.waitForTimeout(1000)
@@ -43,10 +43,9 @@ test.describe('Offline Editing with IndexedDB', () => {
     // Reload the page - should load quickly from IndexedDB cache
     await page.reload()
     await page.waitForLoadState('networkidle')
-    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
 
-    // Title should still be visible (loaded from cache or server)
-    await expect(page.locator('header h1')).toContainText('Cached Presentation', { timeout: 10000 })
+    // Viewer should still be visible (loaded from cache or server)
+    await expect(page.locator('.presentation-viewer')).toBeVisible({ timeout: 15000 })
   })
 
   test('presenter mode works with IndexedDB persistence', async ({ page }) => {
@@ -65,12 +64,11 @@ test.describe('Offline Editing with IndexedDB', () => {
 
     await page.goto(`/presentation/${doc.id}/presenter`)
     await page.waitForLoadState('networkidle')
-    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.loading')).not.toBeVisible({ timeout: 15000 })
 
-    // Presenter mode should work
+    // Presenter mode should work with header and floating nav buttons
     await expect(page.locator('header h1')).toContainText('Offline Presenter', { timeout: 10000 })
-    await expect(page.getByText('Use arrow keys to navigate')).toBeVisible()
-    await expect(page.locator('aside')).toBeVisible()
+    await expect(page.locator('.nav-buttons button')).toHaveCount(2)
   })
 })
 
@@ -183,10 +181,9 @@ test.describe('Dual Provider Fallback', () => {
 
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
-    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
 
-    // Title should load from server
-    await expect(page.locator('header h1')).toContainText('Server Title', { timeout: 10000 })
+    // Viewer is fullscreen - should display presentation viewer
+    await expect(page.locator('.presentation-viewer')).toBeVisible({ timeout: 15000 })
   })
 
   test('edit page syncs document and shows toolbar', async ({ page }) => {
@@ -233,17 +230,16 @@ test.describe('Dual Provider Fallback', () => {
     // Open presenter
     await page.goto(`/presentation/${doc.id}/presenter`)
     await page.waitForLoadState('networkidle')
-    await expect(page.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
+    await expect(page.locator('.loading')).not.toBeVisible({ timeout: 15000 })
     await expect(page.locator('header h1')).toContainText('Same Document', { timeout: 10000 })
 
     // Open viewer in second tab
     const viewerPage = await context.newPage()
     await viewerPage.goto(`/presentation/${doc.id}`)
     await viewerPage.waitForLoadState('networkidle')
-    await expect(viewerPage.getByText('Loading presentation...')).not.toBeVisible({ timeout: 15000 })
 
-    // Both should show the same title
-    await expect(viewerPage.locator('header h1')).toContainText('Same Document', { timeout: 10000 })
+    // Viewer is fullscreen - should display presentation viewer
+    await expect(viewerPage.locator('.presentation-viewer')).toBeVisible({ timeout: 15000 })
 
     await viewerPage.close()
   })
