@@ -56,6 +56,8 @@ export interface PresentationDocument {
   setTextColor(value: string | undefined): void
 
   readonly content: Y.XmlFragment
+  /** Version counter that increments on each content change (for reactive updates) */
+  readonly contentVersion: number
 
   readonly ydoc: Y.Doc
   readonly meta: Y.Map<unknown>

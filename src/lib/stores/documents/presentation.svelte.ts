@@ -11,6 +11,9 @@ export function createPresentationDoc(options: DocumentOptions): PresentationDoc
   let backgroundColor: ReturnType<typeof createReactiveMetaProperty<string | undefined>>
   let textColor: ReturnType<typeof createReactiveMetaProperty<string | undefined>>
 
+  // Reactive content version - increments when Yjs content changes
+  let contentVersion = $state(0)
+
   const base = createBaseDocument({
     ...options,
     onDocumentSynced: () => {
@@ -34,6 +37,12 @@ export function createPresentationDoc(options: DocumentOptions): PresentationDoc
 
   // Rich text content (XmlFragment for ProseMirror compatibility)
   const content = base.ydoc.getXmlFragment('content')
+
+  // Observe content changes to trigger reactive updates
+  const contentObserver = () => {
+    contentVersion++
+  }
+  content.observeDeep(contentObserver)
 
   // Shared awareness channel for presenter sync via both WebRTC (P2P) and Hocuspocus (server)
   const awareness = createPresentationAwareness({
@@ -112,6 +121,10 @@ export function createPresentationDoc(options: DocumentOptions): PresentationDoc
     get content() {
       return content
     },
+    // Version number that increments on each content change (for reactive updates)
+    get contentVersion() {
+      return contentVersion
+    },
 
     // Raw Yjs access
     get ydoc() {
@@ -129,6 +142,7 @@ export function createPresentationDoc(options: DocumentOptions): PresentationDoc
 
     // Lifecycle
     destroy() {
+      content.unobserveDeep(contentObserver)
       base.destroy()
     },
   }

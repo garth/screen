@@ -49,9 +49,38 @@ describe('PresentationViewer', () => {
     content.push([p])
   }
 
+  // Empty paragraph with no text child at all (how ProseMirror might create it)
+  function addEmptyParagraphNoChild(content: Y.XmlFragment) {
+    const p = new Y.XmlElement('paragraph')
+    // No segmentId, no children
+    content.push([p])
+  }
+
+  // Empty paragraph with explicit null segmentId (how segment plugin clears it)
+  function addEmptyParagraphWithNullSegmentId(content: Y.XmlFragment) {
+    const p = new Y.XmlElement('paragraph')
+    p.setAttribute('segmentId', null as unknown as string)
+    const t = new Y.XmlText()
+    t.insert(0, '')
+    p.insert(0, [t])
+    content.push([p])
+  }
+
   function addSlideDivider(content: Y.XmlFragment) {
     const divider = new Y.XmlElement('slide_divider')
     content.push([divider])
+  }
+
+  function addHeading(content: Y.XmlFragment, text: string, level = 1): string {
+    const h = new Y.XmlElement('heading')
+    const segmentId = generateSegmentId()
+    h.setAttribute('segmentId', segmentId)
+    h.setAttribute('level', level)
+    const t = new Y.XmlText()
+    t.insert(0, text)
+    h.insert(0, [t])
+    content.push([h])
+    return segmentId
   }
 
   /**
@@ -294,6 +323,122 @@ describe('PresentationViewer', () => {
       await expect.element(page.getByText('Segment A')).toBeInTheDocument()
       await expect.element(page.getByText('Segment B')).toBeInTheDocument()
       await expect.element(page.getByText('Segment C')).toBeInTheDocument()
+    })
+
+    it('shows only the middle block when navigating to it (3 blocks)', async () => {
+      const content = createContent()
+      // Block 1
+      const id0 = addParagraph(content, 'Block1 Para1')
+      const id1 = addParagraph(content, 'Block1 Para2')
+      addEmptyParagraph(content) // Block boundary
+      // Block 2
+      const id2 = addParagraph(content, 'Block2 Para1')
+      const id3 = addParagraph(content, 'Block2 Para2')
+      addEmptyParagraph(content) // Block boundary
+      // Block 3
+      const id4 = addParagraph(content, 'Block3 Para1')
+      const id5 = addParagraph(content, 'Block3 Para2')
+
+      const segments = createSegments([id0, id1, id2, id3, id4, id5])
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'block',
+        segments,
+        currentSegmentId: id2, // Navigate to Block 2
+      })
+
+      // Block 1 should NOT be visible
+      await expect.element(page.getByText('Block1 Para1')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Block1 Para2')).not.toBeInTheDocument()
+      // Block 2 should be visible
+      await expect.element(page.getByText('Block2 Para1')).toBeInTheDocument()
+      await expect.element(page.getByText('Block2 Para2')).toBeInTheDocument()
+      // Block 3 should NOT be visible
+      await expect.element(page.getByText('Block3 Para1')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Block3 Para2')).not.toBeInTheDocument()
+    })
+
+    it('treats empty paragraphs with no children as block boundaries', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Block A content')
+      addEmptyParagraphNoChild(content) // Empty paragraph with no XmlText child
+      const id1 = addParagraph(content, 'Block B content')
+
+      const segments = createSegments([id0, id1])
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'block',
+        segments,
+        currentSegmentId: id0,
+      })
+
+      // Block A should be visible
+      await expect.element(page.getByText('Block A content')).toBeInTheDocument()
+      // Block B should NOT be visible
+      await expect.element(page.getByText('Block B content')).not.toBeInTheDocument()
+    })
+
+    it('treats empty paragraphs with null segmentId as block boundaries', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Block X content')
+      addEmptyParagraphWithNullSegmentId(content) // Empty paragraph with segmentId=null
+      const id1 = addParagraph(content, 'Block Y content')
+
+      const segments = createSegments([id0, id1])
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'block',
+        segments,
+        currentSegmentId: id0,
+      })
+
+      // Block X should be visible
+      await expect.element(page.getByText('Block X content')).toBeInTheDocument()
+      // Block Y should NOT be visible
+      await expect.element(page.getByText('Block Y content')).not.toBeInTheDocument()
+    })
+
+    it('correctly separates blocks with headings and paragraphs', async () => {
+      const content = createContent()
+      // Block 1: Heading + paragraph
+      const h1 = addHeading(content, 'Block 1 Title')
+      const p1 = addParagraph(content, 'Block 1 content')
+      addEmptyParagraph(content) // Block boundary
+      // Block 2: Heading + paragraph
+      const h2 = addHeading(content, 'Block 2 Title')
+      const p2 = addParagraph(content, 'Block 2 content')
+
+      const segments: ContentSegment[] = [
+        { id: h1, index: 0, label: 'Block 1 Title', type: 'heading', slideIndex: 0, level: 1 },
+        { id: p1, index: 1, label: 'Block 1 content', type: 'paragraph', slideIndex: 0 },
+        { id: h2, index: 2, label: 'Block 2 Title', type: 'heading', slideIndex: 0, level: 1 },
+        { id: p2, index: 3, label: 'Block 2 content', type: 'paragraph', slideIndex: 0 },
+      ]
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'block',
+        segments,
+        currentSegmentId: h1, // Navigate to Block 1
+      })
+
+      // Block 1 should be visible
+      await expect.element(page.getByText('Block 1 Title')).toBeInTheDocument()
+      await expect.element(page.getByText('Block 1 content')).toBeInTheDocument()
+      // Block 2 should NOT be visible
+      await expect.element(page.getByText('Block 2 Title')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Block 2 content')).not.toBeInTheDocument()
     })
   })
 

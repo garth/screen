@@ -1,6 +1,6 @@
 import { Plugin, PluginKey } from 'prosemirror-state'
 import { Decoration, DecorationSet } from 'prosemirror-view'
-import type { Node, Schema } from 'prosemirror-model'
+import { Fragment, type Node, type Schema } from 'prosemirror-model'
 import { generateSegmentId, isSegmentNode, extractSegmentsFromDoc } from './segment-annotator'
 import type { ContentSegment } from '$lib/utils/segment-parser'
 
@@ -24,7 +24,7 @@ export function createSegmentPlugin(schema: Schema): Plugin {
     key: segmentPluginKey,
 
     /**
-     * Append transaction to assign segment IDs and dissolve broken merge groups
+     * Append transaction to assign segment IDs, fix duplicates, and dissolve broken merge groups
      */
     appendTransaction(transactions, oldState, newState) {
       let tr = newState.tr
@@ -39,7 +39,7 @@ export function createSegmentPlugin(schema: Schema): Plugin {
         }
       })
 
-      // Only process merge group dissolution if document actually changed
+      // Only process document modifications if document actually changed
       const docChanged = transactions.some((t) => t.docChanged)
 
       if (docChanged) {
@@ -192,8 +192,67 @@ export function createSegmentPlugin(schema: Schema): Plugin {
       decorations(state) {
         return this.getState(state)?.decorations
       },
+
+      /**
+       * Transform pasted content to regenerate segment IDs.
+       * This prevents duplicate IDs when copy/pasting within the same document.
+       */
+      transformPasted(slice) {
+        // Create a new slice with regenerated segment IDs
+        const fragment = transformFragmentSegmentIds(slice.content)
+        // Use Slice constructor directly - it's the same class
+        const Slice = slice.constructor as new (
+          content: Fragment,
+          openStart: number,
+          openEnd: number,
+        ) => typeof slice
+        return new Slice(fragment, slice.openStart, slice.openEnd)
+      },
     },
   })
+}
+
+/**
+ * Transform a fragment to regenerate all segment IDs.
+ * Used for pasted content to prevent duplicate IDs.
+ */
+function transformFragmentSegmentIds(fragment: Fragment): Fragment {
+  const nodes: Node[] = []
+
+  fragment.forEach((node) => {
+    nodes.push(transformNodeSegmentIds(node))
+  })
+
+  return Fragment.from(nodes)
+}
+
+/**
+ * Transform a node to regenerate its segment ID and recursively transform children.
+ */
+function transformNodeSegmentIds(node: Node): Node {
+  // Transform children first
+  let newContent = node.content
+  if (node.content.size > 0) {
+    newContent = transformFragmentSegmentIds(node.content)
+  }
+
+  // Regenerate segment ID if this is a segment node with an ID
+  let newAttrs = node.attrs
+  if (isSegmentNode(node) && node.attrs.segmentId) {
+    newAttrs = {
+      ...node.attrs,
+      segmentId: generateSegmentId(),
+      // Also clear merge group since pasted content shouldn't be in the original merge group
+      mergeGroupId: null,
+    }
+  }
+
+  // Return new node if anything changed
+  if (newContent !== node.content || newAttrs !== node.attrs) {
+    return node.type.create(newAttrs, newContent, node.marks)
+  }
+
+  return node
 }
 
 /**

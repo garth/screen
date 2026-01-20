@@ -83,8 +83,14 @@ function mapNodeTypeToSegmentType(nodeName: string): ContentSegment['type'] {
  *
  * For long paragraphs without stored sentence nodes, creates virtual
  * sentence segments at parse time for sentence-level navigation.
+ *
+ * @param content The Yjs XmlFragment to parse
+ * @param _version Optional version number to trigger reactive updates (not used internally)
  */
-export function parseContentSegments(content: Y.XmlFragment | null): ContentSegment[] {
+export function parseContentSegments(
+  content: Y.XmlFragment | null,
+  _version?: number,
+): ContentSegment[] {
   if (!content) return []
 
   const segments: ContentSegment[] = []

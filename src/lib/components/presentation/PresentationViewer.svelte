@@ -519,6 +519,7 @@
 
       // Check if this is an empty block (virtual slide divider)
       const isEmpty = isEmptyBlock(child)
+      const segmentId = child.getAttribute('segmentId')
 
       if (isEmpty) {
         // Empty block: if we had content before, start a new block
@@ -537,15 +538,16 @@
         child.forEach((listItem) => {
           if (listItem instanceof Y.XmlElement) {
             const segmentId = listItem.getAttribute('segmentId')
-            if (segmentId) {
+            // Only use first occurrence of each segmentId (handles duplicate IDs defensively)
+            if (segmentId && !segmentToBlock.has(segmentId)) {
               segmentToBlock.set(segmentId, currentBlockIndex)
             }
           }
         })
       } else {
         // Check for segment on this element
-        const segmentId = child.getAttribute('segmentId')
-        if (segmentId) {
+        // Only use first occurrence of each segmentId (handles duplicate IDs defensively)
+        if (segmentId && !segmentToBlock.has(segmentId)) {
           segmentToBlock.set(segmentId, currentBlockIndex)
         }
       }

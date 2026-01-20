@@ -46,7 +46,10 @@
   )
 
   // Parse content into segments for navigation
-  const segments: ContentSegment[] = $derived(doc.synced ? parseContentSegments(doc.content) : [])
+  // Include contentVersion in dependency to trigger re-parse when content changes
+  const segments: ContentSegment[] = $derived(
+    doc.synced ? parseContentSegments(doc.content, doc.contentVersion) : [],
+  )
 
   // Track by STABLE segment ID (not index)
   let currentSegmentId = $state<string | null>(null)
