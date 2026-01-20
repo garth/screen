@@ -75,6 +75,11 @@ User → Session (auth), Document → DocumentUpdate (change tracking), Document
 The presentation feature uses a rich text editor with real-time collaboration:
 
 - **Editor**: ProseMirror with custom schema (`src/lib/editor/schema.ts`) supporting paragraphs, headings, lists, images, blockquotes, and slide dividers
+- **Schema Types** (`src/lib/editor/schema.ts`):
+  - Block nodes: `paragraph`, `heading` (levels 1-3), `bullet_list`, `ordered_list`, `list_item`, `blockquote`, `attribution`, `slide_divider`
+  - Inline nodes: `text`, `sentence` (for split paragraphs), `image`, `hard_break`
+  - Marks: `strong`, `em`, `underline`, `strikethrough`, `code`, `link`
+  - Segment attributes: `segmentId` and `mergeGroupId` on paragraph, heading, list_item, blockquote, image
 - **Collaboration**: Yjs with y-prosemirror for CRDT-based real-time sync
 - **Segmentation**: Content is automatically segmented for presenter navigation:
   - Stable UUIDs assigned to each segment via `segmentId` attribute
@@ -93,6 +98,32 @@ The presentation feature uses a rich text editor with real-time collaboration:
   - Merged segments navigate and highlight as one unit
   - Viewer auto-scrolls to active segment
   - Presenter sync via shared awareness channel
+- **Format Modes**: Control how content is displayed to viewers
+  - `single`: shows only 1 segment per slide
+  - `minimal`: Shows only 2 segments at a time (current pair)
+  - `block`: Shows a single block of contiguous content per slide
+  - `maximal`: Shows only the current segment (and its merge group)
+  - `scrolling`: Shows all segments with fading effect on past segments
+  - Format stored in document metadata via `doc.format`
+- **PresentationViewer Component** (`src/lib/components/presentation/PresentationViewer.svelte`):
+  - Renders Yjs content as HTML with segment wrapping
+  - Three display modes:
+    - `view`: Basic rendering, no segment filtering
+    - `present`: Full content with segment highlighting (for presenter)
+    - `follow`: Applies format modes to filter/style segments (for viewers)
+  - Format effects only apply in `follow` mode
+  - Presenter sees all segments regardless of format mode
+  - Viewer defaults to first segment if no presenter position is set
+  - In `follow` mode, the following rules apply for automatically arranging the content into slides:
+    - a `presentation point` is a segment of a presentation that can be selected
+    - merged segments should be treated as a single segment in the viewer
+    - a `presentation block` is a contigious set of elememts, each having content
+    - any empty top level block node is a candidate `virtual slide divider`
+    - new slides are started either by a `virtual slide divider` (depending on the `Format Mode`) or by `slide_divider` block node
+    - if the content of a slide overflows the `slide viewport`, the content should scroll as the `presentation points` are selected
+    - empty top level blocks at the start or end of a slide should be trimmed
+    - the `slide viewport` is the rectangle within the slide where content can be rendered
+    - the dimensions of the `slide viewport` are defined by the theme
 
 ### Document Stores (`src/lib/stores/documents/`)
 
