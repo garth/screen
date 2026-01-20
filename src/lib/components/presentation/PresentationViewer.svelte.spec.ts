@@ -40,6 +40,393 @@ describe('PresentationViewer', () => {
     }))
   }
 
+  function addEmptyParagraph(content: Y.XmlFragment) {
+    const p = new Y.XmlElement('paragraph')
+    // No segmentId - empty paragraphs don't get segment IDs
+    const t = new Y.XmlText()
+    t.insert(0, '')
+    p.insert(0, [t])
+    content.push([p])
+  }
+
+  function addSlideDivider(content: Y.XmlFragment) {
+    const divider = new Y.XmlElement('slide_divider')
+    content.push([divider])
+  }
+
+  /**
+   * Adds a long paragraph that will be split into sentence segments.
+   * Returns the segment ID of the paragraph (which becomes the parentSegmentId for sentences).
+   */
+  function addLongParagraph(content: Y.XmlFragment, text: string): string {
+    const p = new Y.XmlElement('paragraph')
+    const segmentId = generateSegmentId()
+    p.setAttribute('segmentId', segmentId)
+    const t = new Y.XmlText()
+    t.insert(0, text)
+    p.insert(0, [t])
+    content.push([p])
+    return segmentId
+  }
+
+  /**
+   * Creates sentence segments from a parent paragraph.
+   * Sentence segments have virtual IDs like "{parentId}:s0", "{parentId}:s1"
+   */
+  function createSentenceSegments(
+    parentId: string,
+    sentences: string[],
+    startIndex: number,
+    slideIndex = 0,
+  ): ContentSegment[] {
+    return sentences.map((text, i) => ({
+      id: `${parentId}:s${i}`,
+      index: startIndex + i,
+      label: text.length > 50 ? text.slice(0, 50) + '...' : text,
+      type: 'sentence' as const,
+      slideIndex,
+      parentSegmentId: parentId,
+      sentenceText: text,
+    }))
+  }
+
+  function addOrderedList(content: Y.XmlFragment, items: string[], startOrder = 1): string[] {
+    const ol = new Y.XmlElement('ordered_list')
+    if (startOrder !== 1) {
+      ol.setAttribute('order', startOrder)
+    }
+    const ids: string[] = []
+    for (const text of items) {
+      const li = new Y.XmlElement('list_item')
+      const segmentId = generateSegmentId()
+      li.setAttribute('segmentId', segmentId)
+      ids.push(segmentId)
+      const p = new Y.XmlElement('paragraph')
+      const t = new Y.XmlText()
+      t.insert(0, text)
+      p.insert(0, [t])
+      li.insert(0, [p])
+      ol.push([li])
+    }
+    content.push([ol])
+    return ids
+  }
+
+  describe('single mode in follow mode', () => {
+    it('only renders the current segment', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Segment 0')
+      const id1 = addParagraph(content, 'Segment 1')
+      const id2 = addParagraph(content, 'Segment 2')
+
+      const segments = createSegments([id0, id1, id2])
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: id1,
+      })
+
+      // Only current segment should be rendered
+      await expect.element(page.getByText('Segment 0')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Segment 1')).toBeInTheDocument()
+      await expect.element(page.getByText('Segment 2')).not.toBeInTheDocument()
+    })
+
+    it('renders all segments in the same merge group as current', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Segment 0')
+      const id1 = addParagraph(content, 'Segment 1')
+      const id2 = addParagraph(content, 'Segment 2')
+      const id3 = addParagraph(content, 'Segment 3')
+
+      const segments: ContentSegment[] = [
+        { id: id0, index: 0, label: 'Segment 0', type: 'paragraph', slideIndex: 0 },
+        { id: id1, index: 1, label: 'Segment 1', type: 'paragraph', slideIndex: 0, mergeGroupId: 'merge-1' },
+        { id: id2, index: 2, label: 'Segment 2', type: 'paragraph', slideIndex: 0, mergeGroupId: 'merge-1' },
+        { id: id3, index: 3, label: 'Segment 3', type: 'paragraph', slideIndex: 0 },
+      ]
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: id1,
+      })
+
+      // Segment not in merge group should NOT be rendered
+      await expect.element(page.getByText('Segment 0')).not.toBeInTheDocument()
+      // Both segments in merge group should be rendered
+      await expect.element(page.getByText('Segment 1')).toBeInTheDocument()
+      await expect.element(page.getByText('Segment 2')).toBeInTheDocument()
+      // Segment not in merge group should NOT be rendered
+      await expect.element(page.getByText('Segment 3')).not.toBeInTheDocument()
+    })
+
+    it('renders exactly 1 segment on first render in single mode', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'First segment')
+      const id1 = addParagraph(content, 'Second segment')
+      const id2 = addParagraph(content, 'Third segment')
+
+      const segments = createSegments([id0, id1, id2])
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: id0,
+      })
+
+      // Count visible segment elements
+      const segmentElements = document.querySelectorAll('[data-segment-id]')
+      expect(segmentElements.length).toBe(1)
+
+      // Verify it's the correct segment
+      await expect.element(page.getByText('First segment')).toBeInTheDocument()
+      await expect.element(page.getByText('Second segment')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Third segment')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('block mode in follow mode', () => {
+    it('renders all segments in the same contiguous block', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Block 1 Segment A')
+      const id1 = addParagraph(content, 'Block 1 Segment B')
+      addEmptyParagraph(content) // Empty paragraph acts as block boundary
+      const id2 = addParagraph(content, 'Block 2 Segment C')
+      const id3 = addParagraph(content, 'Block 2 Segment D')
+
+      const segments = createSegments([id0, id1, id2, id3])
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'block',
+        segments,
+        currentSegmentId: id0, // In first block
+      })
+
+      // First block should be rendered
+      await expect.element(page.getByText('Block 1 Segment A')).toBeInTheDocument()
+      await expect.element(page.getByText('Block 1 Segment B')).toBeInTheDocument()
+      // Second block should NOT be rendered
+      await expect.element(page.getByText('Block 2 Segment C')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Block 2 Segment D')).not.toBeInTheDocument()
+    })
+
+    it('renders second block when current segment is in second block', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Block 1 Segment A')
+      const id1 = addParagraph(content, 'Block 1 Segment B')
+      addEmptyParagraph(content) // Empty paragraph acts as block boundary
+      const id2 = addParagraph(content, 'Block 2 Segment C')
+      const id3 = addParagraph(content, 'Block 2 Segment D')
+
+      const segments = createSegments([id0, id1, id2, id3])
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'block',
+        segments,
+        currentSegmentId: id2, // In second block
+      })
+
+      // First block should NOT be rendered
+      await expect.element(page.getByText('Block 1 Segment A')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Block 1 Segment B')).not.toBeInTheDocument()
+      // Second block should be rendered
+      await expect.element(page.getByText('Block 2 Segment C')).toBeInTheDocument()
+      await expect.element(page.getByText('Block 2 Segment D')).toBeInTheDocument()
+    })
+
+    it('treats slide_divider as block boundary', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Before divider')
+      addSlideDivider(content)
+      const id1 = addParagraph(content, 'After divider')
+
+      const segments = createSegments([id0, id1])
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'block',
+        segments,
+        currentSegmentId: id0,
+      })
+
+      // Only content before divider should be rendered
+      await expect.element(page.getByText('Before divider')).toBeInTheDocument()
+      await expect.element(page.getByText('After divider')).not.toBeInTheDocument()
+    })
+
+    it('renders all segments when no block boundaries exist', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Segment A')
+      const id1 = addParagraph(content, 'Segment B')
+      const id2 = addParagraph(content, 'Segment C')
+
+      const segments = createSegments([id0, id1, id2])
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'block',
+        segments,
+        currentSegmentId: id1,
+      })
+
+      // All segments in the same block should be rendered
+      await expect.element(page.getByText('Segment A')).toBeInTheDocument()
+      await expect.element(page.getByText('Segment B')).toBeInTheDocument()
+      await expect.element(page.getByText('Segment C')).toBeInTheDocument()
+    })
+  })
+
+  describe('ordered list numbering preservation', () => {
+    it('preserves list numbering when list is split across blocks', async () => {
+      const content = createContent()
+      // Create an ordered list with 4 items, split by an empty paragraph
+      const listIds = addOrderedList(content, ['First item', 'Second item'])
+      addEmptyParagraph(content)
+      const listIds2 = addOrderedList(content, ['Third item', 'Fourth item'])
+
+      const segments: ContentSegment[] = [
+        { id: listIds[0], index: 0, label: 'First item', type: 'list-item', slideIndex: 0 },
+        { id: listIds[1], index: 1, label: 'Second item', type: 'list-item', slideIndex: 0 },
+        { id: listIds2[0], index: 2, label: 'Third item', type: 'list-item', slideIndex: 1 },
+        { id: listIds2[1], index: 3, label: 'Fourth item', type: 'list-item', slideIndex: 1 },
+      ]
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'block',
+        segments,
+        currentSegmentId: listIds2[0], // Show second block (Third item, Fourth item)
+      })
+
+      // Second block items should be visible
+      await expect.element(page.getByText('Third item')).toBeInTheDocument()
+      await expect.element(page.getByText('Fourth item')).toBeInTheDocument()
+
+      // First block items should NOT be visible
+      await expect.element(page.getByText('First item')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Second item')).not.toBeInTheDocument()
+
+      // The ol should start at 1 for the second list (it's a separate list element)
+      const olElement = document.querySelector('ol')
+      expect(olElement).toBeTruthy()
+    })
+
+    it('adjusts start number when list items are hidden in single mode', async () => {
+      const content = createContent()
+      const listIds = addOrderedList(content, ['Item 1', 'Item 2', 'Item 3', 'Item 4'])
+
+      const segments: ContentSegment[] = [
+        { id: listIds[0], index: 0, label: 'Item 1', type: 'list-item', slideIndex: 0 },
+        { id: listIds[1], index: 1, label: 'Item 2', type: 'list-item', slideIndex: 0 },
+        { id: listIds[2], index: 2, label: 'Item 3', type: 'list-item', slideIndex: 0 },
+        { id: listIds[3], index: 3, label: 'Item 4', type: 'list-item', slideIndex: 0 },
+      ]
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: listIds[2], // Show third item
+      })
+
+      // Only Item 3 should be visible
+      await expect.element(page.getByText('Item 3')).toBeInTheDocument()
+      await expect.element(page.getByText('Item 1')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Item 2')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Item 4')).not.toBeInTheDocument()
+
+      // The ol should start at 3 (since items 1 and 2 are hidden)
+      const olElement = document.querySelector('ol')
+      expect(olElement?.getAttribute('start')).toBe('3')
+    })
+
+    it('adjusts start number when list items are hidden in minimal mode', async () => {
+      const content = createContent()
+      const listIds = addOrderedList(content, ['Item 1', 'Item 2', 'Item 3', 'Item 4'])
+
+      const segments: ContentSegment[] = [
+        { id: listIds[0], index: 0, label: 'Item 1', type: 'list-item', slideIndex: 0 },
+        { id: listIds[1], index: 1, label: 'Item 2', type: 'list-item', slideIndex: 0 },
+        { id: listIds[2], index: 2, label: 'Item 3', type: 'list-item', slideIndex: 0 },
+        { id: listIds[3], index: 3, label: 'Item 4', type: 'list-item', slideIndex: 0 },
+      ]
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'minimal',
+        segments,
+        currentSegmentId: listIds[2], // Show second pair (items 3 and 4)
+      })
+
+      // Items 3 and 4 should be visible
+      await expect.element(page.getByText('Item 3')).toBeInTheDocument()
+      await expect.element(page.getByText('Item 4')).toBeInTheDocument()
+      await expect.element(page.getByText('Item 1')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Item 2')).not.toBeInTheDocument()
+
+      // The ol should start at 3 (since items 1 and 2 are hidden)
+      const olElement = document.querySelector('ol')
+      expect(olElement?.getAttribute('start')).toBe('3')
+    })
+
+    it('preserves custom start order when items are hidden', async () => {
+      const content = createContent()
+      // List starting at 5
+      const listIds = addOrderedList(content, ['Item A', 'Item B', 'Item C'], 5)
+
+      const segments: ContentSegment[] = [
+        { id: listIds[0], index: 0, label: 'Item A', type: 'list-item', slideIndex: 0 },
+        { id: listIds[1], index: 1, label: 'Item B', type: 'list-item', slideIndex: 0 },
+        { id: listIds[2], index: 2, label: 'Item C', type: 'list-item', slideIndex: 0 },
+      ]
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: listIds[1], // Show Item B (originally item 6)
+      })
+
+      // Only Item B should be visible
+      await expect.element(page.getByText('Item B')).toBeInTheDocument()
+      await expect.element(page.getByText('Item A')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Item C')).not.toBeInTheDocument()
+
+      // The ol should start at 6 (base 5 + 1 skipped item)
+      const olElement = document.querySelector('ol')
+      expect(olElement?.getAttribute('start')).toBe('6')
+    })
+  })
+
   describe('minimal mode in follow mode', () => {
     it('only renders segments in the current pair (first pair)', async () => {
       const content = createContent()
@@ -206,6 +593,51 @@ describe('PresentationViewer', () => {
   })
 
   describe('presenter mode (mode="present")', () => {
+    it('renders all segments regardless of single format', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Segment 0')
+      const id1 = addParagraph(content, 'Segment 1')
+      const id2 = addParagraph(content, 'Segment 2')
+
+      const segments = createSegments([id0, id1, id2])
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'present', // Presenter mode
+        format: 'single',
+        segments,
+        currentSegmentId: id1,
+      })
+
+      // All segments should be rendered in presenter mode
+      await expect.element(page.getByText('Segment 0')).toBeInTheDocument()
+      await expect.element(page.getByText('Segment 1')).toBeInTheDocument()
+      await expect.element(page.getByText('Segment 2')).toBeInTheDocument()
+    })
+
+    it('renders all segments regardless of block format', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Block 1 Segment')
+      addEmptyParagraph(content)
+      const id1 = addParagraph(content, 'Block 2 Segment')
+
+      const segments = createSegments([id0, id1])
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'present', // Presenter mode
+        format: 'block',
+        segments,
+        currentSegmentId: id0,
+      })
+
+      // All segments should be rendered in presenter mode regardless of block boundaries
+      await expect.element(page.getByText('Block 1 Segment')).toBeInTheDocument()
+      await expect.element(page.getByText('Block 2 Segment')).toBeInTheDocument()
+    })
+
     it('renders all segments regardless of minimal format', async () => {
       const content = createContent()
       const id0 = addParagraph(content, 'Segment 0')
@@ -394,6 +826,620 @@ describe('PresentationViewer', () => {
       await expect.element(page.getByText('Seg D')).toBeInTheDocument()
       await expect.element(page.getByText('Seg E')).not.toBeInTheDocument()
       await expect.element(page.getByText('Seg F')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('sentence segment visibility (keeping split paragraphs together)', () => {
+    it('shows all sentences in a paragraph when navigating to any sentence in single mode', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Regular paragraph before')
+      const longParaId = addLongParagraph(
+        content,
+        'First sentence of a long paragraph. Second sentence continues the thought. Third sentence wraps it up.',
+      )
+      const id2 = addParagraph(content, 'Regular paragraph after')
+
+      const segments: ContentSegment[] = [
+        { id: id0, index: 0, label: 'Regular paragraph before', type: 'paragraph', slideIndex: 0 },
+        ...createSentenceSegments(
+          longParaId,
+          [
+            'First sentence of a long paragraph.',
+            'Second sentence continues the thought.',
+            'Third sentence wraps it up.',
+          ],
+          1,
+        ),
+        { id: id2, index: 4, label: 'Regular paragraph after', type: 'paragraph', slideIndex: 0 },
+      ]
+
+      // Navigate to the second sentence
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: `${longParaId}:s1`,
+      })
+
+      // All three sentences should be visible (entire paragraph)
+      await expect.element(page.getByText('First sentence of a long paragraph.')).toBeInTheDocument()
+      await expect
+        .element(page.getByText('Second sentence continues the thought.'))
+        .toBeInTheDocument()
+      await expect.element(page.getByText('Third sentence wraps it up.')).toBeInTheDocument()
+
+      // Other paragraphs should NOT be visible
+      await expect.element(page.getByText('Regular paragraph before')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Regular paragraph after')).not.toBeInTheDocument()
+    })
+
+    it('individual sentences have separate data-segment-id attributes', async () => {
+      const content = createContent()
+      const longParaId = addLongParagraph(
+        content,
+        'Sentence one here. Sentence two here. Sentence three here.',
+      )
+
+      const segments: ContentSegment[] = createSentenceSegments(
+        longParaId,
+        ['Sentence one here.', 'Sentence two here.', 'Sentence three here.'],
+        0,
+      )
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: `${longParaId}:s0`,
+      })
+
+      // Each sentence should have its own segment ID
+      const segmentElements = document.querySelectorAll('[data-segment-id]')
+      expect(segmentElements.length).toBe(3)
+
+      const segmentIds = Array.from(segmentElements).map((el) => el.getAttribute('data-segment-id'))
+      expect(segmentIds).toContain(`${longParaId}:s0`)
+      expect(segmentIds).toContain(`${longParaId}:s1`)
+      expect(segmentIds).toContain(`${longParaId}:s2`)
+    })
+
+    it('only the active sentence has segment-active class', async () => {
+      const content = createContent()
+      const longParaId = addLongParagraph(
+        content,
+        'Active sentence. Inactive sibling one. Inactive sibling two.',
+      )
+
+      const segments: ContentSegment[] = createSentenceSegments(
+        longParaId,
+        ['Active sentence.', 'Inactive sibling one.', 'Inactive sibling two.'],
+        0,
+      )
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: `${longParaId}:s0`, // First sentence is active
+      })
+
+      // Only the first sentence should have segment-active class
+      const activeElement = document.querySelector(
+        `[data-segment-id="${longParaId}:s0"]`,
+      ) as HTMLElement
+      const sibling1 = document.querySelector(`[data-segment-id="${longParaId}:s1"]`) as HTMLElement
+      const sibling2 = document.querySelector(`[data-segment-id="${longParaId}:s2"]`) as HTMLElement
+
+      expect(activeElement?.classList.contains('segment-active')).toBe(true)
+      expect(sibling1?.classList.contains('segment-active')).toBe(false)
+      expect(sibling2?.classList.contains('segment-active')).toBe(false)
+    })
+
+    it('shows all sentences in a paragraph in maximal mode', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Before paragraph')
+      const longParaId = addLongParagraph(content, 'First part. Second part. Third part.')
+      const id2 = addParagraph(content, 'After paragraph')
+
+      const segments: ContentSegment[] = [
+        { id: id0, index: 0, label: 'Before paragraph', type: 'paragraph', slideIndex: 0 },
+        ...createSentenceSegments(longParaId, ['First part.', 'Second part.', 'Third part.'], 1),
+        { id: id2, index: 4, label: 'After paragraph', type: 'paragraph', slideIndex: 0 },
+      ]
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'maximal',
+        segments,
+        currentSegmentId: `${longParaId}:s2`, // Navigate to third sentence
+      })
+
+      // All sentences in the paragraph should be visible
+      await expect.element(page.getByText('First part.')).toBeInTheDocument()
+      await expect.element(page.getByText('Second part.')).toBeInTheDocument()
+      await expect.element(page.getByText('Third part.')).toBeInTheDocument()
+
+      // Other paragraphs should NOT be visible
+      await expect.element(page.getByText('Before paragraph')).not.toBeInTheDocument()
+      await expect.element(page.getByText('After paragraph')).not.toBeInTheDocument()
+    })
+
+    it('shows all sentences in a paragraph when sentence is part of minimal pair', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'First regular paragraph')
+      const longParaId = addLongParagraph(content, 'Long one. Long two. Long three.')
+      const id2 = addParagraph(content, 'Third regular paragraph')
+      const id3 = addParagraph(content, 'Fourth regular paragraph')
+
+      const segments: ContentSegment[] = [
+        { id: id0, index: 0, label: 'First regular paragraph', type: 'paragraph', slideIndex: 0 },
+        ...createSentenceSegments(longParaId, ['Long one.', 'Long two.', 'Long three.'], 1),
+        { id: id2, index: 4, label: 'Third regular paragraph', type: 'paragraph', slideIndex: 0 },
+        { id: id3, index: 5, label: 'Fourth regular paragraph', type: 'paragraph', slideIndex: 0 },
+      ]
+
+      // Navigate to first sentence (index 1), which pairs with second sentence (index 2)
+      // Both are from the same long paragraph
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'minimal',
+        segments,
+        currentSegmentId: `${longParaId}:s0`,
+      })
+
+      // The pair is segments at index 0 and 1: "First regular paragraph" and "Long one."
+      // But "Long one." is a sentence, so all siblings should also be visible
+      await expect.element(page.getByText('First regular paragraph')).toBeInTheDocument()
+      await expect.element(page.getByText('Long one.')).toBeInTheDocument()
+      await expect.element(page.getByText('Long two.')).toBeInTheDocument()
+      await expect.element(page.getByText('Long three.')).toBeInTheDocument()
+
+      // Paragraphs outside the pair should NOT be visible
+      await expect.element(page.getByText('Third regular paragraph')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Fourth regular paragraph')).not.toBeInTheDocument()
+    })
+
+    it('independent paragraphs with sentences do not affect each other', async () => {
+      const content = createContent()
+      const para1Id = addLongParagraph(content, 'Para1 sent1. Para1 sent2.')
+      const para2Id = addLongParagraph(content, 'Para2 sent1. Para2 sent2.')
+
+      const segments: ContentSegment[] = [
+        ...createSentenceSegments(para1Id, ['Para1 sent1.', 'Para1 sent2.'], 0),
+        ...createSentenceSegments(para2Id, ['Para2 sent1.', 'Para2 sent2.'], 2),
+      ]
+
+      // Navigate to first sentence of first paragraph
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: `${para1Id}:s0`,
+      })
+
+      // Only first paragraph's sentences should be visible
+      await expect.element(page.getByText('Para1 sent1.')).toBeInTheDocument()
+      await expect.element(page.getByText('Para1 sent2.')).toBeInTheDocument()
+
+      // Second paragraph's sentences should NOT be visible
+      await expect.element(page.getByText('Para2 sent1.')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Para2 sent2.')).not.toBeInTheDocument()
+    })
+
+    it('keeps sentence segments on the same block in block mode', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Block 1 paragraph')
+      const longParaId = addLongParagraph(
+        content,
+        'First sentence here. Second sentence here. Third sentence here.',
+      )
+      addEmptyParagraph(content) // Block boundary
+      const id2 = addParagraph(content, 'Block 2 paragraph')
+
+      const segments: ContentSegment[] = [
+        { id: id0, index: 0, label: 'Block 1', type: 'paragraph', slideIndex: 0 },
+        ...createSentenceSegments(
+          longParaId,
+          ['First sentence here.', 'Second sentence here.', 'Third sentence here.'],
+          1,
+        ),
+        { id: id2, index: 4, label: 'Block 2', type: 'paragraph', slideIndex: 0 },
+      ]
+
+      // Navigate to second sentence - should show all of block 1
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'block',
+        segments,
+        currentSegmentId: `${longParaId}:s1`,
+      })
+
+      // Block 1 content visible
+      await expect.element(page.getByText('Block 1 paragraph')).toBeInTheDocument()
+      await expect.element(page.getByText('First sentence here.')).toBeInTheDocument()
+      await expect.element(page.getByText('Second sentence here.')).toBeInTheDocument()
+      await expect.element(page.getByText('Third sentence here.')).toBeInTheDocument()
+
+      // Block 2 hidden
+      await expect.element(page.getByText('Block 2 paragraph')).not.toBeInTheDocument()
+    })
+
+    it('uses first sentence index for pair computation in minimal mode', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'First paragraph')
+      const longParaId = addLongParagraph(
+        content,
+        'Sentence one here. Sentence two here. Sentence three here.',
+      )
+      const id2 = addParagraph(content, 'Third paragraph')
+      const id3 = addParagraph(content, 'Fourth paragraph')
+
+      const segments: ContentSegment[] = [
+        { id: id0, index: 0, label: 'First paragraph', type: 'paragraph', slideIndex: 0 },
+        ...createSentenceSegments(
+          longParaId,
+          ['Sentence one here.', 'Sentence two here.', 'Sentence three here.'],
+          1,
+        ),
+        { id: id2, index: 4, label: 'Third paragraph', type: 'paragraph', slideIndex: 0 },
+        { id: id3, index: 5, label: 'Fourth paragraph', type: 'paragraph', slideIndex: 0 },
+      ]
+
+      // Navigate to sentence at index 2 (second sentence)
+      // First sentence is at index 1, so pair 0 (indices 0-1) should be used
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'minimal',
+        segments,
+        currentSegmentId: `${longParaId}:s1`,
+      })
+
+      // Pair 0 content + all sibling sentences should be visible
+      await expect.element(page.getByText('First paragraph')).toBeInTheDocument()
+      await expect.element(page.getByText('Sentence one here.')).toBeInTheDocument()
+      await expect.element(page.getByText('Sentence two here.')).toBeInTheDocument()
+      await expect.element(page.getByText('Sentence three here.')).toBeInTheDocument()
+
+      // Content outside pair 0 should NOT be visible
+      await expect.element(page.getByText('Third paragraph')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Fourth paragraph')).not.toBeInTheDocument()
+    })
+
+    it('does not show sentence paragraph on subsequent slides in minimal mode', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'First paragraph')
+      const longParaId = addLongParagraph(
+        content,
+        'Sentence one here. Sentence two here. Sentence three here.',
+      )
+      const id2 = addParagraph(content, 'Third paragraph')
+      const id3 = addParagraph(content, 'Fourth paragraph')
+
+      const segments: ContentSegment[] = [
+        { id: id0, index: 0, label: 'First paragraph', type: 'paragraph', slideIndex: 0 },
+        ...createSentenceSegments(
+          longParaId,
+          ['Sentence one here.', 'Sentence two here.', 'Sentence three here.'],
+          1,
+        ),
+        { id: id2, index: 4, label: 'Third paragraph', type: 'paragraph', slideIndex: 0 },
+        { id: id3, index: 5, label: 'Fourth paragraph', type: 'paragraph', slideIndex: 0 },
+      ]
+
+      // Navigate to segment at index 4 (Third paragraph) - this is pair 2
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'minimal',
+        segments,
+        currentSegmentId: id2,
+      })
+
+      // Pair 2 content should be visible
+      await expect.element(page.getByText('Third paragraph')).toBeInTheDocument()
+      await expect.element(page.getByText('Fourth paragraph')).toBeInTheDocument()
+
+      // Previous content should NOT be visible (including the sentence paragraph)
+      await expect.element(page.getByText('First paragraph')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Sentence one here.')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Sentence two here.')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Sentence three here.')).not.toBeInTheDocument()
+    })
+
+    it('does not render sentences from wrong paragraph when parentSegmentId does not match', async () => {
+      // This tests that sentence segments are only rendered when their parentSegmentId
+      // matches the current DOM element's segmentId - preventing cross-paragraph rendering
+      const content = createContent()
+      const para1Id = addLongParagraph(content, 'Para1 sentA. Para1 sentB.')
+      const para2Id = addLongParagraph(content, 'Para2 sentA. Para2 sentB.')
+
+      // Both paragraphs have sentence segments with distinct parentSegmentIds
+      const segments: ContentSegment[] = [
+        ...createSentenceSegments(para1Id, ['Para1 sentA.', 'Para1 sentB.'], 0),
+        ...createSentenceSegments(para2Id, ['Para2 sentA.', 'Para2 sentB.'], 2),
+      ]
+
+      // Navigate to first paragraph's first sentence
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: `${para1Id}:s0`,
+      })
+
+      // Para1 sentences should be visible (current + siblings)
+      await expect.element(page.getByText('Para1 sentA.')).toBeInTheDocument()
+      await expect.element(page.getByText('Para1 sentB.')).toBeInTheDocument()
+
+      // Para2 sentences should NOT be visible - parentSegmentId doesn't match para1's segmentId
+      await expect.element(page.getByText('Para2 sentA.')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Para2 sentB.')).not.toBeInTheDocument()
+    })
+
+    it('correctly matches sentence segments to their parent paragraph only', async () => {
+      // Test that sentence segments are only rendered for their matching paragraph
+      // not for other paragraphs that happen to be at the same ctx.segmentIndex
+      const content = createContent()
+      const para1Id = addLongParagraph(content, 'Para1 sent1. Para1 sent2.')
+      const para2Id = addLongParagraph(content, 'Para2 sent1. Para2 sent2.')
+      const id2 = addParagraph(content, 'Regular paragraph')
+
+      const segments: ContentSegment[] = [
+        ...createSentenceSegments(para1Id, ['Para1 sent1.', 'Para1 sent2.'], 0),
+        ...createSentenceSegments(para2Id, ['Para2 sent1.', 'Para2 sent2.'], 2),
+        { id: id2, index: 4, label: 'Regular paragraph', type: 'paragraph', slideIndex: 0 },
+      ]
+
+      // Navigate to second sentence paragraph
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: `${para2Id}:s0`,
+      })
+
+      // Para2 sentences should be visible
+      await expect.element(page.getByText('Para2 sent1.')).toBeInTheDocument()
+      await expect.element(page.getByText('Para2 sent2.')).toBeInTheDocument()
+
+      // Para1 sentences should NOT be visible
+      await expect.element(page.getByText('Para1 sent1.')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Para1 sent2.')).not.toBeInTheDocument()
+    })
+
+    it('does not show sentence paragraph on subsequent slides in single mode', async () => {
+      const content = createContent()
+      const longParaId = addLongParagraph(
+        content,
+        'First sentence here. Second sentence here.',
+      )
+      const id1 = addParagraph(content, 'Second paragraph')
+
+      const segments: ContentSegment[] = [
+        ...createSentenceSegments(
+          longParaId,
+          ['First sentence here.', 'Second sentence here.'],
+          0,
+        ),
+        { id: id1, index: 2, label: 'Second paragraph', type: 'paragraph', slideIndex: 0 },
+      ]
+
+      // Navigate to the regular paragraph after the sentence paragraph
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: id1,
+      })
+
+      // Only the current paragraph should be visible
+      await expect.element(page.getByText('Second paragraph')).toBeInTheDocument()
+
+      // Sentence content should NOT be visible
+      await expect.element(page.getByText('First sentence here.')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Second sentence here.')).not.toBeInTheDocument()
+    })
+
+    it('does not show sentence paragraph on subsequent slides in block mode', async () => {
+      const content = createContent()
+      const longParaId = addLongParagraph(
+        content,
+        'Block1 sentence one. Block1 sentence two.',
+      )
+      addEmptyParagraph(content) // Block boundary
+      const id1 = addParagraph(content, 'Block2 paragraph')
+
+      const segments: ContentSegment[] = [
+        ...createSentenceSegments(
+          longParaId,
+          ['Block1 sentence one.', 'Block1 sentence two.'],
+          0,
+        ),
+        { id: id1, index: 2, label: 'Block2 paragraph', type: 'paragraph', slideIndex: 0 },
+      ]
+
+      // Navigate to the block 2 paragraph
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'block',
+        segments,
+        currentSegmentId: id1,
+      })
+
+      // Block 2 content should be visible
+      await expect.element(page.getByText('Block2 paragraph')).toBeInTheDocument()
+
+      // Block 1 sentence content should NOT be visible
+      await expect.element(page.getByText('Block1 sentence one.')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Block1 sentence two.')).not.toBeInTheDocument()
+    })
+
+    it('skips paragraph when segment index is misaligned', async () => {
+      // Test that a paragraph is skipped when its segment is missing from the array
+      // This can happen if content was edited and segments weren't updated
+      const content = createContent()
+      const orphanParaId = addParagraph(content, 'Orphan paragraph without segment')
+      const id1 = addParagraph(content, 'Regular paragraph')
+
+      // Segments array is missing the first paragraph's segment
+      const segments: ContentSegment[] = [
+        { id: id1, index: 0, label: 'Regular paragraph', type: 'paragraph', slideIndex: 0 },
+      ]
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: id1,
+      })
+
+      // Regular paragraph should be visible
+      await expect.element(page.getByText('Regular paragraph')).toBeInTheDocument()
+
+      // Orphan paragraph should NOT be visible (segment mismatch)
+      await expect.element(page.getByText('Orphan paragraph without segment')).not.toBeInTheDocument()
+    })
+
+    it('does not render paragraph using wrong segment visibility', async () => {
+      // Test that a paragraph with missing sentence segments doesn't render
+      // using a different paragraph's segment visibility
+      const content = createContent()
+      // First paragraph has a segmentId but no corresponding segments in the array
+      addParagraph(content, 'First para with missing segments')
+      const id1 = addParagraph(content, 'Second paragraph')
+
+      // Only second paragraph has a segment entry
+      const segments: ContentSegment[] = [
+        { id: id1, index: 0, label: 'Second paragraph', type: 'paragraph', slideIndex: 0 },
+      ]
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: id1,
+      })
+
+      // Second paragraph should be visible
+      await expect.element(page.getByText('Second paragraph')).toBeInTheDocument()
+
+      // First paragraph should NOT be visible (it would incorrectly use second's visibility)
+      await expect.element(page.getByText('First para with missing segments')).not.toBeInTheDocument()
+    })
+
+    it('uses logical segments for minimal mode pairing (sentence paragraph as one unit)', async () => {
+      // This is the key test for the fix: a paragraph with 2 sentences should count
+      // as ONE logical unit for pairing, not TWO.
+      //
+      // Expected slides:
+      //   Slide 1: [1st Point] + [2nd Point with sentences]
+      //   Slide 2: [3rd Point] + [4th Point]
+      //
+      // NOT:
+      //   Slide 1: [1st Point] + [2nd Point sentence 1]
+      //   Slide 2: [2nd Point sentence 2] + [3rd Point]  <-- WRONG!
+
+      const content = createContent()
+      const id0 = addParagraph(content, '1st Point')
+      const longParaId = addLongParagraph(content, '2nd Point sent1. 2nd Point sent2.')
+      const id2 = addParagraph(content, '3rd Point')
+      const id3 = addParagraph(content, '4th Point')
+
+      // Raw segment indices:
+      // 0: 1st Point
+      // 1: 2nd Point sentence 1
+      // 2: 2nd Point sentence 2
+      // 3: 3rd Point
+      // 4: 4th Point
+      const segments: ContentSegment[] = [
+        { id: id0, index: 0, label: '1st Point', type: 'paragraph', slideIndex: 0 },
+        ...createSentenceSegments(longParaId, ['2nd Point sent1.', '2nd Point sent2.'], 1),
+        { id: id2, index: 3, label: '3rd Point', type: 'paragraph', slideIndex: 0 },
+        { id: id3, index: 4, label: '4th Point', type: 'paragraph', slideIndex: 0 },
+      ]
+
+      // Navigate to 3rd Point - should show slide 2 (logical pair 1)
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'minimal',
+        segments,
+        currentSegmentId: id2,
+      })
+
+      // Slide 2 should show 3rd Point and 4th Point
+      await expect.element(page.getByText('3rd Point')).toBeInTheDocument()
+      await expect.element(page.getByText('4th Point')).toBeInTheDocument()
+
+      // Slide 2 should NOT show any content from slide 1
+      await expect.element(page.getByText('1st Point')).not.toBeInTheDocument()
+      await expect.element(page.getByText('2nd Point sent1.')).not.toBeInTheDocument()
+      await expect.element(page.getByText('2nd Point sent2.')).not.toBeInTheDocument()
+    })
+
+    it('shows sentence paragraph on correct slide in minimal mode', async () => {
+      // Complementary test: verify slide 1 shows the sentence paragraph correctly
+      const content = createContent()
+      const id0 = addParagraph(content, '1st Point')
+      const longParaId = addLongParagraph(content, '2nd Point sent1. 2nd Point sent2.')
+      const id2 = addParagraph(content, '3rd Point')
+      const id3 = addParagraph(content, '4th Point')
+
+      const segments: ContentSegment[] = [
+        { id: id0, index: 0, label: '1st Point', type: 'paragraph', slideIndex: 0 },
+        ...createSentenceSegments(longParaId, ['2nd Point sent1.', '2nd Point sent2.'], 1),
+        { id: id2, index: 3, label: '3rd Point', type: 'paragraph', slideIndex: 0 },
+        { id: id3, index: 4, label: '4th Point', type: 'paragraph', slideIndex: 0 },
+      ]
+
+      // Navigate to 1st Point - should show slide 1 (logical pair 0)
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'minimal',
+        segments,
+        currentSegmentId: id0,
+      })
+
+      // Slide 1 should show 1st Point and ALL of 2nd Point (both sentences)
+      await expect.element(page.getByText('1st Point')).toBeInTheDocument()
+      await expect.element(page.getByText('2nd Point sent1.')).toBeInTheDocument()
+      await expect.element(page.getByText('2nd Point sent2.')).toBeInTheDocument()
+
+      // Slide 1 should NOT show slide 2 content
+      await expect.element(page.getByText('3rd Point')).not.toBeInTheDocument()
+      await expect.element(page.getByText('4th Point')).not.toBeInTheDocument()
     })
   })
 })

@@ -99,12 +99,21 @@ The presentation feature uses a rich text editor with real-time collaboration:
   - Viewer auto-scrolls to active segment
   - Presenter sync via shared awareness channel
 - **Format Modes**: Control how content is displayed to viewers
-  - `single`: shows only 1 segment per slide
-  - `minimal`: Shows only 2 segments at a time (current pair)
+  - `single`: shows only 1 logical segment per slide
+  - `minimal`: Shows only 2 logical segments at a time (current pair)
   - `block`: Shows a single block of contiguous content per slide
   - `maximal`: Shows only the current segment (and its merge group)
   - `scrolling`: Shows all segments with fading effect on past segments
   - Format stored in document metadata via `doc.format`
+- **Logical Segments**: For slide grouping purposes, segments are counted as "logical units":
+  - A regular paragraph/heading/list-item = 1 logical segment
+  - A sentence-split paragraph (all sentences combined) = 1 logical segment
+  - This ensures a long paragraph with multiple sentences doesn't span across slides
+  - Navigation still treats each sentence as a separate presentation point
+  - Example with minimal mode (2 logical segments per slide):
+    - Segments: [Para1], [LongPara sent1], [LongPara sent2], [Para3], [Para4]
+    - Slide 1: Para1 + LongPara (all sentences) — 2 logical segments
+    - Slide 2: Para3 + Para4 — 2 logical segments
 - **PresentationViewer Component** (`src/lib/components/presentation/PresentationViewer.svelte`):
   - Renders Yjs content as HTML with segment wrapping
   - Three display modes:
@@ -114,10 +123,18 @@ The presentation feature uses a rich text editor with real-time collaboration:
   - Format effects only apply in `follow` mode
   - Presenter sees all segments regardless of format mode
   - Viewer defaults to first segment if no presenter position is set
+  - **Sentence Segment Handling**:
+    - `shouldSplitIntoSentences()` verifies sentence's `parentSegmentId` matches the DOM element's `segmentId`
+    - Prevents cross-paragraph rendering when segment indices are misaligned
+    - `renderSentenceSegments()` renders visible sentences with proper wrapping
+    - Paragraphs with no visible sentences are skipped entirely (return empty string)
+    - Non-sentence paragraphs verify segment ID matches before rendering via `wrapWithSegment()`
   - In `follow` mode, the following rules apply for automatically arranging the content into slides:
     - a `presentation point` is a segment of a presentation that can be selected
     - merged segments should be treated as a single segment in the viewer
-    - a `presentation block` is a contigious set of elememts, each having content
+    - when long paragraphs are automatically segmented, do not split the paragraph across slides. treat the paragraph as a single logical segment within the formatting mode, but still navigate the split sentences as individual presentation points.
+    - when a long paragraph is split into sentences, keep all sentences on the slide of the first sentence for all follow modes. Only start a new slide for the following block element.
+    - a `presentation block` is a contiguous set of elements, each having content
     - any empty top level block node is a candidate `virtual slide divider`
     - new slides are started either by a `virtual slide divider` (depending on the `Format Mode`) or by `slide_divider` block node
     - if the content of a slide overflows the `slide viewport`, the content should scroll as the `presentation points` are selected

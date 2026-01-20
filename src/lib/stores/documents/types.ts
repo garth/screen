@@ -24,7 +24,7 @@ export interface DocumentOptions {
 // Presentation Types
 // =============================================================================
 
-export type PresentationFormat = 'minimal' | 'maximal' | 'scrolling'
+export type PresentationFormat = 'single' | 'minimal' | 'block' | 'maximal' | 'scrolling'
 
 export interface PresentationMeta {
   title: string

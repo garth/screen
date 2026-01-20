@@ -40,8 +40,11 @@
       const offsetTop = elementRect.top - containerRect.top + viewerElement.scrollTop
       const targetScroll = offsetTop - containerRect.height * 0.2
       viewerElement.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' })
-    } else if (format === 'maximal') {
-      // Maximal mode: center the current segment
+    } else if (format === 'maximal' || format === 'single') {
+      // Maximal/Single mode: center the current segment
+      segmentEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    } else if (format === 'block') {
+      // Block mode: center the current segment within the block
       segmentEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
     // Minimal mode: no scrolling needed, we hide other segments
@@ -74,8 +77,14 @@
     insideListItem: boolean
     /** Format mode for display */
     format: PresentationFormat
+    /** Set of segment IDs visible in single mode (current + merge group) */
+    singleVisibleIds: Set<string>
     /** Set of segment IDs visible in minimal mode */
     minimalVisibleIds: Set<string>
+    /** Set of segment IDs visible in block mode (contiguous content block) */
+    blockVisibleIds: Set<string>
+    /** Set of segment IDs visible in maximal mode (current + merge group + sibling sentences) */
+    maximalVisibleIds: Set<string>
     /** Whether to apply format display effects (hiding/fading) - only true in follow mode */
     applyFormatEffects: boolean
     /** Track if we've rendered at least one visible segment */
@@ -105,14 +114,24 @@
     // Scrolling mode: all segments visible (just faded)
     if (ctx.format === 'scrolling') return true
 
+    // Single mode: only show current segment (and its merge group)
+    if (ctx.format === 'single') {
+      return ctx.singleVisibleIds.has(segment.id)
+    }
+
     // Minimal mode: only show segments in current pair
     if (ctx.format === 'minimal') {
       return ctx.minimalVisibleIds.has(segment.id)
     }
 
-    // Maximal mode: only show active segment (and its merge group)
+    // Block mode: show all segments in the current contiguous block
+    if (ctx.format === 'block') {
+      return ctx.blockVisibleIds.has(segment.id)
+    }
+
+    // Maximal mode: only show active segment (and its merge group + sibling sentences)
     if (ctx.format === 'maximal') {
-      return isSegmentActive(segment, ctx)
+      return ctx.maximalVisibleIds.has(segment.id)
     }
 
     return true
@@ -160,24 +179,36 @@
   /**
    * Check if a paragraph/list-item should be split into sentence segments
    */
-  function shouldSplitIntoSentences(ctx: SegmentContext, _elementType: string): boolean {
+  function shouldSplitIntoSentences(
+    ctx: SegmentContext,
+    elementSegmentId: string | null,
+  ): boolean {
     if (!ctx.inPresenterMode || ctx.segments.length === 0) return false
 
     const segment = ctx.segments[ctx.segmentIndex]
     if (!segment) return false
 
-    // Check if the next few segments are 'sentence' type from this element
-    return segment.type === 'sentence'
+    // Check if the segment is a sentence AND belongs to this element
+    // The sentence's parentSegmentId must match the DOM element's segmentId
+    return segment.type === 'sentence' && segment.parentSegmentId === elementSegmentId
   }
 
   /**
    * Render text content split into sentence segments
    */
   function renderSentenceSegments(_textHtml: string, ctx: SegmentContext): string {
-    // Find all consecutive sentence segments
+    // Find all consecutive sentence segments from the same parent paragraph
     let html = ''
 
-    while (ctx.segmentIndex < ctx.segments.length && ctx.segments[ctx.segmentIndex].type === 'sentence') {
+    // Get the parent paragraph ID from the first sentence to scope to this paragraph
+    const firstSentence = ctx.segments[ctx.segmentIndex]
+    const parentId = firstSentence?.parentSegmentId
+
+    while (
+      ctx.segmentIndex < ctx.segments.length &&
+      ctx.segments[ctx.segmentIndex].type === 'sentence' &&
+      ctx.segments[ctx.segmentIndex].parentSegmentId === parentId
+    ) {
       const segment = ctx.segments[ctx.segmentIndex]
       const segmentIdx = ctx.segmentIndex
       ctx.segmentIndex++
@@ -304,9 +335,22 @@
             return `<p>${children || '&nbsp;'}</p>`
           }
           // Check if this paragraph should be split into sentence segments
-          if (ctx && hasSegmentId && shouldSplitIntoSentences(ctx, 'paragraph')) {
+          const elementSegmentId = node.getAttribute('segmentId') as string | null
+          if (ctx && hasSegmentId && shouldSplitIntoSentences(ctx, elementSegmentId)) {
             const sentenceHtml = renderSentenceSegments(children, ctx)
-            return `<p>${sentenceHtml || '&nbsp;'}</p>`
+            // Skip paragraph entirely if no sentences are visible
+            if (!sentenceHtml) {
+              return ''
+            }
+            return `<p>${sentenceHtml}</p>`
+          }
+          // For non-sentence-split paragraphs, verify segment matches before rendering
+          if (ctx && hasSegmentId) {
+            const segment = ctx.segments[ctx.segmentIndex]
+            // Skip if segment doesn't match this element (index misalignment)
+            if (!segment || segment.id !== elementSegmentId) {
+              return ''
+            }
           }
           const html = `<p>${children || '&nbsp;'}</p>`
           return ctx && hasSegmentId ? wrapWithSegment(html, ctx) : html
@@ -329,9 +373,34 @@
         }
 
         case 'ordered_list': {
+          // Calculate the correct start number when list items are hidden
+          let effectiveStart = node.getAttribute('order') || 1
+          if (typeof effectiveStart === 'string') effectiveStart = parseInt(effectiveStart, 10) || 1
+
+          if (ctx?.applyFormatEffects) {
+            // Count how many list items are skipped before the first visible one
+            let skippedCount = 0
+            let foundVisible = false
+            node.forEach((listItem) => {
+              if (foundVisible) return
+              if (listItem instanceof Y.XmlElement) {
+                const segmentId = listItem.getAttribute('segmentId')
+                if (segmentId) {
+                  // Check if this segment is visible based on format mode
+                  const segment = ctx.segments.find((s) => s.id === segmentId)
+                  if (segment && isSegmentVisible(segment, ctx)) {
+                    foundVisible = true
+                  } else {
+                    skippedCount++
+                  }
+                }
+              }
+            })
+            effectiveStart += skippedCount
+          }
+
           const children = buildChildren(ctx)
-          const start = node.getAttribute('order')
-          return start && start !== 1 ? `<ol start="${start}">${children}</ol>` : `<ol>${children}</ol>`
+          return effectiveStart !== 1 ? `<ol start="${effectiveStart}">${children}</ol>` : `<ol>${children}</ol>`
         }
 
         case 'list_item': {
@@ -340,7 +409,8 @@
           const children = buildChildren(listItemCtx)
 
           // Check if this list item should be split into sentence segments
-          if (ctx && hasSegmentId && shouldSplitIntoSentences(ctx, 'list-item')) {
+          const listItemSegmentId = node.getAttribute('segmentId') as string | null
+          if (ctx && hasSegmentId && shouldSplitIntoSentences(ctx, listItemSegmentId)) {
             const sentenceHtml = renderSentenceSegments(children, ctx)
             return `<li>${sentenceHtml}</li>`
           }
@@ -398,6 +468,103 @@
     return ''
   }
 
+  /**
+   * Check if a content node is an empty block (virtual slide divider candidate).
+   * Empty blocks have no text content and no segmentId.
+   */
+  function isEmptyBlock(node: Y.XmlElement): boolean {
+    // Check if it has a segmentId - nodes with segmentIds are not empty
+    if (node.getAttribute('segmentId') != null) return false
+
+    // Check if it has any text content
+    let hasContent = false
+    node.forEach((child) => {
+      if (child instanceof Y.XmlText && child.toString().trim()) {
+        hasContent = true
+      } else if (child instanceof Y.XmlElement) {
+        // Recursively check children (e.g., paragraph inside list_item)
+        if (!isEmptyBlock(child)) {
+          hasContent = true
+        }
+      }
+    })
+    return !hasContent
+  }
+
+  /**
+   * Analyze content structure to find block boundaries.
+   * Returns an array of block indices for each segment, where segments in the same
+   * contiguous block share the same block index. Empty blocks and slide_dividers
+   * create boundaries between blocks.
+   */
+  function computeBlockBoundaries(
+    content: Y.XmlFragment,
+    segments: ContentSegment[],
+  ): Map<string, number> {
+    const segmentToBlock = new Map<string, number>()
+    let currentBlockIndex = 0
+    let lastWasEmpty = true // Start as true to handle leading empty blocks
+
+    content.forEach((child) => {
+      if (!(child instanceof Y.XmlElement)) return
+
+      const tagName = child.nodeName.toLowerCase()
+
+      // Slide dividers always create a boundary
+      if (tagName === 'slide_divider') {
+        currentBlockIndex++
+        lastWasEmpty = true
+        return
+      }
+
+      // Check if this is an empty block (virtual slide divider)
+      const isEmpty = isEmptyBlock(child)
+
+      if (isEmpty) {
+        // Empty block: if we had content before, start a new block
+        if (!lastWasEmpty) {
+          currentBlockIndex++
+        }
+        lastWasEmpty = true
+        return
+      }
+
+      // Non-empty block: assign segments to current block
+      lastWasEmpty = false
+
+      // Handle list elements (they contain list_items which are the segments)
+      if (tagName === 'bullet_list' || tagName === 'ordered_list') {
+        child.forEach((listItem) => {
+          if (listItem instanceof Y.XmlElement) {
+            const segmentId = listItem.getAttribute('segmentId')
+            if (segmentId) {
+              segmentToBlock.set(segmentId, currentBlockIndex)
+            }
+          }
+        })
+      } else {
+        // Check for segment on this element
+        const segmentId = child.getAttribute('segmentId')
+        if (segmentId) {
+          segmentToBlock.set(segmentId, currentBlockIndex)
+        }
+      }
+    })
+
+    // Assign sentence segments to their parent's block
+    // Sentence segments have parentSegmentId pointing to the paragraph they belong to
+    for (const segment of segments) {
+      if (segment.parentSegmentId) {
+        const parentBlock = segmentToBlock.get(segment.parentSegmentId)
+        if (parentBlock !== undefined) {
+          segmentToBlock.set(segment.id, parentBlock)
+        }
+      }
+    }
+
+    return segmentToBlock
+  }
+
   // Compute HTML content - must be a function that reruns when props change
   function computeHtmlContent(
     _content: Y.XmlFragment | null,
@@ -412,19 +579,145 @@
     if ((_mode === 'present' || _mode === 'follow') && _segments.length > 0) {
       // Compute segment index and pair inline to ensure freshness
       const segIdx = _currentSegmentId ? _segments.findIndex((s) => s.id === _currentSegmentId) : -1
-      const pairIdx = Math.floor(Math.max(0, segIdx) / 2)
-
-      // Compute minimal visible IDs inline
-      const minimalIds = new Set<string>()
-      if (_format === 'minimal') {
-        const startIdx = pairIdx * 2
-        if (_segments[startIdx]) minimalIds.add(_segments[startIdx].id)
-        if (_segments[startIdx + 1]) minimalIds.add(_segments[startIdx + 1].id)
-      }
 
       // Find the merge group ID if the current segment is part of a merge group
       const currentSegment = _currentSegmentId ? _segments.find((s) => s.id === _currentSegmentId) : null
       const activeMergeGroupId = currentSegment?.mergeGroupId ?? null
+
+      // For sentence segments, use first sentence's index for slide/pair computation
+      // This keeps all sentences from the same paragraph on the same slide
+      let effectiveSegIdx = segIdx
+      if (currentSegment?.parentSegmentId) {
+        // Find first sibling sentence (lowest index with same parentSegmentId)
+        const firstSibling = _segments.find(
+          (s) => s.parentSegmentId === currentSegment.parentSegmentId,
+        )
+        if (firstSibling) {
+          effectiveSegIdx = _segments.findIndex((s) => s.id === firstSibling.id)
+        }
+      }
+
+      // Use effectiveSegIdx for pair calculation
+      const pairIdx = Math.floor(Math.max(0, effectiveSegIdx) / 2)
+
+      // Helper: get all sibling sentence IDs from the same paragraph
+      function getSiblingSentenceIds(segment: ContentSegment): string[] {
+        const parentId = segment.parentSegmentId
+        if (!parentId) return []
+        return _segments.filter((s) => s.parentSegmentId === parentId).map((s) => s.id)
+      }
+
+      // Compute single visible IDs (current segment + merge group members + sibling sentences)
+      const singleIds = new Set<string>()
+      if (_format === 'single') {
+        if (currentSegment) {
+          singleIds.add(currentSegment.id)
+          // Add sibling sentences from same paragraph
+          for (const id of getSiblingSentenceIds(currentSegment)) {
+            singleIds.add(id)
+          }
+          // Add all segments in the same merge group
+          if (activeMergeGroupId) {
+            for (const seg of _segments) {
+              if (seg.mergeGroupId === activeMergeGroupId) {
+                singleIds.add(seg.id)
+              }
+            }
+          }
+        }
+      }
+
+      // Compute minimal visible IDs using "logical segments" where sentence-split
+      // paragraphs count as one unit. This ensures a paragraph with multiple sentences
+      // doesn't span across slides.
+      const minimalIds = new Set<string>()
+      if (_format === 'minimal') {
+        // Build list of logical segments (first sentence of each paragraph, or regular segments)
+        const logicalSegments: ContentSegment[] = []
+        const seenParentIds = new Set<string>()
+        for (const segment of _segments) {
+          if (segment.parentSegmentId) {
+            // Sentence segment - only include if first of its parent
+            if (!seenParentIds.has(segment.parentSegmentId)) {
+              seenParentIds.add(segment.parentSegmentId)
+              logicalSegments.push(segment)
+            }
+          } else {
+            // Regular segment
+            logicalSegments.push(segment)
+          }
+        }
+
+        // Compute logical index for current segment
+        let logicalIdx = 0
+        if (currentSegment?.parentSegmentId) {
+          // For sentence, find the logical index of its first sibling
+          const firstSibling = _segments.find(
+            (s) => s.parentSegmentId === currentSegment.parentSegmentId,
+          )
+          if (firstSibling) {
+            logicalIdx = logicalSegments.findIndex((s) => s.id === firstSibling.id)
+          }
+        } else if (currentSegment) {
+          logicalIdx = logicalSegments.findIndex((s) => s.id === currentSegment.id)
+        }
+
+        // Compute pair index based on logical index
+        const logicalPairIdx = Math.floor(Math.max(0, logicalIdx) / 2)
+        const logicalStartIdx = logicalPairIdx * 2
+
+        // Get the 2 logical segments for this pair
+        const logicalSeg0 = logicalSegments[logicalStartIdx]
+        const logicalSeg1 = logicalSegments[logicalStartIdx + 1]
+
+        // Add all segments (including sibling sentences) for these logical segments
+        if (logicalSeg0) {
+          minimalIds.add(logicalSeg0.id)
+          for (const id of getSiblingSentenceIds(logicalSeg0)) {
+            minimalIds.add(id)
+          }
+        }
+        if (logicalSeg1) {
+          minimalIds.add(logicalSeg1.id)
+          for (const id of getSiblingSentenceIds(logicalSeg1)) {
+            minimalIds.add(id)
+          }
+        }
+      }
+
+      // Compute block visible IDs (all segments in current contiguous block)
+      const blockIds = new Set<string>()
+      if (_format === 'block') {
+        const blockBoundaries = computeBlockBoundaries(_content, _segments)
+        const currentBlockIndex = currentSegment ? blockBoundaries.get(currentSegment.id) : undefined
+        if (currentBlockIndex !== undefined) {
+          for (const seg of _segments) {
+            if (blockBoundaries.get(seg.id) === currentBlockIndex) {
+              blockIds.add(seg.id)
+            }
+          }
+        }
+      }
+
+      // Compute maximal visible IDs (current segment + merge group + sibling sentences)
+      const maximalIds = new Set<string>()
+      if (_format === 'maximal') {
+        if (currentSegment) {
+          maximalIds.add(currentSegment.id)
+          // Add sibling sentences from same paragraph
+          for (const id of getSiblingSentenceIds(currentSegment)) {
+            maximalIds.add(id)
+          }
+          // Add all segments in the same merge group
+          if (activeMergeGroupId) {
+            for (const seg of _segments) {
+              if (seg.mergeGroupId === activeMergeGroupId) {
+                maximalIds.add(seg.id)
+              }
+            }
+          }
+        }
+      }
 
       const ctx: SegmentContext = {
         segments: _segments,
@@ -435,7 +728,10 @@
         inPresenterMode: true,
         insideListItem: false,
         format: _format,
+        singleVisibleIds: singleIds,
         minimalVisibleIds: minimalIds,
+        blockVisibleIds: blockIds,
+        maximalVisibleIds: maximalIds,
         applyFormatEffects: _mode === 'follow',
         hasRenderedVisible: false,
         hasFinishedVisible: false,

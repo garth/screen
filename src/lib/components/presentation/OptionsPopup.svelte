@@ -41,19 +41,29 @@
 
   const formatOptions: { value: PresentationFormat; label: string; description: string }[] = [
     {
+      value: 'single',
+      label: 'Single',
+      description: 'Show one segment at a time',
+    },
+    {
       value: 'minimal',
       label: 'Minimal',
       description: 'Navigate 2 segments at a time, like slides',
     },
     {
+      value: 'block',
+      label: 'Block',
+      description: 'Show a contiguous block of content per slide',
+    },
+    {
       value: 'maximal',
       label: 'Maximal',
-      description: 'Show as many segments as fit on screen',
+      description: 'Show current segment and merge group',
     },
     {
       value: 'scrolling',
       label: 'Scrolling',
-      description: 'Current segment at top, older content fades',
+      description: 'All segments with fading on past content',
     },
   ]
 </script>
