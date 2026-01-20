@@ -3,7 +3,9 @@
   import { browser } from '$app/environment'
   import { resolve } from '$app/paths'
   import { createPresentationDoc, createThemeDoc, type ThemeDocument } from '$lib/stores/documents'
+  import type { PresentationFormat } from '$lib/stores/documents/types'
   import PresentationViewer from '$lib/components/presentation/PresentationViewer.svelte'
+  import OptionsPopup from '$lib/components/presentation/OptionsPopup.svelte'
   import { resolveTheme, defaultTheme, type ResolvedTheme } from '$lib/utils/theme-resolver'
   import { parseContentSegments, clampSegmentIndex, type ContentSegment } from '$lib/utils/segment-parser'
 
@@ -149,6 +151,21 @@
     themeDoc?.destroy()
     doc.destroy()
   })
+
+  // Options popup state
+  let showOptionsPopup = $state(false)
+
+  function handleThemeChange(themeId: string | null) {
+    if (doc.synced) {
+      doc.setThemeId(themeId)
+    }
+  }
+
+  function handleFormatChange(format: PresentationFormat) {
+    if (doc.synced) {
+      doc.setFormat(format)
+    }
+  }
 </script>
 
 <svelte:head>
@@ -165,6 +182,13 @@
     </div>
 
     <div class="flex flex-none items-center gap-3">
+      <button
+        type="button"
+        onclick={() => (showOptionsPopup = true)}
+        disabled={!doc.synced}
+        class="btn btn-ghost btn-sm">
+        Options
+      </button>
       <a href={resolve(`/presentation/${data.document.id}`)} class="btn btn-ghost btn-sm">View</a>
       <a href={resolve(`/presentation/${data.document.id}/edit`)} class="btn btn-ghost btn-sm">Edit</a>
     </div>
@@ -209,6 +233,19 @@
     {/if}
   </main>
 </div>
+
+<!-- Options Popup -->
+{#if showOptionsPopup}
+  <OptionsPopup
+    open={showOptionsPopup}
+    themes={data.themes}
+    currentThemeId={doc.themeId}
+    currentFormat={doc.format}
+    disabled={!doc.synced}
+    onThemeChange={handleThemeChange}
+    onFormatChange={handleFormatChange}
+    onClose={() => (showOptionsPopup = false)} />
+{/if}
 
 <style>
   .nav-buttons {
