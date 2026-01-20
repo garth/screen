@@ -24,3 +24,11 @@ export { createEventDoc } from './event.svelte'
 // Document list (for offline document listing)
 export { createDocumentListDoc, getDocumentListId } from './document-list.svelte'
 export type { DocumentListDocument, DocumentListItem, DocumentListOptions } from './document-list.svelte'
+
+// Presenter awareness (persistent Yjs document for presenter state)
+export { createPresenterAwarenessDoc } from './presenter-awareness.svelte'
+export type {
+  PresenterAwarenessDoc,
+  PresenterAwarenessDocOptions,
+  PresenterState as PersistentPresenterState,
+} from './presenter-awareness.svelte'

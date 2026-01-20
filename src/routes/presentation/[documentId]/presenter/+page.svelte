@@ -2,7 +2,12 @@
   import { onDestroy } from 'svelte'
   import { browser } from '$app/environment'
   import { resolve } from '$app/paths'
-  import { createPresentationDoc, createThemeDoc, type ThemeDocument } from '$lib/stores/documents'
+  import {
+    createPresentationDoc,
+    createThemeDoc,
+    createPresenterAwarenessDoc,
+    type ThemeDocument,
+  } from '$lib/stores/documents'
   import type { PresentationFormat } from '$lib/stores/documents/types'
   import PresentationViewer from '$lib/components/presentation/PresentationViewer.svelte'
   import OptionsPopup from '$lib/components/presentation/OptionsPopup.svelte'
@@ -15,6 +20,12 @@
   const doc = createPresentationDoc({
     documentId: data.document.id,
     baseDocumentId: data.document.baseDocumentId ?? undefined,
+  })
+
+  // Create persistent presenter awareness (presenter has write access)
+  const presenterAwareness = createPresenterAwarenessDoc({
+    documentId: data.document.id,
+    canWrite: true,
   })
 
   // Theme document (loaded when themeId is available)
@@ -57,25 +68,79 @@
   // Track last local update timestamp to prevent feedback loops
   let lastLocalUpdate = $state(0)
 
-  // Initialize to first segment when segments are available
+  // Track the previous segment index for handling deletions
+  let previousSegmentIndex = $state(-1)
+
+  // Initialize segment position when synced
+  // Priority: 1) persistent awareness position, 2) first segment
   $effect(() => {
-    if (segments.length > 0 && !currentSegmentId) {
+    console.log('[Presenter Init] doc.synced:', doc.synced, 'presenterAwareness.synced:', presenterAwareness.synced, 'segments.length:', segments.length, 'currentSegmentId:', currentSegmentId)
+    if (doc.synced && presenterAwareness.synced && segments.length > 0 && !currentSegmentId) {
+      // Check if there's an existing presenter position in persistent awareness
+      const existingPresenter = presenterAwareness.getPresenter()
+      console.log('[Presenter Init] Checking for existing presenter:', existingPresenter)
+      if (existingPresenter?.segmentId) {
+        // Verify the segment still exists
+        const segmentExists = segments.some((s) => s.id === existingPresenter.segmentId)
+        console.log('[Presenter Init] Segment exists:', segmentExists)
+        if (segmentExists) {
+          console.log('[Presenter Init] Restoring to:', existingPresenter.segmentId)
+          currentSegmentId = existingPresenter.segmentId
+          return
+        }
+      }
+      // Fallback to first segment
+      console.log('[Presenter Init] Defaulting to first segment:', segments[0].id)
       currentSegmentId = segments[0].id
     }
   })
 
-  // Join as presenter on shared awareness channel when synced
+  // Handle segment deletion - move to next/previous segment if current is deleted
   $effect(() => {
-    if (doc.synced && currentSegmentId) {
-      lastLocalUpdate = Date.now()
-      doc.awareness.setPresenter(currentSegmentId)
+    if (!currentSegmentId || segments.length === 0) return
+
+    // Check if current segment still exists
+    const currentIndex = segments.findIndex((s) => s.id === currentSegmentId)
+
+    if (currentIndex === -1) {
+      // Current segment was deleted - try to find the best replacement
+      // Use the previous index to determine which segment to select
+      let newIndex = previousSegmentIndex
+
+      // Clamp to valid range
+      if (newIndex >= segments.length) {
+        newIndex = segments.length - 1
+      }
+      if (newIndex < 0) {
+        newIndex = 0
+      }
+
+      const newSegmentId = segments[newIndex]?.id ?? null
+      if (newSegmentId) {
+        currentSegmentId = newSegmentId
+        lastLocalUpdate = Date.now()
+        presenterAwareness.setPresenter(newSegmentId)
+      }
+    } else {
+      // Update previous index for next time
+      previousSegmentIndex = currentIndex
     }
   })
 
-  // Subscribe to other presenters' navigation on the shared channel
+  // Broadcast position to persistent awareness when synced
   $effect(() => {
-    if (doc.synced) {
-      const unsubscribe = doc.awareness.onPresenterChange((presenter) => {
+    console.log('[Presenter Broadcast] presenterAwareness.synced:', presenterAwareness.synced, 'currentSegmentId:', currentSegmentId)
+    if (presenterAwareness.synced && currentSegmentId) {
+      console.log('[Presenter Broadcast] Broadcasting position:', currentSegmentId)
+      lastLocalUpdate = Date.now()
+      presenterAwareness.setPresenter(currentSegmentId)
+    }
+  })
+
+  // Subscribe to other presenters' navigation via persistent awareness
+  $effect(() => {
+    if (presenterAwareness.synced) {
+      const unsubscribe = presenterAwareness.onPresenterChange((presenter) => {
         // Ignore our own updates (prevent feedback loop)
         if (!presenter || presenter.timestamp <= lastLocalUpdate) return
 
@@ -98,7 +163,7 @@
     if (newSegmentId && newSegmentId !== currentSegmentId) {
       currentSegmentId = newSegmentId
       lastLocalUpdate = Date.now()
-      doc.awareness.setPresenter(newSegmentId)
+      presenterAwareness.setPresenter(newSegmentId)
     }
   }
 
@@ -107,7 +172,7 @@
     if (segmentId !== currentSegmentId) {
       currentSegmentId = segmentId
       lastLocalUpdate = Date.now()
-      doc.awareness.setPresenter(segmentId)
+      presenterAwareness.setPresenter(segmentId)
     }
   }
 
@@ -150,8 +215,9 @@
   })
 
   onDestroy(() => {
-    doc.awareness.clearPresenter()
+    // DO NOT call clearPresenter() - let position persist for reconnection
     themeDoc?.destroy()
+    presenterAwareness.destroy()
     doc.destroy()
   })
 

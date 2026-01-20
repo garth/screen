@@ -1,10 +1,15 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
-  import { createPresentationDoc, createThemeDoc, type ThemeDocument } from '$lib/stores/documents'
+  import {
+    createPresentationDoc,
+    createThemeDoc,
+    createPresenterAwarenessDoc,
+    type ThemeDocument,
+    type PersistentPresenterState,
+  } from '$lib/stores/documents'
   import PresentationViewer from '$lib/components/presentation/PresentationViewer.svelte'
   import { resolveTheme, defaultTheme, type ResolvedTheme } from '$lib/utils/theme-resolver'
   import { parseContentSegments, type ContentSegment } from '$lib/utils/segment-parser'
-  import type { PresenterState } from '$lib/stores/documents/awareness.svelte'
 
   let { data } = $props()
 
@@ -12,6 +17,12 @@
   const doc = createPresentationDoc({
     documentId: data.document.id,
     baseDocumentId: data.document.baseDocumentId ?? undefined,
+  })
+
+  // Create persistent presenter awareness (viewer has read-only access)
+  const presenterAwareness = createPresenterAwarenessDoc({
+    documentId: data.document.id,
+    canWrite: false,
   })
 
   // Theme document (loaded when themeId is available)
@@ -50,13 +61,13 @@
 
   // Follow mode state
   let followMode = $state(true)
-  let activePresenter = $state<PresenterState | null>(null)
+  let activePresenter = $state<PersistentPresenterState | null>(null)
   let currentSegmentId = $state<string | null>(null)
 
-  // Subscribe to presenter changes on the shared channel
+  // Subscribe to presenter changes via persistent awareness
   $effect(() => {
-    if (doc.synced) {
-      const unsubscribe = doc.awareness.onPresenterChange((presenter) => {
+    if (presenterAwareness.synced) {
+      const unsubscribe = presenterAwareness.onPresenterChange((presenter) => {
         activePresenter = presenter
 
         // Auto-follow if enabled
@@ -68,9 +79,17 @@
     }
   })
 
-  // Default to first segment if no position is set
+  // Default to persisted position or first segment
   $effect(() => {
-    if (doc.synced && segments.length > 0 && currentSegmentId === null) {
+    if (doc.synced && presenterAwareness.synced && segments.length > 0 && currentSegmentId === null) {
+      const presenter = presenterAwareness.getPresenter()
+      if (presenter?.segmentId) {
+        const segmentExists = segments.some((s) => s.id === presenter.segmentId)
+        if (segmentExists) {
+          currentSegmentId = presenter.segmentId
+          return
+        }
+      }
       currentSegmentId = segments[0].id
     }
   })
@@ -83,6 +102,7 @@
 
   onDestroy(() => {
     themeDoc?.destroy()
+    presenterAwareness.destroy()
     doc.destroy()
   })
 </script>
