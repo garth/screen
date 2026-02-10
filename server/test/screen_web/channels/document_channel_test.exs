@@ -13,7 +13,9 @@ defmodule ScreenWeb.DocumentChannelTest do
     owner = user_fixture()
     document = document_fixture(owner)
     token = Screen.Accounts.generate_user_session_token(owner)
-    {:ok, socket} = connect(UserSocket, %{"token" => token})
+
+    {:ok, socket} =
+      connect(UserSocket, %{}, connect_info: %{session: %{"user_token" => token}})
 
     # Pre-start DocServer via start_link (not DynamicSupervisor)
     # so $callers gives it sandbox access
@@ -59,7 +61,9 @@ defmodule ScreenWeb.DocumentChannelTest do
       other_user = user_fixture()
       document_user_fixture(document, other_user, %{can_write: true})
       token = Screen.Accounts.generate_user_session_token(other_user)
-      {:ok, socket} = connect(UserSocket, %{"token" => token})
+
+      {:ok, socket} =
+        connect(UserSocket, %{}, connect_info: %{session: %{"user_token" => token}})
 
       assert {:ok, reply, _socket} =
                subscribe_and_join(socket, DocumentChannel, "document:#{document.id}")
@@ -71,7 +75,9 @@ defmodule ScreenWeb.DocumentChannelTest do
       other_user = user_fixture()
       document_user_fixture(document, other_user, %{can_write: false})
       token = Screen.Accounts.generate_user_session_token(other_user)
-      {:ok, socket} = connect(UserSocket, %{"token" => token})
+
+      {:ok, socket} =
+        connect(UserSocket, %{}, connect_info: %{session: %{"user_token" => token}})
 
       assert {:ok, reply, _socket} =
                subscribe_and_join(socket, DocumentChannel, "document:#{document.id}")
@@ -89,7 +95,7 @@ defmodule ScreenWeb.DocumentChannelTest do
           name: {:via, Registry, {Screen.Documents.DocRegistry, public_doc.id}}
         )
 
-      {:ok, socket} = connect(UserSocket, %{})
+      {:ok, socket} = connect(UserSocket, %{}, connect_info: %{session: %{}})
 
       assert {:ok, reply, _socket} =
                subscribe_and_join(socket, DocumentChannel, "document:#{public_doc.id}")
@@ -98,7 +104,7 @@ defmodule ScreenWeb.DocumentChannelTest do
     end
 
     test "anonymous user cannot join private document", %{document: document} do
-      {:ok, socket} = connect(UserSocket, %{})
+      {:ok, socket} = connect(UserSocket, %{}, connect_info: %{session: %{}})
 
       assert {:error, %{reason: "not found"}} =
                subscribe_and_join(socket, DocumentChannel, "document:#{document.id}")
@@ -107,7 +113,9 @@ defmodule ScreenWeb.DocumentChannelTest do
     test "unrelated user cannot join private document", %{document: document} do
       other_user = user_fixture()
       token = Screen.Accounts.generate_user_session_token(other_user)
-      {:ok, socket} = connect(UserSocket, %{"token" => token})
+
+      {:ok, socket} =
+        connect(UserSocket, %{}, connect_info: %{session: %{"user_token" => token}})
 
       assert {:error, %{reason: "not found"}} =
                subscribe_and_join(socket, DocumentChannel, "document:#{document.id}")
@@ -116,11 +124,42 @@ defmodule ScreenWeb.DocumentChannelTest do
     test "nonexistent document returns error" do
       user = user_fixture()
       token = Screen.Accounts.generate_user_session_token(user)
-      {:ok, socket} = connect(UserSocket, %{"token" => token})
+
+      {:ok, socket} =
+        connect(UserSocket, %{}, connect_info: %{session: %{"user_token" => token}})
+
       fake_id = ExCuid2.generate()
 
       assert {:error, %{reason: "not found"}} =
                subscribe_and_join(socket, DocumentChannel, "document:#{fake_id}")
+    end
+
+    test "pushes permissions event after join", %{document: document, socket: socket} do
+      {:ok, _reply, _socket} =
+        subscribe_and_join(socket, DocumentChannel, "document:#{document.id}")
+
+      assert_push "permissions", %{read_only: false}, 1000
+    end
+
+    test "pushes read_only permissions for public doc viewer", %{owner: owner} do
+      public_doc = document_fixture(owner, %{is_public: true})
+
+      {:ok, _} =
+        DocServer.start_link(
+          [doc_name: public_doc.id],
+          name: {:via, Registry, {Screen.Documents.DocRegistry, public_doc.id}}
+        )
+
+      other_user = user_fixture()
+      token = Screen.Accounts.generate_user_session_token(other_user)
+
+      {:ok, socket} =
+        connect(UserSocket, %{}, connect_info: %{session: %{"user_token" => token}})
+
+      {:ok, _reply, _socket} =
+        subscribe_and_join(socket, DocumentChannel, "document:#{public_doc.id}")
+
+      assert_push "permissions", %{read_only: true}, 1000
     end
 
     test "initiates sync on join by pushing yjs messages", %{
@@ -138,7 +177,11 @@ defmodule ScreenWeb.DocumentChannelTest do
   end
 
   describe "handle_in yjs" do
-    test "read-write client can send updates", %{document: document, socket: socket} do
+    test "read-write client can send updates", %{
+      document: document,
+      socket: socket,
+      server: server
+    } do
       {:ok, _reply, socket} =
         subscribe_and_join(socket, DocumentChannel, "document:#{document.id}")
 
@@ -164,8 +207,8 @@ defmodule ScreenWeb.DocumentChannelTest do
 
       push(socket, "yjs", %{"data" => message})
 
-      # Wait for persistence
-      Process.sleep(100)
+      # Synchronize with DocServer to ensure persistence completes
+      _ = :sys.get_state(server)
 
       updates = Documents.get_document_updates_with_inheritance(document.id)
       assert length(updates) > 0
@@ -174,7 +217,7 @@ defmodule ScreenWeb.DocumentChannelTest do
     test "read-only client cannot send updates", %{owner: owner} do
       public_doc = document_fixture(owner, %{is_public: true})
 
-      {:ok, _} =
+      {:ok, pub_server} =
         DocServer.start_link(
           [doc_name: public_doc.id],
           name: {:via, Registry, {Screen.Documents.DocRegistry, public_doc.id}}
@@ -182,7 +225,9 @@ defmodule ScreenWeb.DocumentChannelTest do
 
       other_user = user_fixture()
       token = Screen.Accounts.generate_user_session_token(other_user)
-      {:ok, socket} = connect(UserSocket, %{"token" => token})
+
+      {:ok, socket} =
+        connect(UserSocket, %{}, connect_info: %{session: %{"user_token" => token}})
 
       {:ok, _reply, socket} =
         subscribe_and_join(socket, DocumentChannel, "document:#{public_doc.id}")
@@ -209,8 +254,8 @@ defmodule ScreenWeb.DocumentChannelTest do
 
       push(socket, "yjs", %{"data" => message})
 
-      # Wait a bit — no update should be persisted by the blocked client
-      Process.sleep(100)
+      # Synchronize with DocServer to ensure message processing completes
+      _ = :sys.get_state(pub_server)
 
       updates = Documents.get_document_updates_with_inheritance(public_doc.id)
       assert updates == []
@@ -225,7 +270,7 @@ defmodule ScreenWeb.DocumentChannelTest do
           name: {:via, Registry, {Screen.Documents.DocRegistry, public_doc.id}}
         )
 
-      {:ok, socket} = connect(UserSocket, %{})
+      {:ok, socket} = connect(UserSocket, %{}, connect_info: %{session: %{}})
 
       {:ok, _reply, socket} =
         subscribe_and_join(socket, DocumentChannel, "document:#{public_doc.id}")

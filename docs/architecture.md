@@ -58,6 +58,9 @@ No REST endpoints. All data flows through WebSocket channels or Yjs documents:
 | --------------- | -------------------------------------------- |
 | Create document | push `"create_document"`                     |
 | Delete document | push `"delete_document"`                     |
+| Update document | push `"update_document"`                     |
+| Create channel  | push `"create_channel"`                      |
+| Delete channel  | push `"delete_channel"`                      |
 | Update profile  | push `"update_profile"`                      |
 | Change password | push `"change_password"`                     |
 | Delete account  | push `"delete_account"`                      |
@@ -157,7 +160,9 @@ screen/
 │   └── build/                       # Static SPA output
 ├── server/                          # Phoenix backend
 │   ├── lib/screen/                  # Business logic (Ecto schemas, contexts)
-│   │   └── collaboration/           # DocServer, document management
+│   │   ├── accounts/                # User, UserToken schemas
+│   │   ├── channels/                # Channel schema
+│   │   └── documents/               # Document, DocServer, Persistence
 │   └── lib/screen_web/              # Web layer (channels, LiveView, router)
 │       ├── channels/                # DocumentChannel, UserChannel
 │       └── live/                    # Auth LiveView pages

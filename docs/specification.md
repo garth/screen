@@ -1,36 +1,38 @@
-# System requirements
+# System Requirements
+
+_Last updated: 2026-02-10_
 
 ## Sync
 
-- client updates sent to the server are stored in individual rows in the documentupdate table.
-- connecting to an existing document syncornises all updates to the client
-- changes by one user, syncronise to other users
-- simultanious changes by multiple users get synced on the server and all clients receive the same result
+- client updates sent to the server are stored in individual rows in the document_updates table
+- connecting to an existing document synchronises all updates to the client
+- changes by one user synchronise to other users
+- simultaneous changes by multiple users get synced on the server and all clients receive the same result
 - updates should include deleting, modifying and adding content to a document
 - readonly clients can receive updates but cannot send updates
 - every update is stored in the database with the id of the user who sent it
 - if a document is public, authentication is not required, but the document should be readonly
 - to write to a document, the user must be the owner or granted access via DocumentUser.canWrite
-- non public documents require and entry in the DocumentUsers table to read
+- non public documents require an entry in the DocumentUsers table to read
 
 ## Documents
 
 - Documents are generic and can be used for storing different types of data
 - The type field defines the type of document
-- Documents can be private of public
+- Documents can be private or public
 - The document name, type, isPublic and meta are stored in the Document table
 - Documents are Yjs based
 - Each yjs update is stored in a documentUpdate table
 - The user who submitted the update is stored in the update table
-- Each yjs document should have a "meta" propery with a YMap of values
+- Each yjs document should have a "meta" property with a YMap of values
 - On each new yjs update received, if a meta values has changed, the meta values should be serialised to json and stored in the Database.meta field
 - Documents can only be created by authenticated users
-- Public documents are readonly for all site visiters
+- Public documents are readonly for all site visitors
 - Users can be assigned access to a document via the DocumentUser table
 - Only the document creator or users with DocumentUser.canWrite can update documents
 - Documents can link to a base document
-  - updates from base documents are not duplicated to the documens own DocumentUpdate rows
-  - when loading a documetn that has a base document, both sets of updates should be loaded
+  - updates from base documents are not duplicated to the document's own DocumentUpdate rows
+  - when loading a document that has a base document, both sets of updates should be loaded
   - whilst the document is open changes to the document or the base document should live sync
   - base documents can go down many levels, ie a base document can have a base document, cyclic base documents are not allowed
 
@@ -42,7 +44,7 @@
 - has meta.title
 - has meta.themeId (documentId)
 - stores presentation content as rich text
-- can also overide all values from theme
+- can also override all values from theme
 
 ### Theme
 
@@ -63,7 +65,7 @@
 - has a list of presentations (documentIds)
 - has a list of channels
 - presentations can be assigned to channels
-- for each channel presentation relation the theme can be overridden, this allows the same presention to have a different theme for each channel
+- for each channel presentation relation the theme can be overridden, this allows the same presentation to have a different theme for each channel
 - presentations can be ordered
 - channels can be ordered
 
@@ -78,11 +80,11 @@
 
 ### Presentations
 
-- Each registerd user can view a list of presentations and create new ones
+- Each registered user can view a list of presentations and create new ones
 - Users can be added to a presentation via the DocumentUser table
-- The presentation list includes the current users presentations as well as those they are assinged to via the DocumentUser table
+- The presentation list includes the current user's presentations as well as those they are assigned to via the DocumentUser table
 - The presentation list is ordered by lastUpdated date descending
-- Presentatinos can be opened for editing when the user is the owner or has DocumentUser.canWrite
+- Presentations can be opened for editing when the user is the owner or has DocumentUser.canWrite
 - Presentations can be opened for presenting when the user is the owner or has DocumentUser.canWrite
 - Presentations can be viewed via /presentation/[documentId]
 - access to the presentation is managed by the event Document.isPublic
@@ -108,7 +110,7 @@
   - images (stored inline)
   - slide divider (behaves like a page break, but forces a new presentation slide to start)
   - quote (including an attribution line)
-  - collaborative editing, reatime cursor positions with usernames
+  - collaborative editing, realtime cursor positions with usernames
 
 #### Presentation Viewer
 
@@ -125,7 +127,7 @@
   - each bullet point is a segment
   - each paragraph or heading is a segment
   - a picture is a segment
-  - longer text based segments should be split into sentance segments
+  - longer text based segments should be split into sentence segments
 - has controls to let the user move forwards or backwards in the presentation points
 - lets the user tap/click on a presentation point to jump to it
 - lets the user scroll to find points to jump to

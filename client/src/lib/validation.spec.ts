@@ -2,16 +2,11 @@ import { describe, expect, it } from 'vitest'
 import {
   requiredString,
   emailSchema,
-  registerPasswordSchema,
-  changePasswordSchema,
+  passwordSchema,
   registrationSchema,
   loginSchema,
   updateNameSchema,
   changePasswordFormSchema,
-  activitySchema,
-  clientSchema,
-  projectSchema,
-  phaseSchema,
   validate,
   passwordsMatch,
   getFieldError,
@@ -91,50 +86,35 @@ describe('emailSchema', () => {
   })
 })
 
-describe('registerPasswordSchema', () => {
-  it('passes for password with 6+ characters', () => {
-    const result = validate(registerPasswordSchema, '123456')
+describe('passwordSchema', () => {
+  it('passes for password with 8+ characters', () => {
+    const result = validate(passwordSchema, '12345678')
     expect(result.success).toBe(true)
   })
 
   it('passes for long password', () => {
-    const result = validate(registerPasswordSchema, 'a'.repeat(100))
-    expect(result.success).toBe(true)
-  })
-
-  it('fails for password under 6 characters', () => {
-    const result = validate(registerPasswordSchema, '12345')
-    expect(result.success).toBe(false)
-    if (!result.success) {
-      expect(result.issues[0].message).toBe('Password must be at least 6 characters')
-    }
-  })
-
-  it('fails for empty password', () => {
-    const result = validate(registerPasswordSchema, '')
-    expect(result.success).toBe(false)
-  })
-
-  it('fails for password over 255 characters', () => {
-    const result = validate(registerPasswordSchema, 'a'.repeat(256))
-    expect(result.success).toBe(false)
-    if (!result.success) {
-      expect(result.issues[0].message).toBe('Password is too long')
-    }
-  })
-})
-
-describe('changePasswordSchema', () => {
-  it('passes for password with 8+ characters', () => {
-    const result = validate(changePasswordSchema, '12345678')
+    const result = validate(passwordSchema, 'a'.repeat(100))
     expect(result.success).toBe(true)
   })
 
   it('fails for password under 8 characters', () => {
-    const result = validate(changePasswordSchema, '1234567')
+    const result = validate(passwordSchema, '1234567')
     expect(result.success).toBe(false)
     if (!result.success) {
       expect(result.issues[0].message).toBe('Password must be at least 8 characters')
+    }
+  })
+
+  it('fails for empty password', () => {
+    const result = validate(passwordSchema, '')
+    expect(result.success).toBe(false)
+  })
+
+  it('fails for password over 255 characters', () => {
+    const result = validate(passwordSchema, 'a'.repeat(256))
+    expect(result.success).toBe(false)
+    if (!result.success) {
+      expect(result.issues[0].message).toBe('Password is too long')
     }
   })
 })
@@ -199,10 +179,10 @@ describe('registrationSchema', () => {
       firstName: 'John',
       lastName: 'Doe',
       email: 'john@example.com',
-      password: '12345',
+      password: '1234567',
     })
     expect(result.success).toBe(false)
-    expect(getFieldError(result, 'password')).toBe('Password must be at least 6 characters')
+    expect(getFieldError(result, 'password')).toBe('Password must be at least 8 characters')
   })
 })
 
@@ -284,169 +264,6 @@ describe('changePasswordFormSchema', () => {
   })
 })
 
-describe('activitySchema', () => {
-  it('passes for valid activity with required fields', () => {
-    const result = validate(activitySchema, {
-      description: 'Working on feature',
-      startTime: '2024-01-15T09:00',
-      timezone: 'America/New_York',
-    })
-    expect(result.success).toBe(true)
-  })
-
-  it('passes for activity with all fields', () => {
-    const result = validate(activitySchema, {
-      description: 'Working on feature',
-      startTime: '2024-01-15T09:00',
-      endTime: '2024-01-15T17:00',
-      tags: 'coding, frontend',
-      note: 'Made good progress',
-      projectId: 'proj-123',
-      timezone: 'America/New_York',
-    })
-    expect(result.success).toBe(true)
-  })
-
-  it('fails for missing description', () => {
-    const result = validate(activitySchema, {
-      description: '',
-      startTime: '2024-01-15T09:00',
-      timezone: 'America/New_York',
-    })
-    expect(result.success).toBe(false)
-    expect(getFieldError(result, 'description')).toBe('Description is required')
-  })
-
-  it('fails for missing start time', () => {
-    const result = validate(activitySchema, {
-      description: 'Working',
-      startTime: '',
-      timezone: 'America/New_York',
-    })
-    expect(result.success).toBe(false)
-    expect(getFieldError(result, 'startTime')).toBe('Start time is required')
-  })
-
-  it('fails for missing timezone', () => {
-    const result = validate(activitySchema, {
-      description: 'Working',
-      startTime: '2024-01-15T09:00',
-      timezone: '',
-    })
-    expect(result.success).toBe(false)
-    expect(getFieldError(result, 'timezone')).toBe('Timezone is required')
-  })
-})
-
-describe('clientSchema', () => {
-  it('passes for valid client', () => {
-    const result = validate(clientSchema, { name: 'Acme Corp' })
-    expect(result.success).toBe(true)
-  })
-
-  it('fails for empty name', () => {
-    const result = validate(clientSchema, { name: '' })
-    expect(result.success).toBe(false)
-    expect(getFieldError(result, 'name')).toBe('Name is required')
-  })
-})
-
-describe('projectSchema', () => {
-  it('passes for valid project', () => {
-    const result = validate(projectSchema, {
-      name: 'Website Redesign',
-      clientId: 'client-123',
-    })
-    expect(result.success).toBe(true)
-  })
-
-  it('fails for empty name', () => {
-    const result = validate(projectSchema, {
-      name: '',
-      clientId: 'client-123',
-    })
-    expect(result.success).toBe(false)
-    expect(getFieldError(result, 'name')).toBe('Name is required')
-  })
-
-  it('fails for missing client', () => {
-    const result = validate(projectSchema, {
-      name: 'Website Redesign',
-      clientId: '',
-    })
-    expect(result.success).toBe(false)
-    expect(getFieldError(result, 'clientId')).toBe('Client is required')
-  })
-})
-
-describe('phaseSchema', () => {
-  it('passes for valid phase with required fields', () => {
-    const result = validate(phaseSchema, {
-      name: 'Q1 2024',
-      clientId: 'client-123',
-      startDate: '2024-01-01',
-      endDate: '2024-03-31',
-    })
-    expect(result.success).toBe(true)
-  })
-
-  it('passes for phase with all fields', () => {
-    const result = validate(phaseSchema, {
-      name: 'Q1 2024',
-      clientId: 'client-123',
-      projectId: 'proj-123',
-      startDate: '2024-01-01',
-      endDate: '2024-03-31',
-      billingRate: '150.00',
-    })
-    expect(result.success).toBe(true)
-  })
-
-  it('fails for missing name', () => {
-    const result = validate(phaseSchema, {
-      name: '',
-      clientId: 'client-123',
-      startDate: '2024-01-01',
-      endDate: '2024-03-31',
-    })
-    expect(result.success).toBe(false)
-    expect(getFieldError(result, 'name')).toBe('Name is required')
-  })
-
-  it('fails for missing client', () => {
-    const result = validate(phaseSchema, {
-      name: 'Q1 2024',
-      clientId: '',
-      startDate: '2024-01-01',
-      endDate: '2024-03-31',
-    })
-    expect(result.success).toBe(false)
-    expect(getFieldError(result, 'clientId')).toBe('Client is required')
-  })
-
-  it('fails for missing start date', () => {
-    const result = validate(phaseSchema, {
-      name: 'Q1 2024',
-      clientId: 'client-123',
-      startDate: '',
-      endDate: '2024-03-31',
-    })
-    expect(result.success).toBe(false)
-    expect(getFieldError(result, 'startDate')).toBe('Start date is required')
-  })
-
-  it('fails for missing end date', () => {
-    const result = validate(phaseSchema, {
-      name: 'Q1 2024',
-      clientId: 'client-123',
-      startDate: '2024-01-01',
-      endDate: '',
-    })
-    expect(result.success).toBe(false)
-    expect(getFieldError(result, 'endDate')).toBe('End date is required')
-  })
-})
-
 describe('passwordsMatch', () => {
   it('returns true when passwords match', () => {
     expect(passwordsMatch('password123', 'password123')).toBe(true)
@@ -467,29 +284,30 @@ describe('passwordsMatch', () => {
 
 describe('getFieldError', () => {
   it('returns undefined for successful validation', () => {
-    const result = validate(clientSchema, { name: 'Test' })
-    expect(getFieldError(result, 'name')).toBeUndefined()
+    const result = validate(updateNameSchema, { firstName: 'Jane', lastName: 'Doe' })
+    expect(getFieldError(result, 'firstName')).toBeUndefined()
   })
 
   it('returns error message for failed field', () => {
-    const result = validate(clientSchema, { name: '' })
-    expect(getFieldError(result, 'name')).toBe('Name is required')
+    const result = validate(updateNameSchema, { firstName: '', lastName: 'Doe' })
+    expect(getFieldError(result, 'firstName')).toBe('First name is required')
   })
 
   it('returns undefined for non-errored field', () => {
     const result = validate(registrationSchema, {
-      name: 'John',
+      firstName: 'John',
+      lastName: 'Doe',
       email: '',
       password: 'password123',
     })
-    expect(getFieldError(result, 'name')).toBeUndefined()
+    expect(getFieldError(result, 'firstName')).toBeUndefined()
     expect(getFieldError(result, 'email')).toBe('Email is required')
   })
 })
 
 describe('getAllErrors', () => {
   it('returns empty object for successful validation', () => {
-    const result = validate(clientSchema, { name: 'Test' })
+    const result = validate(updateNameSchema, { firstName: 'Jane', lastName: 'Doe' })
     expect(getAllErrors(result)).toEqual({})
   })
 

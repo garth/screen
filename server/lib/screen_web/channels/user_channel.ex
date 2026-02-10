@@ -1,4 +1,27 @@
 defmodule ScreenWeb.UserChannel do
+  @moduledoc """
+  Handles `user:{userId}` channel for authenticated user operations.
+
+  ## Join
+
+  - `user:{userId}` — returns user profile and theme list
+
+  ## Incoming Events
+
+  - `create_document` — creates a new document (presentation/theme/event)
+  - `delete_document` — soft-deletes a document owned by the user
+  - `update_document` — updates document attrs (name, isPublic, meta)
+  - `create_channel` — creates a channel for an event (requires write access)
+  - `delete_channel` — deletes a channel owned by the user
+  - `update_profile` — updates user first/last name
+  - `change_password` — changes user password (requires current password)
+  - `delete_account` — permanently deletes the user account
+
+  ## Outgoing Events
+
+  - `user_updated` — pushed after profile update with new user data
+  """
+
   use ScreenWeb, :channel
 
   alias Screen.Accounts
@@ -117,15 +140,20 @@ defmodule ScreenWeb.UserChannel do
         %{"name" => name, "slug" => slug, "eventDocumentId" => event_doc_id},
         socket
       ) do
-    case Channels.create_channel(socket.assigns.user.id, event_doc_id, %{
-           name: name,
-           slug: slug
-         }) do
-      {:ok, channel} ->
-        {:reply, {:ok, %{id: channel.id}}, socket}
+    user_id = socket.assigns.user.id
 
-      {:error, _changeset} ->
-        {:reply, {:error, %{reason: "failed to create channel"}}, socket}
+    case Documents.check_document_permission(event_doc_id, user_id) do
+      {:ok, :read_write} ->
+        case Channels.create_channel(user_id, event_doc_id, %{name: name, slug: slug}) do
+          {:ok, channel} ->
+            {:reply, {:ok, %{id: channel.id}}, socket}
+
+          {:error, _changeset} ->
+            {:reply, {:error, %{reason: "failed to create channel"}}, socket}
+        end
+
+      _ ->
+        {:reply, {:error, %{reason: "unauthorized"}}, socket}
     end
   end
 

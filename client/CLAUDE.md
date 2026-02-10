@@ -53,6 +53,9 @@ All data flows through WebSocket channels or Yjs documents — no REST endpoints
 | --------------- | -------------------------------------------- |
 | Create document | push `"create_document"`                     |
 | Delete document | push `"delete_document"`                     |
+| Update document | push `"update_document"`                     |
+| Create channel  | push `"create_channel"`                      |
+| Delete channel  | push `"delete_channel"`                      |
 | Update profile  | push `"update_profile"`                      |
 | Change password | push `"change_password"`                     |
 | Delete account  | push `"delete_account"`                      |

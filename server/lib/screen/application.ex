@@ -13,7 +13,8 @@ defmodule Screen.Application do
       {DNSCluster, query: Application.get_env(:screen, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Screen.PubSub},
       {Registry, keys: :unique, name: Screen.Documents.DocRegistry},
-      {DynamicSupervisor, name: Screen.Documents.DocSupervisor, strategy: :one_for_one},
+      {DynamicSupervisor,
+       name: Screen.Documents.DocSupervisor, strategy: :one_for_one, max_children: 1_000},
       # Start to serve requests, typically the last entry
       ScreenWeb.Endpoint
     ]

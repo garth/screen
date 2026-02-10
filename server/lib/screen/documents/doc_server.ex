@@ -209,6 +209,30 @@ defmodule Screen.Documents.DocServer do
     end
   end
 
+  @impl true
+  def terminate(_reason, state) do
+    # Flush any pending meta sync
+    if state.assigns.meta_timer do
+      Process.cancel_timer(state.assigns.meta_timer)
+      do_sync_meta(state)
+    end
+
+    # Compact document updates into a single state snapshot
+    try do
+      case Yex.encode_state_as_update(state.doc) do
+        {:ok, compacted_state} ->
+          Documents.compact_document_updates(state.assigns.doc_name, compacted_state)
+
+        _ ->
+          :ok
+      end
+    rescue
+      e -> Logger.error("Failed to compact updates for #{state.assigns.doc_name}: #{inspect(e)}")
+    end
+
+    :ok
+  end
+
   # --- Private Helpers ---
 
   defp via(doc_name) do

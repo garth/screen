@@ -84,6 +84,9 @@ export function createThemeDoc(options: DocumentOptions): ThemeDocument {
     get synced() {
       return base.synced
     },
+    get syncTimedOut() {
+      return base.syncTimedOut
+    },
     get readOnly() {
       return base.readOnly
     },
@@ -159,6 +162,9 @@ export function createThemeDoc(options: DocumentOptions): ThemeDocument {
     },
 
     // Lifecycle
+    retry() {
+      base.retry()
+    },
     destroy() {
       base.destroy()
     },

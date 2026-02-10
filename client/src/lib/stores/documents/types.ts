@@ -38,6 +38,7 @@ export interface PresentationMeta {
 export interface PresentationDocument {
   readonly connected: boolean
   readonly synced: boolean
+  readonly syncTimedOut: boolean
   readonly readOnly: boolean
 
   readonly title: string
@@ -64,6 +65,7 @@ export interface PresentationDocument {
   readonly provider: import('y-phoenix-channel').PhoenixChannelProvider
   readonly awareness: PresentationAwareness
 
+  retry(): void
   destroy(): void
 }
 
@@ -89,6 +91,7 @@ export interface ThemeMeta {
 export interface ThemeDocument {
   readonly connected: boolean
   readonly synced: boolean
+  readonly syncTimedOut: boolean
   readonly readOnly: boolean
   readonly isSystemTheme: boolean
 
@@ -113,6 +116,7 @@ export interface ThemeDocument {
   readonly ydoc: Y.Doc
   readonly meta: Y.Map<unknown>
 
+  retry(): void
   destroy(): void
 }
 
@@ -136,7 +140,11 @@ export interface EventChannel {
 export interface EventDocument {
   readonly connected: boolean
   readonly synced: boolean
+  readonly syncTimedOut: boolean
   readonly readOnly: boolean
+
+  readonly title: string
+  setTitle(value: string): void
 
   readonly presentations: string[]
   addPresentation(presentationId: string): void
@@ -157,5 +165,6 @@ export interface EventDocument {
   readonly ydoc: Y.Doc
   readonly meta: Y.Map<unknown>
 
+  retry(): void
   destroy(): void
 }

@@ -5,6 +5,7 @@
   import { page } from '$app/state'
   import { toast } from '$lib/toast.svelte'
   import { auth } from '$lib/stores/auth.svelte'
+  import ConfirmDialog from '$lib/components/ConfirmDialog.svelte'
   import { createPresentationDoc, createThemeDoc, type ThemeDocument } from '$lib/stores/documents'
   import type { PresentationFormat } from '$lib/stores/documents/types'
   import PresentationEditor from '$lib/components/presentation/PresentationEditor.svelte'
@@ -132,9 +133,16 @@
 </svelte:head>
 
 <div class="flex h-screen flex-col">
+  <h1 class="sr-only">Edit Presentation</h1>
   <!-- Header -->
   <header class="navbar min-h-0 border-b border-base-300 bg-base-200 px-4 py-2">
     <div class="flex flex-1 items-center gap-2">
+      <a href={resolve('/presentations')} class="btn btn-ghost btn-sm">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Presentations
+      </a>
       <input
         type="text"
         bind:value={titleInput}
@@ -147,13 +155,13 @@
       {/if}
     </div>
 
-    <div class="flex flex-none items-center gap-4">
-      <!-- Sharing Toggle -->
-      <div class="flex items-center gap-2">
+    <div class="flex flex-none items-center gap-2 sm:gap-4">
+      <!-- Sharing Toggle (hidden on small screens, shown in overflow) -->
+      <div class="hidden items-center gap-2 sm:flex">
         <label class="flex cursor-pointer items-center gap-1.5">
           <input
             type="checkbox"
-            class="toggle toggle-sm toggle-primary"
+            class="toggle toggle-primary toggle-sm"
             checked={isPublic}
             disabled={sharingLoading || !doc.synced}
             onchange={toggleSharing} />
@@ -183,7 +191,7 @@
         type="button"
         onclick={() => (showOptionsPopup = true)}
         disabled={!doc.synced}
-        class="btn btn-ghost btn-sm">
+        class="btn hidden btn-ghost btn-sm sm:inline-flex">
         Options
       </button>
 
@@ -193,9 +201,39 @@
         type="button"
         onclick={() => (showDeleteDialog = true)}
         disabled={deleting}
-        class="btn btn-outline btn-sm btn-error">
+        class="btn hidden btn-outline btn-sm btn-error sm:inline-flex">
         {deleting ? 'Deleting...' : 'Delete'}
       </button>
+
+      <!-- Mobile overflow menu -->
+      <div class="dropdown dropdown-end sm:hidden">
+        <button type="button" class="btn btn-ghost btn-sm" aria-label="More actions" aria-haspopup="true">
+          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
+          </svg>
+        </button>
+        <ul class="dropdown-content menu z-20 mt-1 w-52 rounded-box border border-base-300 bg-base-200 p-2 shadow-lg">
+          <li>
+            <label class="flex cursor-pointer items-center gap-2">
+              <input
+                type="checkbox"
+                class="toggle toggle-primary toggle-sm"
+                checked={isPublic}
+                disabled={sharingLoading || !doc.synced}
+                onchange={toggleSharing} />
+              <span>{isPublic ? 'Public' : 'Private'}</span>
+            </label>
+          </li>
+          <li>
+            <button type="button" onclick={() => (showOptionsPopup = true)} disabled={!doc.synced}>Options</button>
+          </li>
+          <li>
+            <button type="button" onclick={() => (showDeleteDialog = true)} disabled={deleting} class="text-error">
+              {deleting ? 'Deleting...' : 'Delete'}
+            </button>
+          </li>
+        </ul>
+      </div>
     </div>
   </header>
 
@@ -203,32 +241,25 @@
   <main class="flex flex-1 flex-col overflow-hidden">
     {#if doc.synced}
       <PresentationEditor {doc} theme={resolvedTheme} />
+    {:else if doc.syncTimedOut}
+      <div class="flex h-full flex-col items-center justify-center gap-4">
+        <p class="text-base-content/70">Failed to connect to the document.</p>
+        <button type="button" onclick={() => doc.retry()} class="btn btn-sm btn-primary">Retry</button>
+      </div>
     {:else}
       <div class="flex h-full items-center justify-center">
-        <span class="loading loading-lg loading-spinner"></span>
+        <span class="loading loading-lg loading-spinner" role="status" aria-label="Loading"></span>
       </div>
     {/if}
   </main>
 </div>
 
-<!-- Delete Confirmation Dialog -->
 {#if showDeleteDialog}
-  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <div class="modal-open modal" role="dialog" aria-modal="true" aria-labelledby="delete-dialog-title" onkeydown={(e) => { if (e.key === 'Escape') showDeleteDialog = false }}>
-    <div class="modal-box">
-      <h3 id="delete-dialog-title" class="text-lg font-bold">Delete Presentation</h3>
-      <p class="py-4 text-base-content/70">
-        Are you sure you want to delete "{titleInput || 'Untitled'}"? This action cannot be undone.
-      </p>
-      <div class="modal-action">
-        <button type="button" onclick={() => (showDeleteDialog = false)} class="btn btn-ghost">Cancel</button>
-        <button type="button" onclick={confirmDelete} class="btn btn-error">Delete</button>
-      </div>
-    </div>
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="modal-backdrop" onclick={() => (showDeleteDialog = false)}></div>
-  </div>
+  <ConfirmDialog
+    title="Delete Presentation"
+    message={'Are you sure you want to delete "' + (titleInput || 'Untitled') + '"? This action cannot be undone.'}
+    onConfirm={confirmDelete}
+    onCancel={() => (showDeleteDialog = false)} />
 {/if}
 
 <!-- Options Popup -->

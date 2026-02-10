@@ -298,7 +298,13 @@
           disabled={currentSegmentIndex <= 0}
           aria-label="Previous segment"
           class="btn btn-circle border-base-300 bg-base-100/80 shadow-lg backdrop-blur-sm btn-lg hover:bg-base-100 disabled:cursor-not-allowed disabled:opacity-50">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-8 w-8"
+            aria-hidden="true"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
@@ -308,14 +314,20 @@
           disabled={currentSegmentIndex >= segments.length - 1}
           aria-label="Next segment"
           class="btn btn-circle border-base-300 bg-base-100/80 shadow-lg backdrop-blur-sm btn-lg hover:bg-base-100 disabled:cursor-not-allowed disabled:opacity-50">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" aria-hidden="true" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-8 w-8"
+            aria-hidden="true"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
           </svg>
         </button>
       </div>
     {:else}
       <div class="flex h-full items-center justify-center">
-        <span class="loading loading-lg loading-spinner"></span>
+        <span class="loading loading-lg loading-spinner" role="status" aria-label="Loading"></span>
       </div>
     {/if}
   </main>

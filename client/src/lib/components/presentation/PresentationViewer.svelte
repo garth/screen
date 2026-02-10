@@ -173,7 +173,8 @@
       classes.push('segment-faded')
     }
 
-    return `<div class="${classes.join(' ')}" data-segment-index="${segment.index}" data-segment-id="${segment.id}">${html}</div>`
+    const interactive = onSegmentClick ? ' tabindex="0" role="button"' : ''
+    return `<div class="${classes.join(' ')}" data-segment-index="${segment.index}" data-segment-id="${segment.id}"${interactive}>${html}</div>`
   }
 
   /**
@@ -237,7 +238,8 @@
       // Use sentenceText for full sentence (label may be truncated), fall back to label
       const sentenceHtml = escapeHtml(segment.sentenceText || segment.label)
 
-      html += `<span class="${classes.join(' ')}" data-segment-index="${segment.index}" data-segment-id="${segment.id}">${sentenceHtml}</span> `
+      const interactive = onSegmentClick ? ' tabindex="0" role="button"' : ''
+      html += `<span class="${classes.join(' ')}" data-segment-index="${segment.index}" data-segment-id="${segment.id}"${interactive}>${sentenceHtml}</span> `
     }
 
     return html.trim()
@@ -738,11 +740,11 @@
   const htmlContent = $derived(computeHtmlContent(content, mode, format, segments, currentSegmentId))
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
   bind:this={viewerElement}
   class="presentation-viewer h-full w-full overflow-auto"
+  role={onSegmentClick ? 'region' : undefined}
+  aria-label={onSegmentClick ? 'Presentation content' : undefined}
   aria-live="polite"
   style:font-family={theme.font}
   style:background-color={theme.backgroundColor}
@@ -751,6 +753,17 @@
     if (!onSegmentClick) return
     const target = (e.target as HTMLElement).closest('[data-segment-id]')
     if (target) {
+      const segmentId = target.getAttribute('data-segment-id')
+      if (segmentId) {
+        onSegmentClick(segmentId)
+      }
+    }
+  }}
+  onkeydown={(e) => {
+    if (!onSegmentClick || (e.key !== 'Enter' && e.key !== ' ')) return
+    const target = (e.target as HTMLElement).closest('[data-segment-id]')
+    if (target) {
+      e.preventDefault()
       const segmentId = target.getAttribute('data-segment-id')
       if (segmentId) {
         onSegmentClick(segmentId)

@@ -36,9 +36,16 @@ The project is a monorepo with two applications:
 - **Node.js** >= 24.12.0
 - **pnpm** 10.28+
 - **Elixir** ~> 1.15
+- **Erlang/OTP** >= 26
 - **Docker** (for PostgreSQL)
 
 ## Getting Started
+
+### Database
+
+```bash
+docker compose up -d  # Start PostgreSQL on port 5439
+```
 
 ### Server
 
@@ -111,9 +118,10 @@ Content is authored in a ProseMirror editor with a custom schema. The segment pl
 Display formats control how content is arranged into slides for viewers:
 
 - **single** — one logical segment per slide
-- **minimal** — two logical segments per slide
+- **minimal** — two logical segments per slide (current pair)
 - **block** — one contiguous content block per slide
-- **scrolling** — all content with fading on past segments
+- **maximal** — shows only the current segment and its merge group
+- **scrolling** — all content visible with fading on past segments
 
 ### Offline Support
 
@@ -121,3 +129,12 @@ Display formats control how content is arranged into slides for viewers:
 - **Service Worker** (Workbox) caches static assets
 - **PWA manifest** enables install on mobile/desktop
 - Changes sync automatically when connectivity resumes
+
+## Documentation
+
+See [`docs/`](docs/) for detailed project documentation:
+
+- [`architecture.md`](docs/architecture.md) — System architecture, data flow, and technology stack
+- [`datamodel.md`](docs/datamodel.md) — Database schema and entity relationships
+- [`specification.md`](docs/specification.md) — Feature requirements and system specification
+- [`decisions-register.md`](docs/decisions-register.md) — Architectural decision records

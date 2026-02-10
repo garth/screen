@@ -1,13 +1,12 @@
 defmodule ScreenWeb.Endpoint do
   use Phoenix.Endpoint, otp_app: :screen
 
-  # The session will be stored in the cookie and signed,
-  # this means its contents can be read but not tampered with.
-  # Set :encryption_salt if you would also like to encrypt it.
+  # The session will be stored in the cookie, signed and encrypted.
   @session_options [
     store: :cookie,
     key: "_screen_key",
     signing_salt: "+Rl4Ylbq",
+    encryption_salt: "k3Fz8mNp",
     same_site: "Lax"
   ]
 
@@ -15,7 +14,7 @@ defmodule ScreenWeb.Endpoint do
     websocket: [connect_info: [session: @session_options]],
     longpoll: [connect_info: [session: @session_options]]
 
-  socket "/socket", ScreenWeb.UserSocket, websocket: true
+  socket "/socket", ScreenWeb.UserSocket, websocket: [connect_info: [session: @session_options]]
 
   # Serve at "/" the static files from "priv/static" directory.
   #

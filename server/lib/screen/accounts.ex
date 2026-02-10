@@ -23,7 +23,9 @@ defmodule Screen.Accounts do
 
   """
   def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: email)
+    User
+    |> where([u], u.email == ^email and is_nil(u.deleted_at))
+    |> Repo.one()
   end
 
   @doc """
@@ -40,7 +42,7 @@ defmodule Screen.Accounts do
   """
   def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
-    user = Repo.get_by(User, email: email)
+    user = get_user_by_email(email)
     if User.valid_password?(user, password), do: user
   end
 

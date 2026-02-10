@@ -4,6 +4,7 @@
   import { toast } from '$lib/toast.svelte'
   import { theme, type ThemePreference } from '$lib/theme.svelte'
   import { auth } from '$lib/stores/auth.svelte'
+  import { focusTrap } from '$lib/actions/focus-trap'
 
   const themeOptions: { value: ThemePreference; label: string }[] = [
     { value: 'system', label: 'System' },
@@ -135,6 +136,7 @@
             <button
               type="button"
               onclick={() => theme.setPreference(option.value)}
+              aria-pressed={theme.preference === option.value}
               class="btn join-item {theme.preference === option.value ? 'btn-primary' : 'btn-ghost'}">
               {option.label}
             </button>
@@ -211,7 +213,15 @@
 <!-- Delete Account Confirmation Dialog -->
 {#if showDeleteDialog}
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <div class="modal-open modal" role="dialog" aria-modal="true" aria-labelledby="delete-account-title" onkeydown={(e) => { if (e.key === 'Escape') showDeleteDialog = false }}>
+  <div
+    class="modal-open modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="delete-account-title"
+    onkeydown={(e) => {
+      if (e.key === 'Escape') showDeleteDialog = false
+    }}
+    use:focusTrap>
     <div class="modal-box">
       <h3 id="delete-account-title" class="text-lg font-bold text-error">Delete Account?</h3>
 
@@ -232,7 +242,7 @@
         </button>
         <button type="button" onclick={handleDeleteAccount} disabled={deleting} class="btn btn-error">
           {#if deleting}
-            <span class="loading loading-sm loading-spinner"></span>
+            <span class="loading loading-sm loading-spinner" role="status" aria-label="Loading"></span>
             Deleting...
           {:else}
             Delete My Account

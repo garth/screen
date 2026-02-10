@@ -51,8 +51,8 @@ if Application.compile_env(:screen, :dev_routes) do
         end
 
       # Generate a verification (login) token
-      {encoded_token, _user_token} = Accounts.UserToken.build_email_token(user, "login")
-      Repo.insert!(elem(Accounts.UserToken.build_email_token(user, "login"), 1))
+      {encoded_token, user_token} = Accounts.UserToken.build_email_token(user, "login")
+      Repo.insert!(user_token)
 
       json(conn, %{
         id: user.id,

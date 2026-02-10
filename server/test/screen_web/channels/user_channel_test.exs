@@ -9,7 +9,9 @@ defmodule ScreenWeb.UserChannelTest do
   setup do
     user = user_fixture()
     token = Screen.Accounts.generate_user_session_token(user)
-    {:ok, socket} = connect(UserSocket, %{"token" => token})
+
+    {:ok, socket} =
+      connect(UserSocket, %{}, connect_info: %{session: %{"user_token" => token}})
 
     %{user: user, socket: socket, token: token}
   end
@@ -34,7 +36,7 @@ defmodule ScreenWeb.UserChannelTest do
     end
 
     test "unauthenticated socket cannot join", %{user: user} do
-      {:ok, socket} = connect(UserSocket, %{})
+      {:ok, socket} = connect(UserSocket, %{}, connect_info: %{session: %{}})
 
       assert {:error, %{reason: "unauthorized"}} =
                subscribe_and_join(socket, UserChannel, "user:#{user.id}")
@@ -122,6 +124,199 @@ defmodule ScreenWeb.UserChannelTest do
     end
   end
 
+  describe "create_channel" do
+    setup %{user: user, socket: socket} do
+      {:ok, _reply, socket} =
+        subscribe_and_join(socket, UserChannel, "user:#{user.id}")
+
+      event = document_fixture(user, %{type: "event"})
+      %{channel_socket: socket, event: event}
+    end
+
+    test "owner can create a channel on their event", %{channel_socket: socket, event: event} do
+      ref =
+        push(socket, "create_channel", %{
+          "name" => "Main Stage",
+          "slug" => "main-stage",
+          "eventDocumentId" => event.id
+        })
+
+      assert_reply ref, :ok, %{id: id}
+      assert is_binary(id)
+
+      channel = Screen.Channels.get_channel(id)
+      assert channel.name == "Main Stage"
+      assert channel.slug == "main-stage"
+      assert channel.event_document_id == event.id
+    end
+
+    test "user with write access can create a channel", %{event: event} do
+      other_user = user_fixture()
+      document_user_fixture(event, other_user, %{can_write: true})
+
+      token = Screen.Accounts.generate_user_session_token(other_user)
+
+      {:ok, socket} =
+        connect(UserSocket, %{}, connect_info: %{session: %{"user_token" => token}})
+
+      {:ok, _reply, socket} =
+        subscribe_and_join(socket, UserChannel, "user:#{other_user.id}")
+
+      ref =
+        push(socket, "create_channel", %{
+          "name" => "Side Stage",
+          "slug" => "side-stage",
+          "eventDocumentId" => event.id
+        })
+
+      assert_reply ref, :ok, %{id: _id}
+    end
+
+    test "user without write access cannot create a channel", %{event: event} do
+      other_user = user_fixture()
+      document_user_fixture(event, other_user, %{can_write: false})
+
+      token = Screen.Accounts.generate_user_session_token(other_user)
+
+      {:ok, socket} =
+        connect(UserSocket, %{}, connect_info: %{session: %{"user_token" => token}})
+
+      {:ok, _reply, socket} =
+        subscribe_and_join(socket, UserChannel, "user:#{other_user.id}")
+
+      ref =
+        push(socket, "create_channel", %{
+          "name" => "Blocked",
+          "slug" => "blocked",
+          "eventDocumentId" => event.id
+        })
+
+      assert_reply ref, :error, %{reason: "unauthorized"}
+    end
+
+    test "unrelated user cannot create a channel on another's event", %{event: event} do
+      other_user = user_fixture()
+      token = Screen.Accounts.generate_user_session_token(other_user)
+
+      {:ok, socket} =
+        connect(UserSocket, %{}, connect_info: %{session: %{"user_token" => token}})
+
+      {:ok, _reply, socket} =
+        subscribe_and_join(socket, UserChannel, "user:#{other_user.id}")
+
+      ref =
+        push(socket, "create_channel", %{
+          "name" => "Hack",
+          "slug" => "hack",
+          "eventDocumentId" => event.id
+        })
+
+      assert_reply ref, :error, %{reason: "unauthorized"}
+    end
+
+    test "rejects nonexistent event document", %{channel_socket: socket} do
+      ref =
+        push(socket, "create_channel", %{
+          "name" => "Ghost",
+          "slug" => "ghost",
+          "eventDocumentId" => ExCuid2.generate()
+        })
+
+      assert_reply ref, :error, %{reason: "unauthorized"}
+    end
+  end
+
+  describe "delete_channel" do
+    setup %{user: user, socket: socket} do
+      {:ok, _reply, socket} =
+        subscribe_and_join(socket, UserChannel, "user:#{user.id}")
+
+      event = document_fixture(user, %{type: "event"})
+      %{channel_socket: socket, event: event}
+    end
+
+    test "creator can delete their channel", %{channel_socket: socket, event: event, user: user} do
+      {:ok, channel} =
+        Screen.Channels.create_channel(user.id, event.id, %{name: "Del Me", slug: "del-me"})
+
+      ref = push(socket, "delete_channel", %{"id" => channel.id})
+      assert_reply ref, :ok
+
+      assert Screen.Channels.get_channel(channel.id) == nil
+    end
+
+    test "other user cannot delete channel", %{event: event, user: user} do
+      {:ok, channel} =
+        Screen.Channels.create_channel(user.id, event.id, %{name: "Protected", slug: "protected"})
+
+      other_user = user_fixture()
+      token = Screen.Accounts.generate_user_session_token(other_user)
+
+      {:ok, socket} =
+        connect(UserSocket, %{}, connect_info: %{session: %{"user_token" => token}})
+
+      {:ok, _reply, socket} =
+        subscribe_and_join(socket, UserChannel, "user:#{other_user.id}")
+
+      ref = push(socket, "delete_channel", %{"id" => channel.id})
+      assert_reply ref, :error, %{reason: "unauthorized"}
+    end
+
+    test "returns error for nonexistent channel", %{channel_socket: socket} do
+      ref = push(socket, "delete_channel", %{"id" => ExCuid2.generate()})
+      assert_reply ref, :error, %{reason: "not found"}
+    end
+  end
+
+  describe "update_document" do
+    setup %{user: user, socket: socket} do
+      {:ok, _reply, socket} =
+        subscribe_and_join(socket, UserChannel, "user:#{user.id}")
+
+      %{channel_socket: socket}
+    end
+
+    test "updates document name", %{user: user, channel_socket: socket} do
+      doc = document_fixture(user)
+      ref = push(socket, "update_document", %{"id" => doc.id, "name" => "New Name"})
+      assert_reply ref, :ok
+
+      updated = Screen.Documents.get_document!(doc.id)
+      assert updated.name == "New Name"
+    end
+
+    test "updates document is_public", %{user: user, channel_socket: socket} do
+      doc = document_fixture(user)
+      ref = push(socket, "update_document", %{"id" => doc.id, "isPublic" => true})
+      assert_reply ref, :ok
+
+      updated = Screen.Documents.get_document!(doc.id)
+      assert updated.is_public == true
+    end
+
+    test "updates document meta", %{user: user, channel_socket: socket} do
+      doc = document_fixture(user)
+      ref = push(socket, "update_document", %{"id" => doc.id, "meta" => %{"key" => "val"}})
+      assert_reply ref, :ok
+
+      updated = Screen.Documents.get_document!(doc.id)
+      assert updated.meta == %{"key" => "val"}
+    end
+
+    test "cannot update another user's document", %{channel_socket: socket} do
+      other_user = user_fixture()
+      doc = document_fixture(other_user)
+
+      ref = push(socket, "update_document", %{"id" => doc.id, "name" => "Hacked"})
+      assert_reply ref, :error, %{reason: "unauthorized"}
+    end
+
+    test "returns not_found for nonexistent document", %{channel_socket: socket} do
+      ref = push(socket, "update_document", %{"id" => ExCuid2.generate(), "name" => "X"})
+      assert_reply ref, :error, %{reason: "not found"}
+    end
+  end
+
   describe "update_profile" do
     setup %{user: user, socket: socket} do
       {:ok, _reply, socket} =
@@ -152,7 +347,9 @@ defmodule ScreenWeb.UserChannelTest do
 
       # Need to reconnect since tokens were expired
       token = Screen.Accounts.generate_user_session_token(user)
-      {:ok, socket} = connect(UserSocket, %{"token" => token})
+
+      {:ok, socket} =
+        connect(UserSocket, %{}, connect_info: %{session: %{"user_token" => token}})
 
       {:ok, _reply, socket} =
         subscribe_and_join(socket, UserChannel, "user:#{user.id}")

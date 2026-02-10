@@ -87,9 +87,7 @@
   )
 
   // Parse content into segments
-  const segments: ContentSegment[] = $derived(
-    doc?.synced ? parseContentSegments(doc.content, doc.contentVersion) : [],
-  )
+  const segments: ContentSegment[] = $derived(doc?.synced ? parseContentSegments(doc.content, doc.contentVersion) : [])
 
   // Follow mode state
   let followMode = $state(true)
@@ -140,7 +138,7 @@
 <div class="h-screen">
   {#if loading}
     <div class="flex h-full items-center justify-center">
-      <span class="loading loading-lg loading-spinner"></span>
+      <span class="loading loading-lg loading-spinner" role="status" aria-label="Loading"></span>
     </div>
   {:else if errorMessage}
     <div class="flex h-full items-center justify-center">
@@ -159,7 +157,7 @@
       {currentSegmentId} />
   {:else}
     <div class="flex h-full items-center justify-center">
-      <span class="loading loading-lg loading-spinner"></span>
+      <span class="loading loading-lg loading-spinner" role="status" aria-label="Loading"></span>
     </div>
   {/if}
 </div>

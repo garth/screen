@@ -16,7 +16,7 @@ defmodule Screen.Documents.DocumentUser do
 
   def changeset(document_user, attrs) do
     document_user
-    |> cast(attrs, [:can_write, :deleted_at])
+    |> cast(attrs, [:can_write])
     |> foreign_key_constraint(:document_id)
     |> foreign_key_constraint(:user_id)
     |> unique_constraint([:document_id, :user_id])

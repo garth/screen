@@ -5,15 +5,21 @@ defmodule ScreenWeb.UserSocket do
   channel "user:*", ScreenWeb.UserChannel
 
   @impl true
-  def connect(%{"token" => token}, socket, _connect_info) do
-    case Screen.Accounts.get_user_by_session_token(token) do
-      {user, _inserted_at} -> {:ok, assign(socket, :user, user)}
-      nil -> {:ok, assign(socket, :user, nil)}
-    end
-  end
+  def connect(_params, socket, connect_info) do
+    user_token =
+      case connect_info do
+        %{session: %{"user_token" => token}} -> token
+        _ -> nil
+      end
 
-  def connect(_params, socket, _connect_info) do
-    {:ok, assign(socket, :user, nil)}
+    if user_token do
+      case Screen.Accounts.get_user_by_session_token(user_token) do
+        {user, _inserted_at} -> {:ok, assign(socket, :user, user)}
+        nil -> {:ok, assign(socket, :user, nil)}
+      end
+    else
+      {:ok, assign(socket, :user, nil)}
+    end
   end
 
   @impl true

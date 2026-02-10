@@ -58,10 +58,7 @@ export async function loginUser(page: Page, credentials: { email: string; passwo
   await page.getByRole('button', { name: 'Log In' }).click()
 }
 
-export async function createPasswordReset(
-  page: Page,
-  email: string,
-): Promise<{ email: string; resetToken: string }> {
+export async function createPasswordReset(page: Page, email: string): Promise<{ email: string; resetToken: string }> {
   const response = await page.request.post('/api/test/create-password-reset', {
     data: { email },
   })
@@ -112,10 +109,7 @@ export async function updateDocument(
   return response.json()
 }
 
-export async function getDocumentMeta(
-  page: Page,
-  documentId: string,
-): Promise<Record<string, unknown>> {
+export async function getDocumentMeta(page: Page, documentId: string): Promise<Record<string, unknown>> {
   const response = await page.request.get(`/api/test/document-meta/${documentId}`)
 
   if (!response.ok()) {

@@ -15,6 +15,12 @@ defmodule Screen.AccountsTest do
       %{id: id} = user = user_fixture()
       assert %User{id: ^id} = Accounts.get_user_by_email(user.email)
     end
+
+    test "does not return soft-deleted user" do
+      user = user_fixture()
+      {:ok, _} = Accounts.delete_user(user)
+      refute Accounts.get_user_by_email(user.email)
+    end
   end
 
   describe "get_user_by_email_and_password/2" do
@@ -32,6 +38,12 @@ defmodule Screen.AccountsTest do
 
       assert %User{id: ^id} =
                Accounts.get_user_by_email_and_password(user.email, valid_user_password())
+    end
+
+    test "does not return soft-deleted user" do
+      user = user_fixture() |> set_password()
+      {:ok, _} = Accounts.delete_user(user)
+      refute Accounts.get_user_by_email_and_password(user.email, valid_user_password())
     end
   end
 

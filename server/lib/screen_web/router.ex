@@ -84,4 +84,18 @@ defmodule ScreenWeb.Router do
     post "/users/log-in", UserSessionController, :create
     delete "/users/log-out", UserSessionController, :delete
   end
+
+  scope "/health", ScreenWeb do
+    pipe_through :api
+
+    get "/", HealthController, :check
+  end
+
+  # SPA catch-all: serve index.html for any unmatched path
+  # This must be the LAST route so it doesn't override auth or API routes
+  scope "/", ScreenWeb do
+    pipe_through [:browser]
+
+    get "/*path", PageController, :spa
+  end
 end

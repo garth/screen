@@ -10,24 +10,24 @@ describe('Toasts', () => {
     toastStore.items.forEach((t) => toastStore.dismiss(t.id))
   })
 
-  it('renders success toast with green styling', async () => {
+  it('renders success toast with success styling', async () => {
     render(Toasts)
-    toast('success', 'Operation successful')
+    toast('success', 'Operation successful', 10000)
 
     const alert = page.getByRole('alert')
     await expect.element(alert).toBeInTheDocument()
     await expect.element(alert).toHaveTextContent('Operation successful')
-    await expect.element(alert).toHaveClass(/bg-green-900/)
+    await expect.element(alert).toHaveClass(/alert-success/)
   })
 
-  it('renders error toast with red styling', async () => {
+  it('renders error toast with error styling', async () => {
     render(Toasts)
-    toast('error', 'Something went wrong')
+    toast('error', 'Something went wrong', 10000)
 
     const alert = page.getByRole('alert')
     await expect.element(alert).toBeInTheDocument()
     await expect.element(alert).toHaveTextContent('Something went wrong')
-    await expect.element(alert).toHaveClass(/bg-red-900/)
+    await expect.element(alert).toHaveClass(/alert-error/)
   })
 
   it('shows dismiss button on each toast', async () => {

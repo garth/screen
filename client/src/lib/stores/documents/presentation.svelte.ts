@@ -61,6 +61,9 @@ export function createPresentationDoc(options: DocumentOptions): PresentationDoc
     get synced() {
       return base.synced
     },
+    get syncTimedOut() {
+      return base.syncTimedOut
+    },
     get readOnly() {
       return base.readOnly
     },
@@ -138,6 +141,9 @@ export function createPresentationDoc(options: DocumentOptions): PresentationDoc
     },
 
     // Lifecycle
+    retry() {
+      base.retry()
+    },
     destroy() {
       content.unobserveDeep(contentObserver)
       base.destroy()

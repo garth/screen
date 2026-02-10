@@ -120,7 +120,7 @@
       {currentSegmentId} />
   {:else}
     <div class="flex h-full items-center justify-center">
-      <span class="loading loading-lg loading-spinner"></span>
+      <span class="loading loading-lg loading-spinner" role="status" aria-label="Loading"></span>
     </div>
   {/if}
 </div>

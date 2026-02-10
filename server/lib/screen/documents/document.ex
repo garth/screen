@@ -22,9 +22,10 @@ defmodule Screen.Documents.Document do
 
   def changeset(document, attrs) do
     document
-    |> cast(attrs, [:name, :type, :is_public, :meta, :base_document_id, :deleted_at])
+    |> cast(attrs, [:name, :type, :is_public, :meta, :base_document_id])
     |> validate_required([:name, :type])
     |> validate_inclusion(:type, ~w(presentation theme event))
+    |> check_constraint(:type, name: :documents_type_check, message: "is invalid")
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:base_document_id)
   end

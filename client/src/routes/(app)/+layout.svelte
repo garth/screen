@@ -54,7 +54,7 @@
 
 <svelte:window onclick={handleClickOutside} />
 
-<div class="navbar border-b border-base-300 bg-base-200 px-4">
+<nav aria-label="Main navigation" class="navbar border-b border-base-300 bg-base-200 px-4">
   <div class="flex w-full items-center justify-between">
     <div class="flex items-center gap-6">
       <a href={resolve('/')} class="text-lg font-semibold">Chapel Screen</a>
@@ -62,7 +62,10 @@
         <div class="flex gap-4">
           {#each navLinks as link (link.href)}
             {@const isActive = page.url.pathname === link.href}
-            <a href={link.href} class="link link-hover {isActive ? 'font-medium text-primary' : ''}">
+            <a
+              href={link.href}
+              class="link link-hover {isActive ? 'font-medium text-primary' : ''}"
+              aria-current={isActive ? 'page' : undefined}>
               {link.label}
             </a>
           {/each}
@@ -105,7 +108,7 @@
       {/if}
     </div>
   </div>
-</div>
+</nav>
 
 {@render children()}
 

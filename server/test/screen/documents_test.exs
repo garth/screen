@@ -36,6 +36,12 @@ defmodule Screen.DocumentsTest do
       fake_id = ExCuid2.generate()
       assert Documents.get_document(fake_id) == nil
     end
+
+    test "returns nil for soft-deleted document", %{user: user} do
+      document = document_fixture(user)
+      {:ok, _} = Documents.delete_document(document.id, user.id)
+      assert Documents.get_document(document.id) == nil
+    end
   end
 
   describe "get_document_updates_with_inheritance/1" do
@@ -78,6 +84,36 @@ defmodule Screen.DocumentsTest do
       assert updates == [<<1>>, <<2>>, <<3>>]
     end
 
+    test "handles cyclic inheritance gracefully", %{user: user} do
+      # Create two documents that point to each other
+      doc_a = document_fixture(user, %{name: "A"})
+      doc_b = document_fixture(user, %{name: "B", base_document_id: doc_a.id})
+
+      # Create the cycle: A -> B -> A
+      doc_a
+      |> Ecto.Changeset.change(%{base_document_id: doc_b.id})
+      |> Repo.update!()
+
+      assert {:error, :cycle_detected} =
+               Documents.get_document_updates_with_inheritance_safe(doc_a.id)
+    end
+
+    test "handles deep chain with depth limit", %{user: user} do
+      # Create a chain of 12 documents (exceeding the limit of 10)
+      docs =
+        Enum.reduce(1..12, [], fn i, acc ->
+          base_id = if acc == [], do: nil, else: hd(acc).id
+
+          doc = document_fixture(user, %{name: "Doc #{i}", base_document_id: base_id})
+          [doc | acc]
+        end)
+
+      deepest = hd(docs)
+
+      assert {:error, :cycle_detected} =
+               Documents.get_document_updates_with_inheritance_safe(deepest.id)
+    end
+
     test "excludes soft-deleted updates", %{user: user} do
       document = document_fixture(user)
       document_update_fixture(document, user, <<1, 2>>)
@@ -103,12 +139,13 @@ defmodule Screen.DocumentsTest do
       assert update.update == <<7, 8, 9>>
     end
 
-    test "raises on nil user_id due to not-null constraint", %{user: user} do
+    test "allows nil user_id for anonymous updates", %{user: user} do
       document = document_fixture(user)
+      update = Documents.create_document_update!(document.id, nil, <<7, 8, 9>>)
 
-      assert_raise Postgrex.Error, fn ->
-        Documents.create_document_update!(document.id, nil, <<7, 8, 9>>)
-      end
+      assert update.document_id == document.id
+      assert update.user_id == nil
+      assert update.update == <<7, 8, 9>>
     end
   end
 
@@ -178,6 +215,13 @@ defmodule Screen.DocumentsTest do
       fake_id = ExCuid2.generate()
 
       assert Documents.check_document_permission(fake_id, nil) == {:error, :not_found}
+    end
+
+    test "soft-deleted document returns not_found even for owner", %{user: user} do
+      document = document_fixture(user)
+      {:ok, _} = Documents.delete_document(document.id, user.id)
+
+      assert Documents.check_document_permission(document.id, user.id) == {:error, :not_found}
     end
 
     test "soft-deleted document_user is not considered", %{user: user} do
@@ -390,6 +434,71 @@ defmodule Screen.DocumentsTest do
 
       themes = Documents.list_user_themes(user.id)
       assert length(themes) == 2
+    end
+  end
+
+  describe "compact_document_updates/2" do
+    test "replaces multiple updates with a single compacted update", %{user: user} do
+      document = document_fixture(user)
+      document_update_fixture(document, user, <<1, 2, 3>>)
+      document_update_fixture(document, user, <<4, 5, 6>>)
+      document_update_fixture(document, user, <<7, 8, 9>>)
+
+      compacted_state = <<10, 20, 30>>
+      assert {:ok, 3} = Documents.compact_document_updates(document.id, compacted_state)
+
+      updates = Documents.get_document_updates_with_inheritance(document.id)
+      assert updates == [compacted_state]
+    end
+
+    test "returns 0 when document has no updates", %{user: user} do
+      document = document_fixture(user)
+      assert {:ok, 0} = Documents.compact_document_updates(document.id, <<1, 2>>)
+
+      # No new update should have been inserted either
+      updates = Documents.get_document_updates_with_inheritance(document.id)
+      assert updates == []
+    end
+
+    test "compacted update has nil user_id", %{user: user} do
+      document = document_fixture(user)
+      document_update_fixture(document, user, <<1, 2>>)
+
+      compacted_state = <<10, 20>>
+      assert {:ok, 1} = Documents.compact_document_updates(document.id, compacted_state)
+
+      # Verify the compacted update has no user_id
+      compacted =
+        Screen.Documents.DocumentUpdate
+        |> Ecto.Query.where([du], du.document_id == ^document.id and is_nil(du.deleted_at))
+        |> Repo.one!()
+
+      assert compacted.user_id == nil
+      assert compacted.update == compacted_state
+    end
+
+    test "soft-deletes old updates rather than hard-deleting them", %{user: user} do
+      document = document_fixture(user)
+      old = document_update_fixture(document, user, <<1, 2>>)
+
+      assert {:ok, 1} = Documents.compact_document_updates(document.id, <<10, 20>>)
+
+      # The old update should still exist in DB but with deleted_at set
+      reloaded = Repo.get!(Screen.Documents.DocumentUpdate, old.id)
+      assert reloaded.deleted_at != nil
+    end
+
+    test "does not affect updates for other documents", %{user: user} do
+      doc1 = document_fixture(user)
+      doc2 = document_fixture(user)
+      document_update_fixture(doc1, user, <<1, 2>>)
+      document_update_fixture(doc2, user, <<3, 4>>)
+
+      assert {:ok, 1} = Documents.compact_document_updates(doc1.id, <<10, 20>>)
+
+      # doc2 should be unaffected
+      updates = Documents.get_document_updates_with_inheritance(doc2.id)
+      assert updates == [<<3, 4>>]
     end
   end
 end

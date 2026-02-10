@@ -84,7 +84,7 @@
     </div>
     <button type="button" onclick={createPresentation} disabled={creating} class="btn btn-primary">
       {#if creating}
-        <span class="loading loading-sm loading-spinner"></span>
+        <span class="loading loading-sm loading-spinner" role="status" aria-label="Loading"></span>
         Creating...
       {:else}
         New Presentation
@@ -95,7 +95,7 @@
   {#if !synced}
     <div class="card bg-base-200">
       <div class="card-body items-center py-12 text-center">
-        <span class="loading loading-lg loading-spinner"></span>
+        <span class="loading loading-lg loading-spinner" role="status" aria-label="Loading"></span>
         <p class="text-base-content/70">Loading presentations...</p>
       </div>
     </div>

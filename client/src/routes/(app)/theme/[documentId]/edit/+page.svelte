@@ -5,6 +5,7 @@
   import { page } from '$app/state'
   import { toast } from '$lib/toast.svelte'
   import { auth } from '$lib/stores/auth.svelte'
+  import ConfirmDialog from '$lib/components/ConfirmDialog.svelte'
   import { createThemeDoc } from '$lib/stores/documents'
 
   const documentId = page.params.documentId!
@@ -112,6 +113,35 @@
 
   const isEditable = $derived(doc.synced && !doc.readOnly && !doc.isSystemTheme)
 
+  // WCAG contrast ratio calculation
+  function hexToRgb(hex: string): [number, number, number] | null {
+    const m = hex.match(/^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i)
+    if (!m) return null
+    return [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)]
+  }
+
+  function relativeLuminance(r: number, g: number, b: number): number {
+    const [rs, gs, bs] = [r, g, b].map((c) => {
+      const s = c / 255
+      return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4)
+    })
+    return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs
+  }
+
+  function contrastRatio(hex1: string, hex2: string): number | null {
+    const rgb1 = hexToRgb(hex1)
+    const rgb2 = hexToRgb(hex2)
+    if (!rgb1 || !rgb2) return null
+    const l1 = relativeLuminance(...rgb1)
+    const l2 = relativeLuminance(...rgb2)
+    const lighter = Math.max(l1, l2)
+    const darker = Math.min(l1, l2)
+    return (lighter + 0.05) / (darker + 0.05)
+  }
+
+  const contrast = $derived(contrastRatio(bgColorInput, textColorInput))
+  const contrastPassesAA = $derived(contrast !== null && contrast >= 4.5)
+
   const fontOptions = [
     'sans-serif',
     'serif',
@@ -138,6 +168,7 @@
 </svelte:head>
 
 <div class="flex h-screen flex-col">
+  <h1 class="sr-only">Edit Theme</h1>
   <!-- Header -->
   <header class="navbar min-h-0 border-b border-base-300 bg-base-200 px-4 py-2">
     <div class="flex flex-1 items-center gap-2">
@@ -174,9 +205,14 @@
 
   <!-- Content -->
   <main class="flex-1 overflow-y-auto">
-    {#if !doc.synced}
+    {#if doc.syncTimedOut}
+      <div class="flex h-full flex-col items-center justify-center gap-4">
+        <p class="text-base-content/70">Failed to connect to the document.</p>
+        <button type="button" onclick={() => doc.retry()} class="btn btn-sm btn-primary">Retry</button>
+      </div>
+    {:else if !doc.synced}
       <div class="flex h-full items-center justify-center">
-        <span class="loading loading-lg loading-spinner"></span>
+        <span class="loading loading-lg loading-spinner" role="status" aria-label="Loading"></span>
       </div>
     {:else}
       <div class="mx-auto max-w-4xl space-y-8 p-6">
@@ -214,7 +250,7 @@
                   bind:value={bgColorInput}
                   onchange={handleBgColorChange}
                   disabled={!isEditable}
-                  class="input input-sm input-bordered flex-1 font-mono" />
+                  class="input-bordered input input-sm flex-1 font-mono" />
               </div>
             </div>
             <div class="form-control">
@@ -234,17 +270,30 @@
                   bind:value={textColorInput}
                   onchange={handleTextColorChange}
                   disabled={!isEditable}
-                  class="input input-sm input-bordered flex-1 font-mono" />
+                  class="input-bordered input input-sm flex-1 font-mono" />
               </div>
             </div>
           </div>
+          {#if contrast !== null}
+            <div class="mt-3 flex items-center gap-2">
+              <span class="text-sm font-medium">Contrast ratio:</span>
+              <span class="font-mono text-sm {contrastPassesAA ? 'text-success' : 'text-warning'}">
+                {contrast.toFixed(1)}:1
+              </span>
+              {#if contrastPassesAA}
+                <span class="badge badge-sm badge-success">WCAG AA</span>
+              {:else}
+                <span class="badge badge-sm badge-warning">Below WCAG AA (4.5:1)</span>
+              {/if}
+            </div>
+          {/if}
         </section>
 
         <!-- Font -->
         <section>
           <h2 class="mb-3 text-lg font-semibold">Font</h2>
           <select
-            class="select select-bordered w-full max-w-xs"
+            class="select-bordered select w-full max-w-xs"
             bind:value={fontInput}
             onchange={handleFontChange}
             disabled={!isEditable}>
@@ -267,7 +316,7 @@
                 bind:value={vpX}
                 onchange={handleViewportChange}
                 disabled={!isEditable}
-                class="input input-sm input-bordered" />
+                class="input-bordered input input-sm" />
             </div>
             <div class="form-control">
               <label class="label" for="vp-y"><span class="label-text">Y</span></label>
@@ -277,7 +326,7 @@
                 bind:value={vpY}
                 onchange={handleViewportChange}
                 disabled={!isEditable}
-                class="input input-sm input-bordered" />
+                class="input-bordered input input-sm" />
             </div>
             <div class="form-control">
               <label class="label" for="vp-width"><span class="label-text">Width</span></label>
@@ -287,7 +336,7 @@
                 bind:value={vpWidth}
                 onchange={handleViewportChange}
                 disabled={!isEditable}
-                class="input input-sm input-bordered" />
+                class="input-bordered input input-sm" />
             </div>
             <div class="form-control">
               <label class="label" for="vp-height"><span class="label-text">Height</span></label>
@@ -297,7 +346,7 @@
                 bind:value={vpHeight}
                 onchange={handleViewportChange}
                 disabled={!isEditable}
-                class="input input-sm input-bordered" />
+                class="input-bordered input input-sm" />
             </div>
           </div>
         </section>
@@ -307,7 +356,9 @@
           <h2 class="mb-3 text-lg font-semibold">Background Image</h2>
           {#if doc.backgroundImage}
             <div class="space-y-2">
-              <p class="text-sm text-base-content/70">Image set ({(doc.backgroundImage.length / 1024).toFixed(1)} KB)</p>
+              <p class="text-sm text-base-content/70">
+                Image set ({(doc.backgroundImage.length / 1024).toFixed(1)} KB)
+              </p>
               {#if isEditable}
                 <button type="button" onclick={removeImage} class="btn btn-outline btn-sm btn-error">
                   Remove Image
@@ -319,7 +370,7 @@
               type="file"
               accept="image/*"
               onchange={handleImageUpload}
-              class="file-input file-input-bordered w-full max-w-xs" />
+              class="file-input-bordered file-input w-full max-w-xs" />
           {:else}
             <p class="text-sm text-base-content/50">No background image</p>
           {/if}
@@ -329,22 +380,10 @@
   </main>
 </div>
 
-<!-- Delete Confirmation Dialog -->
 {#if showDeleteDialog}
-  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <div class="modal-open modal" role="dialog" aria-modal="true" aria-labelledby="delete-theme-title" onkeydown={(e) => { if (e.key === 'Escape') showDeleteDialog = false }}>
-    <div class="modal-box">
-      <h3 id="delete-theme-title" class="text-lg font-bold">Delete Theme</h3>
-      <p class="py-4 text-base-content/70">
-        Are you sure you want to delete "{titleInput || 'Untitled'}"? This action cannot be undone.
-      </p>
-      <div class="modal-action">
-        <button type="button" onclick={() => (showDeleteDialog = false)} class="btn btn-ghost">Cancel</button>
-        <button type="button" onclick={confirmDelete} class="btn btn-error">Delete</button>
-      </div>
-    </div>
-    <!-- svelte-ignore a11y_click_events_have_key_events -->
-    <!-- svelte-ignore a11y_no_static_element_interactions -->
-    <div class="modal-backdrop" onclick={() => (showDeleteDialog = false)}></div>
-  </div>
+  <ConfirmDialog
+    title="Delete Theme"
+    message={'Are you sure you want to delete "' + (titleInput || 'Untitled') + '"? This action cannot be undone.'}
+    onConfirm={confirmDelete}
+    onCancel={() => (showDeleteDialog = false)} />
 {/if}

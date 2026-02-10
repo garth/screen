@@ -7,6 +7,7 @@ function createMockThemeDocument(overrides: Partial<ThemeDocument> = {}): ThemeD
   return {
     connected: true,
     synced: true,
+    syncTimedOut: false,
     readOnly: false,
     isSystemTheme: false,
     font: 'Arial',
@@ -25,6 +26,7 @@ function createMockThemeDocument(overrides: Partial<ThemeDocument> = {}): ThemeD
     effectiveViewport: undefined,
     ydoc: {} as unknown as ThemeDocument['ydoc'],
     meta: {} as unknown as ThemeDocument['meta'],
+    retry: () => {},
     destroy: () => {},
     ...overrides,
   }

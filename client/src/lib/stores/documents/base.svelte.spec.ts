@@ -18,6 +18,19 @@ vi.mock('y-phoenix-channel', () => {
         off: vi.fn(),
       }
       _listeners = new Map<string, Array<(...args: unknown[]) => void>>()
+      _channelListeners = new Map<string, Array<(...args: unknown[]) => void>>()
+
+      channel = {
+        on: (event: string, callback: (...args: unknown[]) => void) => {
+          if (!this._channelListeners.has(event)) {
+            this._channelListeners.set(event, [])
+          }
+          this._channelListeners.get(event)!.push(callback)
+        },
+        _emit: (event: string, payload: unknown) => {
+          for (const cb of this._channelListeners.get(event) ?? []) cb(payload)
+        },
+      }
 
       on(event: string, callback: (...args: unknown[]) => void) {
         if (!this._listeners.has(event)) {
@@ -95,6 +108,23 @@ describe('createBaseDocument', () => {
     expect(doc.connected).toBe(true)
     expect(doc.synced).toBe(true)
     expect(doc.readOnly).toBe(false)
+
+    doc.destroy()
+  })
+
+  it('updates readOnly when server pushes permissions event', async () => {
+    const doc = createBaseDocument({ documentId: 'test-doc' })
+
+    // Wait for mock connection
+    await new Promise((resolve) => setTimeout(resolve, 10))
+
+    expect(doc.readOnly).toBe(false)
+
+    // Simulate server pushing permissions event
+    const provider = doc.provider as unknown as { channel: { _emit: (event: string, payload: unknown) => void } }
+    provider.channel._emit('permissions', { read_only: true })
+
+    expect(doc.readOnly).toBe(true)
 
     doc.destroy()
   })

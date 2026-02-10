@@ -183,6 +183,73 @@ defmodule Screen.Documents.DocServerTest do
     end
   end
 
+  describe "compaction on terminate" do
+    test "compacts updates into a single state on shutdown", %{document: document, user: user} do
+      server = start_server(document)
+      DocServer.observe(server)
+      DocServer.register_user(server, self(), user.id)
+
+      # Send two updates to create multiple document_updates rows
+      update1 = make_yjs_update("hello")
+      DocServer.send_yjs_message(server, encode_sync_update(update1))
+
+      update2 = make_yjs_update("content", "world")
+      DocServer.send_yjs_message(server, encode_sync_update(update2))
+
+      # Wait for persistence
+      _ = :sys.get_state(server)
+
+      # Verify we have multiple updates before shutdown
+      updates_before = Documents.get_document_updates_with_inheritance(document.id)
+      assert length(updates_before) >= 2
+
+      # Unobserve triggers graceful shutdown + compaction
+      DocServer.unobserve(server)
+      wait_for_exit(server)
+
+      # After compaction, there should be exactly one update
+      updates_after = Documents.get_document_updates_with_inheritance(document.id)
+      assert length(updates_after) == 1
+
+      # The compacted state should still contain all the content
+      [compacted] = updates_after
+      doc = Yex.Doc.new()
+      :ok = Yex.apply_update(doc, compacted)
+      text = Yex.Doc.get_text(doc, "content")
+      result = Yex.Text.to_string(text)
+      assert String.contains?(result, "hello")
+      assert String.contains?(result, "world")
+    end
+
+    test "flushes pending meta sync on terminate", %{document: document, user: user} do
+      server = start_server(document)
+      DocServer.observe(server)
+      DocServer.register_user(server, self(), user.id)
+
+      # Set a meta value
+      doc = Yex.Doc.new()
+      meta = Yex.Doc.get_map(doc, "meta")
+      {:ok, _} = Yex.Doc.monitor_update(doc)
+      Yex.Map.set(meta, "title", "Terminate Test")
+
+      update =
+        receive do
+          {:update_v1, update_bin, _origin, _metadata} -> update_bin
+        after
+          1000 -> raise "expected update"
+        end
+
+      DocServer.send_yjs_message(server, encode_sync_update(update))
+
+      # Don't trigger sync_meta manually — let terminate flush it
+      DocServer.unobserve(server)
+      wait_for_exit(server)
+
+      reloaded = Documents.get_document!(document.id)
+      assert reloaded.meta["title"] == "Terminate Test"
+    end
+  end
+
   describe "meta sync" do
     test "syncs meta map to database after debounce", %{document: document, user: user} do
       server = start_server(document)

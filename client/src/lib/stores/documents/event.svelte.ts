@@ -1,5 +1,5 @@
 import * as Y from 'yjs'
-import { createBaseDocument } from './base.svelte'
+import { createBaseDocument, createReactiveMetaProperty } from './base.svelte'
 import type { DocumentOptions, EventChannel, EventDocument } from './types'
 
 export function createEventDoc(options: DocumentOptions): EventDocument {
@@ -12,6 +12,9 @@ export function createEventDoc(options: DocumentOptions): EventDocument {
   // Reactive state that mirrors Yjs arrays
   let presentations = $state<string[]>([])
   let channels = $state<EventChannel[]>([])
+
+  // Track observers for cleanup
+  const observedMaps: Array<{ target: Y.Map<unknown> | Y.Array<unknown>; handler: () => void }> = []
 
   // Helper to convert Y.Map to EventChannel
   function mapToChannel(ymap: Y.Map<unknown>): EventChannel {
@@ -42,27 +45,43 @@ export function createEventDoc(options: DocumentOptions): EventDocument {
     base.meta.set('presentationCount', presentations.length)
   }
 
+  function observeChannelMap(channelMap: Y.Map<unknown>, presArray?: Y.Array<Y.Map<unknown>>) {
+    channelMap.observe(updateChannels)
+    observedMaps.push({ target: channelMap, handler: updateChannels })
+    const resolvedPresArray = presArray ?? (channelMap.get('presentations') as Y.Array<Y.Map<unknown>> | undefined)
+    if (resolvedPresArray) {
+      resolvedPresArray.observe(updateChannels)
+      observedMaps.push({ target: resolvedPresArray, handler: updateChannels })
+    }
+  }
+
+  let title: ReturnType<typeof createReactiveMetaProperty<string>>
+
   const base = createBaseDocument({
     ...options,
     onDocumentSynced: () => {
+      title.subscribe()
       // Initialize
       updatePresentations()
       updateChannels()
 
       // Observe presentations array
       presentationsArray.observe(updatePresentations)
+      observedMaps.push({ target: presentationsArray, handler: updatePresentations })
 
       // Observe channels array
       channelsArray.observe(updateChannels)
+      observedMaps.push({ target: channelsArray, handler: updateChannels })
 
       // Also observe each channel's internal changes
       channelsArray.forEach((channelMap) => {
-        channelMap.observe(updateChannels)
-        const presArray = channelMap.get('presentations') as Y.Array<Y.Map<unknown>> | undefined
-        presArray?.observe(updateChannels)
+        observeChannelMap(channelMap)
       })
     },
   })
+
+  // Initialize meta properties
+  title = createReactiveMetaProperty(base.meta, 'title', '')
 
   // Initialize arrays
   presentationsArray = base.ydoc.getArray<string>('presentations')
@@ -90,8 +109,18 @@ export function createEventDoc(options: DocumentOptions): EventDocument {
     get synced() {
       return base.synced
     },
+    get syncTimedOut() {
+      return base.syncTimedOut
+    },
     get readOnly() {
       return base.readOnly
+    },
+    get title() {
+      return title.get()
+    },
+    setTitle(value: string) {
+      assertWritable()
+      title.set(value)
     },
 
     // Presentations
@@ -139,9 +168,8 @@ export function createEventDoc(options: DocumentOptions): EventDocument {
       channelMap.set('order', channelsArray.length)
       channelMap.set('presentations', presArray)
 
-      // Observe new channel for changes
-      channelMap.observe(updateChannels)
-      presArray.observe(updateChannels)
+      // Observe new channel for changes (pass presArray directly since channelMap isn't in doc yet)
+      observeChannelMap(channelMap, presArray)
 
       channelsArray.push([channelMap])
       return id
@@ -214,9 +242,8 @@ export function createEventDoc(options: DocumentOptions): EventDocument {
               presArray.push([relationMap])
             })
 
-            // Observe new channel for changes
-            channelMap.observe(updateChannels)
-            presArray.observe(updateChannels)
+            // Observe new channel for changes (pass presArray directly)
+            observeChannelMap(channelMap, presArray)
 
             channelsArray.push([channelMap])
           })
@@ -322,7 +349,14 @@ export function createEventDoc(options: DocumentOptions): EventDocument {
     },
 
     // Lifecycle
+    retry() {
+      base.retry()
+    },
     destroy() {
+      for (const { target, handler } of observedMaps) {
+        target.unobserve(handler)
+      }
+      observedMaps.length = 0
       base.destroy()
     },
   }

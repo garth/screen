@@ -16,7 +16,7 @@ defmodule Screen.Documents.DocumentUpdate do
 
   def changeset(document_update, attrs) do
     document_update
-    |> cast(attrs, [:update, :deleted_at])
+    |> cast(attrs, [:update])
     |> validate_required([:update])
     |> foreign_key_constraint(:document_id)
     |> foreign_key_constraint(:user_id)

@@ -25,18 +25,13 @@ export const optionalString = v.optional(v.string())
 export const emailSchema = v.pipe(v.string(), v.nonEmpty('Email is required'), v.email('Invalid email address'))
 
 /**
- * Password validator for registration (6+ chars)
+ * Password validator (8+ chars)
  */
-export const registerPasswordSchema = v.pipe(
+export const passwordSchema = v.pipe(
   v.string(),
-  v.minLength(6, 'Password must be at least 6 characters'),
+  v.minLength(8, 'Password must be at least 8 characters'),
   v.maxLength(255, 'Password is too long'),
 )
-
-/**
- * Password validator for changing password (8+ chars)
- */
-export const changePasswordSchema = v.pipe(v.string(), v.minLength(8, 'Password must be at least 8 characters'))
 
 // ============================================================================
 // Form Schemas
@@ -49,7 +44,7 @@ export const registrationSchema = v.object({
   firstName: requiredString('First name'),
   lastName: requiredString('Last name'),
   email: emailSchema,
-  password: registerPasswordSchema,
+  password: passwordSchema,
 })
 
 /**
@@ -73,48 +68,8 @@ export const updateNameSchema = v.object({
  */
 export const changePasswordFormSchema = v.object({
   currentPassword: v.pipe(v.string(), v.nonEmpty('Current password is required')),
-  newPassword: changePasswordSchema,
+  newPassword: passwordSchema,
   confirmPassword: v.string(),
-})
-
-/**
- * Schema for activity creation/update
- */
-export const activitySchema = v.object({
-  description: requiredString('Description'),
-  startTime: requiredString('Start time'),
-  endTime: optionalString,
-  tags: optionalString,
-  note: optionalString,
-  projectId: optionalString,
-  timezone: requiredString('Timezone'),
-})
-
-/**
- * Schema for client creation/update
- */
-export const clientSchema = v.object({
-  name: requiredString('Name'),
-})
-
-/**
- * Schema for project creation
- */
-export const projectSchema = v.object({
-  name: requiredString('Name'),
-  clientId: requiredString('Client'),
-})
-
-/**
- * Schema for phase creation
- */
-export const phaseSchema = v.object({
-  name: requiredString('Name'),
-  clientId: requiredString('Client'),
-  projectId: optionalString,
-  startDate: requiredString('Start date'),
-  endDate: requiredString('End date'),
-  billingRate: optionalString,
 })
 
 // ============================================================================

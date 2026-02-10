@@ -27,7 +27,7 @@
     <h1 class="text-2xl font-bold">Themes</h1>
     <button type="button" onclick={createTheme} disabled={creating} class="btn btn-primary">
       {#if creating}
-        <span class="loading loading-sm loading-spinner"></span>
+        <span class="loading loading-sm loading-spinner" role="status" aria-label="Loading"></span>
         Creating...
       {:else}
         New Theme

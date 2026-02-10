@@ -809,3 +809,72 @@ test.describe('Presentation 404 Handling', () => {
     expect(response?.status()).toBe(404)
   })
 })
+
+test.describe('Presentation Public Sharing', () => {
+  const testUser = {
+    firstName: 'Share',
+    lastName: 'Tester',
+    password: 'password123',
+  }
+
+  test('sharing toggle is visible in editor header', async ({ page }) => {
+    const email = `share-toggle-${Date.now()}@example.com`
+
+    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: user.id,
+      name: 'Share Toggle Test',
+      type: 'presentation',
+    })
+
+    await loginUser(page, { email, password: testUser.password })
+    await expect(page).toHaveURL('/presentations')
+
+    await page.goto(`/presentation/${doc.id}/edit`)
+    await page.waitForLoadState('networkidle')
+
+    // Sharing toggle should be visible (on desktop)
+    const toggle = page.locator('.toggle-primary').first()
+    await expect(toggle).toBeVisible({ timeout: 10000 })
+
+    // Should show "Private" label by default
+    await expect(page.getByText('Private')).toBeVisible()
+  })
+
+  test('private presentation is inaccessible without auth', async ({ page }) => {
+    const email = `share-private-${Date.now()}@example.com`
+
+    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: user.id,
+      name: 'Private Share Test',
+      type: 'presentation',
+      public: false,
+    })
+
+    // Try to access without auth (in a new context)
+    await page.goto(`/presentation/${doc.id}`)
+
+    // Should redirect to login
+    await expect(page).toHaveURL(/\/login/)
+  })
+
+  test('public presentation is accessible without auth', async ({ page }) => {
+    const email = `share-public-${Date.now()}@example.com`
+
+    const user = await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
+    const doc = await createDocument(page, {
+      userId: user.id,
+      name: 'Public Share Test',
+      type: 'presentation',
+      public: true,
+    })
+
+    // Access without logging in
+    await page.goto(`/presentation/${doc.id}`)
+    await page.waitForLoadState('networkidle')
+
+    // Viewer should load
+    await expect(page.locator('.presentation-viewer')).toBeVisible({ timeout: 15000 })
+  })
+})

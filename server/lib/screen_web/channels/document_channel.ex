@@ -1,4 +1,25 @@
 defmodule ScreenWeb.DocumentChannel do
+  @moduledoc """
+  Handles `document:{id}` channel for Yjs document sync.
+
+  Checks permissions on join and returns a `read_only` flag. Read-only clients
+  can only send sync step1 (reads) and awareness messages; write attempts are
+  silently dropped.
+
+  ## Join
+
+  - `document:{id}` — checks permission, starts DocServer, begins Yjs sync
+
+  ## Incoming Events
+
+  - `yjs` — binary Yjs sync message, delegated to DocServer
+
+  ## Outgoing Events
+
+  - `permissions` — pushed after join with `%{read_only: boolean}`
+  - `yjs` — relayed Yjs messages from DocServer (sync updates, awareness)
+  """
+
   use ScreenWeb, :channel
 
   alias Screen.Documents
@@ -20,6 +41,10 @@ defmodule ScreenWeb.DocumentChannel do
           |> assign(:server, server)
           |> assign(:doc_id, doc_id)
           |> assign(:read_only, permission == :read_only)
+
+        # Push permissions so the client can update readOnly state
+        # (y-phoenix-channel ignores the join reply payload)
+        send(self(), :push_permissions)
 
         # Initiate sync by sending our SyncStep1 to the server
         send(self(), :start_sync)
@@ -52,6 +77,12 @@ defmodule ScreenWeb.DocumentChannel do
       DocServer.send_yjs_message(socket.assigns.server, data)
     end
 
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info(:push_permissions, socket) do
+    push(socket, "permissions", %{read_only: socket.assigns.read_only})
     {:noreply, socket}
   end
 

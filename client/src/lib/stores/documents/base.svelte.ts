@@ -29,6 +29,7 @@ function generateUserColor(userId: string): string {
 export interface BaseDocument {
   readonly connected: boolean
   readonly synced: boolean
+  readonly syncTimedOut: boolean
   readonly readOnly: boolean
   readonly ydoc: Y.Doc
   readonly meta: Y.Map<unknown>
@@ -36,13 +37,28 @@ export interface BaseDocument {
   readonly baseMeta: Y.Map<unknown> | null
   readonly provider: PhoenixChannelProvider
   readonly baseProvider: PhoenixChannelProvider | null
+  retry(): void
   destroy(): void
 }
 
 export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
   let connected = $state(false)
   let synced = $state(false)
+  let syncTimedOut = $state(false)
   let readOnly = $state(false)
+
+  const SYNC_TIMEOUT_MS = 15_000
+  let syncTimeout: ReturnType<typeof setTimeout> | null = null
+
+  function startSyncTimeout() {
+    if (syncTimeout) clearTimeout(syncTimeout)
+    syncTimedOut = false
+    syncTimeout = setTimeout(() => {
+      if (!synced) syncTimedOut = true
+    }, SYNC_TIMEOUT_MS)
+  }
+
+  if (browser) startSyncTimeout()
 
   const ydoc = new Y.Doc()
   const meta = ydoc.getMap('meta')
@@ -56,13 +72,26 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
     params: {},
   })
 
+  // Listen for permissions pushed by the server after join
+  // (y-phoenix-channel ignores the join reply payload, so the server sends a separate event)
+  let permissionsListenerAdded = false
+
   provider.on('status', ({ status }) => {
     connected = status === 'connected'
+
+    if (status === 'connected' && provider.channel && !permissionsListenerAdded) {
+      permissionsListenerAdded = true
+      provider.channel.on('permissions', (payload: { read_only: boolean }) => {
+        readOnly = payload.read_only
+      })
+    }
   })
 
   provider.on('sync', (isSynced: boolean) => {
     if (isSynced && !synced) {
       synced = true
+      syncTimedOut = false
+      if (syncTimeout) clearTimeout(syncTimeout)
       options.onDocumentSynced?.()
     }
   })
@@ -91,8 +120,11 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
 
   // Meta observation for DB sync with debouncing
   let metaObserverTimeout: ReturnType<typeof setTimeout> | null = null
+  let metaObserverAttached = false
 
   function observeMeta() {
+    if (metaObserverAttached) return
+    metaObserverAttached = true
     meta.observe(() => {
       if (metaObserverTimeout) clearTimeout(metaObserverTimeout)
       metaObserverTimeout = setTimeout(() => {
@@ -112,6 +144,9 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
     },
     get synced() {
       return synced
+    },
+    get syncTimedOut() {
+      return syncTimedOut
     },
     get readOnly() {
       return readOnly
@@ -134,7 +169,16 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
     get baseProvider() {
       return baseProvider
     },
+    retry() {
+      if (synced) return
+      syncTimedOut = false
+      provider.destroy()
+      // Reconnect by creating a new provider instance is complex;
+      // simplest approach: reload the page
+      if (browser) window.location.reload()
+    },
     destroy() {
+      if (syncTimeout) clearTimeout(syncTimeout)
       if (metaObserverTimeout) clearTimeout(metaObserverTimeout)
       baseProvider?.destroy()
       baseYdoc?.destroy()

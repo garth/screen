@@ -27,6 +27,24 @@ interface ErrorResponse {
   message?: string
 }
 
+function pushAsync<T = void>(
+  channel: Channel,
+  event: string,
+  payload: Record<string, unknown>,
+  options: { errorMessage: string; extractResult?: (resp: Record<string, unknown>) => T },
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    channel
+      .push(event, payload)
+      .receive('ok', (resp: Record<string, unknown>) =>
+        resolve(options.extractResult ? options.extractResult(resp) : (undefined as T)),
+      )
+      .receive('error', (resp: Record<string, unknown>) =>
+        reject(new Error((resp as ErrorResponse)?.reason ?? options.errorMessage)),
+      )
+  })
+}
+
 /**
  * Manages the `user:{userId}` channel for authenticated users.
  * Provides user profile, theme list, and mutation methods.
@@ -42,10 +60,6 @@ export function createUserChannel(userId: string) {
 
   function notify() {
     for (const fn of listeners) fn()
-  }
-
-  function errorMessage(resp: ErrorResponse, fallback: string): string {
-    return resp?.reason ?? resp?.message ?? fallback
   }
 
   // Join the channel
@@ -88,74 +102,60 @@ export function createUserChannel(userId: string) {
       return () => listeners.delete(fn)
     },
 
-    async createDocument(type: string = 'presentation'): Promise<string> {
-      return new Promise((resolve, reject) => {
-        channel
-          .push('create_document', { type })
-          .receive('ok', (resp: Record<string, unknown>) => resolve(resp.id as string))
-          .receive('error', (resp: Record<string, unknown>) =>
-            reject(new Error(errorMessage(resp as ErrorResponse, 'Failed to create document'))),
-          )
+    createDocument(type: string = 'presentation'): Promise<string> {
+      return pushAsync(
+        channel,
+        'create_document',
+        { type },
+        {
+          errorMessage: 'Failed to create document',
+          extractResult: (resp) => resp.id as string,
+        },
+      )
+    },
+
+    deleteDocument(documentId: string): Promise<void> {
+      return pushAsync(
+        channel,
+        'delete_document',
+        { id: documentId },
+        {
+          errorMessage: 'Failed to delete document',
+        },
+      )
+    },
+
+    updateProfile(data: { firstName: string; lastName: string }): Promise<void> {
+      return pushAsync(channel, 'update_profile', data, {
+        errorMessage: 'Failed to update profile',
       })
     },
 
-    async deleteDocument(documentId: string): Promise<void> {
-      return new Promise((resolve, reject) => {
-        channel
-          .push('delete_document', { id: documentId })
-          .receive('ok', () => resolve())
-          .receive('error', (resp: Record<string, unknown>) =>
-            reject(new Error(errorMessage(resp as ErrorResponse, 'Failed to delete document'))),
-          )
+    changePassword(data: { currentPassword: string; newPassword: string }): Promise<void> {
+      return pushAsync(channel, 'change_password', data, {
+        errorMessage: 'Failed to change password',
       })
     },
 
-    async updateProfile(data: { firstName: string; lastName: string }): Promise<void> {
-      return new Promise((resolve, reject) => {
-        channel
-          .push('update_profile', data)
-          .receive('ok', () => resolve())
-          .receive('error', (resp: Record<string, unknown>) =>
-            reject(new Error(errorMessage(resp as ErrorResponse, 'Failed to update profile'))),
-          )
-      })
+    deleteAccount(): Promise<void> {
+      return pushAsync(
+        channel,
+        'delete_account',
+        {},
+        {
+          errorMessage: 'Failed to delete account',
+        },
+      )
     },
 
-    async changePassword(data: { currentPassword: string; newPassword: string }): Promise<void> {
-      return new Promise((resolve, reject) => {
-        channel
-          .push('change_password', data)
-          .receive('ok', () => resolve())
-          .receive('error', (resp: Record<string, unknown>) =>
-            reject(new Error(errorMessage(resp as ErrorResponse, 'Failed to change password'))),
-          )
-      })
-    },
-
-    async deleteAccount(): Promise<void> {
-      return new Promise((resolve, reject) => {
-        channel
-          .push('delete_account', {})
-          .receive('ok', () => resolve())
-          .receive('error', (resp: Record<string, unknown>) =>
-            reject(new Error(errorMessage(resp as ErrorResponse, 'Failed to delete account'))),
-          )
-      })
-    },
-
-    async updateDocument(data: {
+    updateDocument(data: {
       id: string
       name?: string
       isPublic?: boolean
       meta?: Record<string, unknown>
     }): Promise<void> {
-      return new Promise((resolve, reject) => {
-        channel
-          .push('update_document', data)
-          .receive('ok', () => resolve())
-          .receive('error', (resp: Record<string, unknown>) =>
-            reject(new Error(errorMessage(resp as ErrorResponse, 'Failed to update document'))),
-          )
+      return pushAsync(channel, 'update_document', data, {
+        errorMessage: 'Failed to update document',
       })
     },
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { focusTrap } from '$lib/actions/focus-trap'
   import type { PresentationFormat } from '$lib/stores/documents/types'
 
   interface Theme {
@@ -70,7 +71,15 @@
 
 {#if open}
   <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <div class="modal-open modal" role="dialog" aria-modal="true" aria-labelledby="options-dialog-title" onkeydown={(e) => { if (e.key === 'Escape') onClose() }}>
+  <div
+    class="modal-open modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="options-dialog-title"
+    onkeydown={(e) => {
+      if (e.key === 'Escape') onClose()
+    }}
+    use:focusTrap>
     <div class="modal-box max-w-md">
       <h3 id="options-dialog-title" class="mb-4 text-lg font-bold">Presentation Options</h3>
 

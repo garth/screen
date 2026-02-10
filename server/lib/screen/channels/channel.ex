@@ -17,10 +17,10 @@ defmodule Screen.Channels.Channel do
 
   def changeset(channel, attrs) do
     channel
-    |> cast(attrs, [:name, :slug, :deleted_at])
+    |> cast(attrs, [:name, :slug])
     |> validate_required([:name])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:event_document_id)
-    |> unique_constraint(:slug)
+    |> unique_constraint(:slug, name: :channels_slug_active_unique_index)
   end
 end

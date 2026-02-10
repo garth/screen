@@ -1,0 +1,12 @@
+# Ignore build artifacts
+_build/
+deps/
+.elixir_ls/
+
+# Ignore test and dev
+test/
+.formatter.exs
+
+# Ignore VCS
+.git/
+.gitignore
