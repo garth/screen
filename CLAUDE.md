@@ -13,6 +13,13 @@ Each app has its own detailed `CLAUDE.md` — refer to `client/CLAUDE.md` and `s
 
 ## Common Commands
 
+### Root
+
+```bash
+pnpm install          # Install all workspace dependencies
+pnpm test:e2e         # Playwright e2e tests (from root)
+```
+
 ### Client (`client/`)
 
 ```bash
@@ -21,7 +28,6 @@ pnpm build            # Production build
 pnpm check            # TypeScript + Svelte type checking
 pnpm lint             # Prettier + ESLint
 pnpm test:unit        # Vitest (browser-mode for .svelte.test.ts, Node for .test.ts)
-pnpm test:e2e         # Playwright e2e tests
 pnpm db:start         # Docker: PostgreSQL (5432) + MailDev
 pnpm db:push          # Push Prisma schema to database
 ```

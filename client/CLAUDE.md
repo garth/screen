@@ -22,9 +22,9 @@ pnpm lint             # Check formatting + linting
 pnpm format           # Auto-format code
 
 # Testing
-pnpm test             # Run all tests (unit + e2e)
+pnpm test             # Run unit tests
 pnpm test:unit        # Vitest unit tests only
-pnpm test:e2e         # Playwright e2e tests only
+# E2e tests live at the repo root — run `pnpm test:e2e` from there
 
 # Database
 pnpm db:start         # Start PostgreSQL + MailDev containers
@@ -64,7 +64,7 @@ pnpm hocuspocus:dev   # Start with file watching
 - `src/lib/components/` - Reusable Svelte components
 - `src/lib/editor/` - ProseMirror editor schema, plugins, and utilities
 - `prisma/` - Database schema and migrations
-- `e2e/` - Playwright end-to-end tests
+- `../e2e/` - Playwright end-to-end tests (at repo root)
 
 ### Database Models
 
@@ -177,5 +177,6 @@ Copy `.env.example` to `.env`. Required variables:
 ## Testing Notes
 
 - Unit tests use Vitest with Playwright browser provider for component tests
+- E2E tests live at the repo root (`e2e/`) and are run via `pnpm test:e2e` from the root
 - E2E tests require `ALLOW_TEST_ENDPOINTS=true` for test API endpoints
 - Run `pnpm db:start` before e2e tests to ensure database and mail services are running

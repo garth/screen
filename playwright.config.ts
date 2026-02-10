@@ -8,6 +8,7 @@ export default defineConfig({
   webServer: [
     {
       command: 'pnpm build && pnpm preview',
+      cwd: 'client',
       port: 4173,
       reuseExistingServer: !process.env.CI,
       env: {
@@ -16,6 +17,7 @@ export default defineConfig({
     },
     {
       command: 'pnpm hocuspocus',
+      cwd: 'client',
       port: 1234,
       reuseExistingServer: !process.env.CI,
     },

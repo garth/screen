@@ -45,9 +45,9 @@ The project is a monorepo with two applications:
 ### Client
 
 ```bash
+pnpm install              # Install all workspace dependencies
 cd client
 cp .env.example .env
-pnpm install
 pnpm db:start         # Start PostgreSQL (port 5432) + MailDev
 pnpm db:push          # Push schema to database
 pnpm dev              # Start dev server + Hocuspocus collaboration server
@@ -67,7 +67,14 @@ The server runs at `http://localhost:4000`.
 
 ## Development
 
-### Client Commands
+### Root Commands
+
+```bash
+pnpm install          # Install all workspace dependencies
+pnpm test:e2e         # Playwright e2e tests
+```
+
+### Client Commands (`client/`)
 
 ```bash
 pnpm dev              # Dev server + Hocuspocus (concurrent)
@@ -76,7 +83,6 @@ pnpm check            # TypeScript + Svelte type checking
 pnpm lint             # Prettier + ESLint
 pnpm format           # Auto-format code
 pnpm test:unit        # Vitest unit tests
-pnpm test:e2e         # Playwright e2e tests
 pnpm db:studio        # Prisma Studio GUI
 pnpm db:migrate       # Create new Prisma migration
 ```
