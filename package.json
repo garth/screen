@@ -3,11 +3,14 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "dev": "concurrently -c blue,magenta -n client,server \"pnpm --filter @chapel/client dev\" \"cd server && mix phx.server\"",
+    "test:unit": "concurrently -n client,server \"pnpm --filter @chapel/client test:unit --run\" \"cd server && mix test\"",
     "test:e2e": "playwright test"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "@types/ws": "^8.18.1",
+    "concurrently": "^9.2.1",
     "playwright": "^1.57.0"
   },
   "dependencies": {
