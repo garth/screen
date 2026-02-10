@@ -18,8 +18,7 @@ pnpm preview          # Preview built app
 
 # Code Quality
 pnpm check            # TypeScript + Svelte type checking
-pnpm lint             # Check formatting + linting
-pnpm format           # Auto-format code
+pnpm lint             # ESLint
 
 # Testing
 pnpm test             # Run unit tests

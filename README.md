@@ -71,6 +71,9 @@ pnpm install          # Install all workspace dependencies
 pnpm dev              # Start client + Phoenix server (concurrent)
 pnpm test:unit        # Run client + server unit tests
 pnpm test:e2e         # Playwright e2e tests
+pnpm lint             # Run client ESLint + server compile --warnings-as-errors
+pnpm format           # Format all files (Prettier + mix format)
+pnpm lint:format      # Check formatting (Prettier + mix format)
 ```
 
 ### Client Commands (`client/`)
@@ -79,8 +82,7 @@ pnpm test:e2e         # Playwright e2e tests
 pnpm dev              # Vite dev server
 pnpm build            # Production build (static SPA)
 pnpm check            # TypeScript + Svelte type checking
-pnpm lint             # Prettier + ESLint
-pnpm format           # Auto-format code
+pnpm lint             # ESLint
 pnpm test:unit        # Vitest unit tests
 ```
 

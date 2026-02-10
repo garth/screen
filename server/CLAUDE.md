@@ -1,4 +1,40 @@
-This is a web application written using the Phoenix web framework.
+This is the Phoenix 1.8 backend for Chapel Screen, a real-time collaborative presentation editor.
+
+## Chapel Screen Server Architecture
+
+### Key Modules
+
+- **`Screen.Documents.DocServer`** — Per-document GenServer managing Yjs state via `Yex.DocServer`. Handles observer broadcasting, user attribution, database persistence, and debounced meta sync (2-10s). Uses Registry + DynamicSupervisor (`DocRegistry`/`DocSupervisor`).
+- **`Screen.Documents.Persistence`** — Implements `Yex.Sync.SharedDoc.PersistenceBehaviour` for loading document state from the database on bind.
+- **`ScreenWeb.DocumentChannel`** — Handles `document:*` topics. Checks permissions on join, returns `read_only` flag. Read-only clients can only send sync step1 and awareness. Delegates message processing to `DocServer`.
+- **`ScreenWeb.UserSocket`** — Authenticates via session token. Registers `document:*` channel.
+
+### Database Schemas
+
+All schemas use `ExCuid2` string primary keys and `deleted_at` for soft deletes.
+
+- **`Screen.Accounts.User`** — email (citext, unique), first_name, last_name, discoverable
+- **`Screen.Accounts.UserToken`** — session/login/change tokens with expiry
+- **`Screen.Accounts.Scope`** — Context struct (not a DB schema) holding user reference for authorization
+- **`Screen.Documents.Document`** — name, type ("presentation"/"theme"/"event"), is_public, meta (map), base_document_id (self-referential for inheritance)
+- **`Screen.Documents.DocumentUpdate`** — binary Yjs update with user_id attribution
+- **`Screen.Documents.DocumentUser`** — can_write permission per user per document
+- **`Screen.Channels.Channel`** — name, slug (unique), event_document_id
+
+### Document Lifecycle
+
+1. Client joins `document:{id}` channel → `DocumentChannel.join/3` checks permissions
+2. `DocServer.find_or_start/1` creates or finds existing GenServer
+3. DocServer loads persisted updates from `document_updates` table (with base document inheritance)
+4. Channel process registers as observer and syncs via y-protocols binary messages
+5. Updates are persisted with user attribution; meta map changes are debounced to the `documents.meta` column
+6. When all observers disconnect, the DocServer stops
+
+### Contexts
+
+- **`Screen.Accounts`** — User CRUD, auth tokens, session management
+- **`Screen.Documents`** — Document CRUD, permission checks, update persistence
+- **`Screen.Channels`** — Channel management for events
 
 ## Project guidelines
 

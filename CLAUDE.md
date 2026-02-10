@@ -63,8 +63,8 @@ Phoenix handles all authentication via LiveView pages (login, register, forgot/r
 
 PostgreSQL managed by the Phoenix server via Ecto migrations:
 
-- Port 5439 (via `server/docker-compose.yml`)
-- Schema: User, Document, DocumentUpdate, DocumentUser, Channel
+- Port 5439 (via root `docker-compose.yml`)
+- Schema: User, UserToken, Document, DocumentUpdate, DocumentUser, Channel
 
 ## Commit Conventions
 
