@@ -8,6 +8,7 @@
     "test:e2e": "playwright test",
     "lint": "concurrently -n client,server \"pnpm --filter @chapel/client lint\" \"cd server && mix compile --warnings-as-errors\"",
     "format": "prettier --write . && cd server && mix format",
+    "build": "pnpm --filter @chapel/client build",
     "lint:format": "prettier --check . && cd server && mix format --check-formatted"
   },
   "devDependencies": {

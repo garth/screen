@@ -11,6 +11,17 @@ ARG DEBIAN_VERSION=bookworm-20250113-slim
 ARG BUILDER_IMAGE="docker.io/hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="docker.io/debian:${DEBIAN_VERSION}"
 
+# ---- Client build ----
+FROM node:24-bookworm-slim AS client
+RUN corepack enable pnpm
+WORKDIR /app
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY client/package.json client/
+RUN pnpm install --frozen-lockfile
+COPY client/ client/
+RUN cd client && pnpm build
+
+# ---- Server build ----
 FROM ${BUILDER_IMAGE} AS builder
 
 # install build dependencies
@@ -40,6 +51,7 @@ COPY config/config.exs config/${MIX_ENV}.exs config/
 RUN mix deps.compile
 
 COPY priv priv
+COPY --from=client /app/server/priv/static/ priv/static/
 COPY lib lib
 
 # Compile the release
@@ -48,7 +60,7 @@ RUN mix compile
 # Changes to config/runtime.exs don't require recompiling the code
 COPY config/runtime.exs config/
 
-COPY rel rel
+RUN mix assets.deploy
 RUN mix release
 
 # start a new build stage so that the final image will only contain

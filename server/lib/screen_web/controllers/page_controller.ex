@@ -2,7 +2,15 @@ defmodule ScreenWeb.PageController do
   use ScreenWeb, :controller
 
   def home(conn, _params) do
-    render(conn, :home)
+    index_path = Path.join(:code.priv_dir(:screen), "static/index.html")
+
+    if File.exists?(index_path) do
+      conn
+      |> put_resp_header("content-type", "text/html; charset=utf-8")
+      |> send_file(200, index_path)
+    else
+      render(conn, :home)
+    end
   end
 
   @doc """

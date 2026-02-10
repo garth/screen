@@ -31,6 +31,19 @@ screen-*.tar
 # Ignore digested assets cache.
 /priv/static/cache_manifest.json
 
+# SPA build artifacts (from client build)
+/priv/static/_app/
+/priv/static/index.html
+/priv/static/sw.js
+/priv/static/workbox-*.js
+/priv/static/manifest.webmanifest
+/priv/static/apple-touch-icon.png
+/priv/static/pwa-192x192.png
+/priv/static/pwa-512x512.png
+/priv/static/favicon.ico
+/priv/static/robots.txt
+/priv/static/images/
+
 # In case you use Node.js/npm, you want to ignore these.
 npm-debug.log
 /assets/node_modules/

@@ -26,6 +26,7 @@ defmodule ScreenWeb.Endpoint do
     from: :screen,
     gzip: not code_reloading?,
     only: ScreenWeb.static_paths(),
+    only_matching: ~w(workbox-),
     raise_on_missing_only: code_reloading?
 
   # Code reloading can be explicitly enabled under the

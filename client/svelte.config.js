@@ -9,7 +9,11 @@ const config = {
   preprocess: [vitePreprocess(), mdsvex()],
 
   kit: {
-    adapter: adapter({ fallback: 'index.html' }),
+    adapter: adapter({
+      pages: '../server/priv/static',
+      assets: '../server/priv/static',
+      fallback: 'index.html',
+    }),
   },
   compilerOptions: {
     experimental: {
