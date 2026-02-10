@@ -10,29 +10,40 @@ vi.mock('$app/environment', () => ({
 let mockDocumentsMap: Y.Map<unknown> | null = null
 let mockIndexeddbSyncedCallback: (() => void) | null = null
 
-// Mock HocuspocusProvider
-vi.mock('@hocuspocus/provider', () => {
-  return {
-    HocuspocusProvider: class MockHocuspocusProvider {
-      destroy = vi.fn()
-      on = vi.fn((event: string, callback: () => void) => {
-        if (event === 'synced') {
-          setTimeout(callback, 0)
-        }
-      })
+// Mock phoenix-socket
+vi.mock('$lib/providers/phoenix-socket', () => ({
+  getSocket: vi.fn(() => ({
+    channel: vi.fn(),
+    connect: vi.fn(),
+  })),
+}))
 
-      constructor(options: {
-        document: Y.Doc
-        onConnect?: () => void
-        onDisconnect?: () => void
-        onSynced?: () => void
-      }) {
-        // Store reference to documents map for test manipulation
-        mockDocumentsMap = options.document.getMap('documents')
+// Mock PhoenixChannelProvider
+vi.mock('y-phoenix-channel', () => {
+  return {
+    PhoenixChannelProvider: class MockPhoenixChannelProvider {
+      destroy = vi.fn()
+      awareness = {
+        setLocalStateField: vi.fn(),
+        getStates: vi.fn(() => new Map()),
+        on: vi.fn(),
+        off: vi.fn(),
+      }
+      _listeners = new Map<string, Array<(...args: unknown[]) => void>>()
+
+      on(event: string, callback: (...args: unknown[]) => void) {
+        if (!this._listeners.has(event)) {
+          this._listeners.set(event, [])
+        }
+        this._listeners.get(event)!.push(callback)
+      }
+
+      constructor(_socket: unknown, _topic: string, ydoc: Y.Doc) {
+        mockDocumentsMap = ydoc.getMap('documents')
 
         setTimeout(() => {
-          options.onConnect?.()
-          options.onSynced?.()
+          for (const cb of this._listeners.get('status') ?? []) cb({ status: 'connected' })
+          for (const cb of this._listeners.get('sync') ?? []) cb(true)
         }, 0)
       }
     },

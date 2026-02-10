@@ -6,16 +6,21 @@ vi.mock('$app/environment', () => ({
   browser: true,
 }))
 
-// Control mock behavior
-let mockReadOnly = false
-
 // Store base document ydocs for inheritance testing
 const baseDocYdocs = new Map<string, Y.Doc>()
 
-// Mock HocuspocusProvider
-vi.mock('@hocuspocus/provider', () => {
+// Mock phoenix-socket
+vi.mock('$lib/providers/phoenix-socket', () => ({
+  getSocket: vi.fn(() => ({
+    channel: vi.fn(),
+    connect: vi.fn(),
+  })),
+}))
+
+// Mock PhoenixChannelProvider
+vi.mock('y-phoenix-channel', () => {
   return {
-    HocuspocusProvider: class MockHocuspocusProvider {
+    PhoenixChannelProvider: class MockPhoenixChannelProvider {
       destroy = vi.fn()
       awareness = {
         setLocalStateField: vi.fn(),
@@ -23,44 +28,27 @@ vi.mock('@hocuspocus/provider', () => {
         on: vi.fn(),
         off: vi.fn(),
       }
-      on = vi.fn((event: string, callback: () => void) => {
-        if (event === 'synced') {
-          setTimeout(callback, 0)
-        }
-      })
+      _listeners = new Map<string, Array<(...args: unknown[]) => void>>()
 
-      constructor(options: {
-        name: string
-        document: Y.Doc
-        onConnect?: () => void
-        onSynced?: (args: { state: boolean }) => void
-      }) {
+      on(event: string, callback: (...args: unknown[]) => void) {
+        if (!this._listeners.has(event)) {
+          this._listeners.set(event, [])
+        }
+        this._listeners.get(event)!.push(callback)
+      }
+
+      constructor(_socket: unknown, topic: string, ydoc: Y.Doc) {
         // Track base documents for inheritance testing
-        if (options.name.startsWith('base-')) {
-          baseDocYdocs.set(options.name, options.document)
+        const docId = topic.replace('document:', '')
+        if (docId.startsWith('base-')) {
+          baseDocYdocs.set(docId, ydoc)
         }
 
         setTimeout(() => {
-          options.onConnect?.()
-          options.onSynced?.({ state: mockReadOnly })
+          for (const cb of this._listeners.get('status') ?? []) cb({ status: 'connected' })
+          for (const cb of this._listeners.get('sync') ?? []) cb(true)
         }, 0)
       }
-    },
-  }
-})
-
-// Mock y-webrtc
-vi.mock('y-webrtc', () => {
-  return {
-    WebrtcProvider: class MockWebrtcProvider {
-      destroy = vi.fn()
-      awareness = {
-        setLocalStateField: vi.fn(),
-        getStates: vi.fn(() => new Map()),
-        on: vi.fn(),
-        off: vi.fn(),
-      }
-      constructor() {}
     },
   }
 })
@@ -81,7 +69,6 @@ import type { ViewportArea } from './types'
 describe('createThemeDoc', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockReadOnly = false
     baseDocYdocs.clear()
   })
 

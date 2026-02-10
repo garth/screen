@@ -6,10 +6,6 @@ vi.mock('$app/environment', () => ({
   browser: true,
 }))
 
-// Track provider options for testing
-let lastProviderStatus: ((event: { status: string }) => void) | null = null
-let lastProviderSync: ((state: boolean) => void) | null = null
-
 // Mock PhoenixChannelProvider
 vi.mock('y-phoenix-channel', () => {
   return {
@@ -21,21 +17,19 @@ vi.mock('y-phoenix-channel', () => {
         on: vi.fn(),
         off: vi.fn(),
       }
+      _listeners = new Map<string, Array<(...args: unknown[]) => void>>()
 
       on(event: string, callback: (...args: unknown[]) => void) {
-        if (event === 'status') {
-          lastProviderStatus = callback as (event: { status: string }) => void
+        if (!this._listeners.has(event)) {
+          this._listeners.set(event, [])
         }
-        if (event === 'sync') {
-          lastProviderSync = callback as (state: boolean) => void
-        }
+        this._listeners.get(event)!.push(callback)
       }
 
       constructor() {
-        // Auto-connect and sync after tick
         setTimeout(() => {
-          lastProviderStatus?.({ status: 'connected' })
-          lastProviderSync?.(true)
+          for (const cb of this._listeners.get('status') ?? []) cb({ status: 'connected' })
+          for (const cb of this._listeners.get('sync') ?? []) cb(true)
         }, 0)
       }
     },
@@ -73,8 +67,6 @@ import { createBaseDocument, createReactiveMetaProperty } from './base.svelte'
 describe('createBaseDocument', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    lastProviderStatus = null
-    lastProviderSync = null
     lastIndexeddbName = null
   })
 

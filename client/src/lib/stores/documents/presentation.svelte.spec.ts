@@ -6,13 +6,18 @@ vi.mock('$app/environment', () => ({
   browser: true,
 }))
 
-// Control mock behavior
-let mockReadOnly = false
+// Mock phoenix-socket
+vi.mock('$lib/providers/phoenix-socket', () => ({
+  getSocket: vi.fn(() => ({
+    channel: vi.fn(),
+    connect: vi.fn(),
+  })),
+}))
 
-// Mock HocuspocusProvider
-vi.mock('@hocuspocus/provider', () => {
+// Mock PhoenixChannelProvider
+vi.mock('y-phoenix-channel', () => {
   return {
-    HocuspocusProvider: class MockHocuspocusProvider {
+    PhoenixChannelProvider: class MockPhoenixChannelProvider {
       destroy = vi.fn()
       awareness = {
         setLocalStateField: vi.fn(),
@@ -20,34 +25,21 @@ vi.mock('@hocuspocus/provider', () => {
         on: vi.fn(),
         off: vi.fn(),
       }
-      on = vi.fn((event: string, callback: () => void) => {
-        if (event === 'synced') {
-          setTimeout(callback, 0)
-        }
-      })
+      _listeners = new Map<string, Array<(...args: unknown[]) => void>>()
 
-      constructor(options: { onConnect?: () => void; onSynced?: (args: { state: boolean }) => void }) {
+      on(event: string, callback: (...args: unknown[]) => void) {
+        if (!this._listeners.has(event)) {
+          this._listeners.set(event, [])
+        }
+        this._listeners.get(event)!.push(callback)
+      }
+
+      constructor() {
         setTimeout(() => {
-          options.onConnect?.()
-          options.onSynced?.({ state: mockReadOnly })
+          for (const cb of this._listeners.get('status') ?? []) cb({ status: 'connected' })
+          for (const cb of this._listeners.get('sync') ?? []) cb(true)
         }, 0)
       }
-    },
-  }
-})
-
-// Mock y-webrtc
-vi.mock('y-webrtc', () => {
-  return {
-    WebrtcProvider: class MockWebrtcProvider {
-      destroy = vi.fn()
-      awareness = {
-        setLocalStateField: vi.fn(),
-        getStates: vi.fn(() => new Map()),
-        on: vi.fn(),
-        off: vi.fn(),
-      }
-      constructor() {}
     },
   }
 })
@@ -67,7 +59,6 @@ import { createPresentationDoc } from './presentation.svelte'
 describe('createPresentationDoc', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    mockReadOnly = false
   })
 
   afterEach(() => {
