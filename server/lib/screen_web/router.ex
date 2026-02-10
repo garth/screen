@@ -43,6 +43,18 @@ defmodule ScreenWeb.Router do
       live_dashboard "/dashboard", metrics: ScreenWeb.Telemetry
       forward "/mailbox", Plug.Swoosh.MailboxPreview
     end
+
+    scope "/api/test", ScreenWeb do
+      pipe_through :api
+
+      post "/create-user", TestController, :create_user
+      post "/create-unverified-user", TestController, :create_unverified_user
+      post "/create-password-reset", TestController, :create_password_reset
+      post "/create-document", TestController, :create_document
+      post "/update-document", TestController, :update_document
+      get "/document-meta/:id", TestController, :document_meta
+      post "/create-document-user", TestController, :create_document_user
+    end
   end
 
   ## Authentication routes

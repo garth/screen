@@ -24,6 +24,7 @@ defmodule Screen.Documents.Document do
     document
     |> cast(attrs, [:name, :type, :is_public, :meta, :base_document_id, :deleted_at])
     |> validate_required([:name, :type])
+    |> validate_inclusion(:type, ~w(presentation theme event))
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:base_document_id)
   end

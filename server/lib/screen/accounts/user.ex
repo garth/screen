@@ -42,6 +42,15 @@ defmodule Screen.Accounts.User do
   end
 
   @doc """
+  A user changeset for updating profile fields (first_name, last_name).
+  """
+  def profile_changeset(user, attrs) do
+    user
+    |> cast(attrs, [:first_name, :last_name])
+    |> validate_required([:first_name, :last_name])
+  end
+
+  @doc """
   A user changeset for registering or changing the email.
 
   It requires the email to change otherwise an error is added.

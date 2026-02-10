@@ -9,7 +9,7 @@ defmodule Screen.Accounts.UserNotifier do
     email =
       new()
       |> to(recipient)
-      |> from({"Screen", "contact@example.com"})
+      |> from({"Screen", Application.get_env(:screen, :mail_from_address, "contact@example.com")})
       |> subject(subject)
       |> text_body(body)
 

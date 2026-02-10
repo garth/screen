@@ -176,6 +176,30 @@ defmodule Screen.Accounts do
     |> update_user_and_delete_all_tokens()
   end
 
+  @doc """
+  Updates a user's first_name and last_name.
+  """
+  def update_user_profile(user, attrs) do
+    user
+    |> User.profile_changeset(attrs)
+    |> Repo.update()
+  end
+
+  @doc """
+  Soft-deletes a user by setting `deleted_at` and removing all session tokens.
+  """
+  def delete_user(user) do
+    Repo.transact(fn ->
+      {:ok, user} =
+        user
+        |> Ecto.Changeset.change(%{deleted_at: DateTime.utc_now(:second)})
+        |> Repo.update()
+
+      Repo.delete_all(from(t in UserToken, where: t.user_id == ^user.id))
+      {:ok, user}
+    end)
+  end
+
   ## Session
 
   @doc """

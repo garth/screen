@@ -143,6 +143,22 @@ export function createUserChannel(userId: string) {
       })
     },
 
+    async updateDocument(data: {
+      id: string
+      name?: string
+      isPublic?: boolean
+      meta?: Record<string, unknown>
+    }): Promise<void> {
+      return new Promise((resolve, reject) => {
+        channel
+          .push('update_document', data)
+          .receive('ok', () => resolve())
+          .receive('error', (resp: Record<string, unknown>) =>
+            reject(new Error(errorMessage(resp as ErrorResponse, 'Failed to update document'))),
+          )
+      })
+    },
+
     destroy() {
       channel.leave()
       listeners.clear()

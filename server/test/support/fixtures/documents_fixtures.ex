@@ -11,7 +11,7 @@ defmodule Screen.DocumentsFixtures do
     attrs =
       Enum.into(attrs, %{
         name: "Test Document #{System.unique_integer([:positive])}",
-        type: "document"
+        type: "presentation"
       })
 
     %Document{}

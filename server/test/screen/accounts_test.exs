@@ -389,6 +389,52 @@ defmodule Screen.AccountsTest do
     end
   end
 
+  describe "update_user_profile/2" do
+    test "updates first_name and last_name", %{} do
+      user = user_fixture()
+
+      assert {:ok, updated} =
+               Accounts.update_user_profile(user, %{first_name: "Jane", last_name: "Doe"})
+
+      assert updated.first_name == "Jane"
+      assert updated.last_name == "Doe"
+    end
+
+    test "rejects empty first_name" do
+      user = user_fixture()
+
+      assert {:error, changeset} =
+               Accounts.update_user_profile(user, %{first_name: "", last_name: "Doe"})
+
+      assert %{first_name: ["can't be blank"]} = errors_on(changeset)
+    end
+
+    test "rejects empty last_name" do
+      user = user_fixture()
+
+      assert {:error, changeset} =
+               Accounts.update_user_profile(user, %{first_name: "Jane", last_name: ""})
+
+      assert %{last_name: ["can't be blank"]} = errors_on(changeset)
+    end
+  end
+
+  describe "delete_user/1" do
+    test "soft-deletes a user" do
+      user = user_fixture()
+      assert {:ok, deleted} = Accounts.delete_user(user)
+      assert deleted.deleted_at != nil
+    end
+
+    test "removes all session tokens" do
+      user = user_fixture()
+      _token = Accounts.generate_user_session_token(user)
+
+      assert {:ok, _} = Accounts.delete_user(user)
+      refute Repo.get_by(UserToken, user_id: user.id)
+    end
+  end
+
   describe "inspect/2 for the User module" do
     test "does not include password" do
       refute inspect(%User{password: "123456"}) =~ "password: \"123456\""

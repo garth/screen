@@ -2,6 +2,7 @@ defmodule ScreenWeb.UserSocket do
   use Phoenix.Socket
 
   channel "document:*", ScreenWeb.DocumentChannel
+  channel "user:*", ScreenWeb.UserChannel
 
   @impl true
   def connect(%{"token" => token}, socket, _connect_info) do

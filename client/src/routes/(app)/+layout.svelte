@@ -11,14 +11,43 @@
 
   let { children } = $props()
 
-  const navLinks = [{ href: '/presentations' as const, label: 'Presentations' }]
+  const navLinks: { href: string; label: string }[] = [
+    { href: '/presentations', label: 'Presentations' },
+    { href: '/events', label: 'Events' },
+    { href: '/themes', label: 'Themes' },
+  ]
 
   let userMenuOpen = $state(false)
+  let menuElement: HTMLUListElement | undefined = $state()
 
   function handleClickOutside(event: MouseEvent) {
     const target = event.target as HTMLElement
     if (!target.closest('.dropdown')) {
       userMenuOpen = false
+    }
+  }
+
+  function handleMenuKeydown(event: KeyboardEvent) {
+    if (!userMenuOpen) return
+
+    if (event.key === 'Escape') {
+      event.preventDefault()
+      userMenuOpen = false
+      return
+    }
+
+    if (!menuElement) return
+    const items = Array.from(menuElement.querySelectorAll<HTMLElement>('a, button'))
+    const currentIndex = items.indexOf(document.activeElement as HTMLElement)
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      const next = currentIndex < items.length - 1 ? currentIndex + 1 : 0
+      items[next]?.focus()
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      const prev = currentIndex > 0 ? currentIndex - 1 : items.length - 1
+      items[prev]?.focus()
     }
   }
 </script>
@@ -33,7 +62,7 @@
         <div class="flex gap-4">
           {#each navLinks as link (link.href)}
             {@const isActive = page.url.pathname === link.href}
-            <a href={resolve(link.href)} class="link link-hover {isActive ? 'font-medium text-primary' : ''}">
+            <a href={link.href} class="link link-hover {isActive ? 'font-medium text-primary' : ''}">
               {link.label}
             </a>
           {/each}
@@ -43,22 +72,29 @@
 
     <div class="flex items-center gap-4">
       {#if auth.user}
-        <div class="dropdown dropdown-end">
-          <button onclick={() => (userMenuOpen = !userMenuOpen)} class="btn gap-2 btn-ghost btn-sm">
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div class="dropdown dropdown-end" onkeydown={handleMenuKeydown}>
+          <button
+            onclick={() => (userMenuOpen = !userMenuOpen)}
+            class="btn gap-2 btn-ghost btn-sm"
+            aria-expanded={userMenuOpen}
+            aria-haspopup="true">
             <span class="font-medium">{auth.user.firstName} {auth.user.lastName}</span>
-            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
           </button>
 
           {#if userMenuOpen}
             <ul
+              bind:this={menuElement}
+              role="menu"
               class="dropdown-content menu z-20 mt-1 w-48 rounded-box border border-base-300 bg-base-200 p-2 shadow-lg">
-              <li>
-                <a href={resolve('/preferences')} onclick={() => (userMenuOpen = false)}>Preferences</a>
+              <li role="none">
+                <a role="menuitem" href={resolve('/preferences')} onclick={() => (userMenuOpen = false)}>Preferences</a>
               </li>
-              <li>
-                <button onclick={handleLogout} class="text-error">Log out</button>
+              <li role="none">
+                <button role="menuitem" onclick={handleLogout} class="text-error">Log out</button>
               </li>
             </ul>
           {/if}

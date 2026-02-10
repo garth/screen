@@ -51,114 +51,23 @@ export async function createUnverifiedUser(
 }
 
 export async function loginUser(page: Page, credentials: { email: string; password: string }) {
-  await page.goto('/login')
+  await page.goto('/users/log-in')
   await page.waitForLoadState('networkidle')
   await page.getByLabel('Email').fill(credentials.email)
   await page.getByLabel('Password').fill(credentials.password)
   await page.getByRole('button', { name: 'Log In' }).click()
 }
 
-export async function createPasswordReset(page: Page, email: string): Promise<{ email: string; resetToken: string }> {
+export async function createPasswordReset(
+  page: Page,
+  email: string,
+): Promise<{ email: string; resetToken: string }> {
   const response = await page.request.post('/api/test/create-password-reset', {
     data: { email },
   })
 
   if (!response.ok()) {
     throw new Error(`Failed to create password reset: ${response.status()}`)
-  }
-
-  return response.json()
-}
-
-export async function createClient(
-  page: Page,
-  data: { userId: string; name: string; billingAddress?: string; billingEmail?: string },
-): Promise<{ id: string; name: string }> {
-  const response = await page.request.post('/api/test/create-client', { data })
-
-  if (!response.ok()) {
-    throw new Error(`Failed to create client: ${response.status()}`)
-  }
-
-  return response.json()
-}
-
-export async function createProject(
-  page: Page,
-  data: { clientId: string; name: string },
-): Promise<{ id: string; name: string }> {
-  const response = await page.request.post('/api/test/create-project', { data })
-
-  if (!response.ok()) {
-    throw new Error(`Failed to create project: ${response.status()}`)
-  }
-
-  return response.json()
-}
-
-export async function createContract(
-  page: Page,
-  data: { clientId: string; name: string; reference?: string; billingRate?: string; currency?: string },
-): Promise<{ id: string; name: string; billingRate: string | null }> {
-  const response = await page.request.post('/api/test/create-contract', { data })
-
-  if (!response.ok()) {
-    throw new Error(`Failed to create contract: ${response.status()}`)
-  }
-
-  return response.json()
-}
-
-export async function createActivity(
-  page: Page,
-  data: {
-    userId: string
-    description: string
-    startTime: string
-    endTime?: string
-    tags?: string[]
-    note?: string
-    projectId?: string
-  },
-): Promise<{ id: string }> {
-  const response = await page.request.post('/api/test/create-activity', { data })
-
-  if (!response.ok()) {
-    throw new Error(`Failed to create activity: ${response.status()}`)
-  }
-
-  return response.json()
-}
-
-export async function createPhase(
-  page: Page,
-  data: {
-    userId: string
-    name: string
-    contractId: string
-    projectId?: string
-    startDate: string
-    endDate: string
-    billingRate?: string
-  },
-): Promise<{ id: string; name: string; billingRate: string | null }> {
-  const response = await page.request.post('/api/test/create-phase', { data })
-
-  if (!response.ok()) {
-    throw new Error(`Failed to create phase: ${response.status()}`)
-  }
-
-  return response.json()
-}
-
-export async function createTeamMember(
-  page: Page,
-  data: { clientId: string; userId: string },
-): Promise<{ id: string }> {
-  const response = await page.request.post('/api/test/create-team-member', { data })
-
-  if (!response.ok()) {
-    throw new Error(`Failed to create team member: ${response.status()}`)
   }
 
   return response.json()
@@ -174,7 +83,13 @@ export async function createDocument(
     meta?: Record<string, unknown>
     baseDocumentId?: string
   },
-): Promise<{ id: string; name: string; type: string; public: boolean; baseDocumentId: string | null }> {
+): Promise<{
+  id: string
+  name: string
+  type: string
+  public: boolean
+  baseDocumentId: string | null
+}> {
   const response = await page.request.post('/api/test/create-document', { data })
 
   if (!response.ok()) {
@@ -197,7 +112,10 @@ export async function updateDocument(
   return response.json()
 }
 
-export async function getDocumentMeta(page: Page, documentId: string): Promise<Record<string, unknown>> {
+export async function getDocumentMeta(
+  page: Page,
+  documentId: string,
+): Promise<Record<string, unknown>> {
   const response = await page.request.get(`/api/test/document-meta/${documentId}`)
 
   if (!response.ok()) {

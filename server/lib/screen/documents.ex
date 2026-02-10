@@ -108,6 +108,139 @@ defmodule Screen.Documents do
     end
   end
 
+  @valid_document_types ~w(presentation theme event)
+
+  @doc """
+  Creates a document owned by the given user.
+
+  Accepts `user_id`, `type`, and optional `attrs` map.
+  Defaults name to "Untitled" if not provided.
+  Validates type is one of: presentation, theme, event.
+  """
+  def create_document(user_id, type, attrs \\ %{}) do
+    if type in @valid_document_types do
+      attrs = Map.put_new(attrs, :name, "Untitled")
+      attrs = Map.put(attrs, :type, type)
+
+      %Document{}
+      |> Document.changeset(attrs)
+      |> Ecto.Changeset.put_change(:user_id, user_id)
+      |> Repo.insert()
+    else
+      {:error, :invalid_type}
+    end
+  end
+
+  @doc """
+  Soft-deletes a document by setting `deleted_at`.
+
+  Verifies the user is the document owner before deleting.
+  """
+  def delete_document(document_id, user_id) do
+    case get_document(document_id) do
+      nil ->
+        {:error, :not_found}
+
+      %Document{user_id: ^user_id} = document ->
+        document
+        |> Ecto.Changeset.change(%{deleted_at: DateTime.utc_now(:second)})
+        |> Repo.update()
+
+      %Document{} ->
+        {:error, :unauthorized}
+    end
+  end
+
+  @doc """
+  Updates mutable fields on a document (name, is_public, meta).
+
+  Verifies the user is the document owner before updating.
+  """
+  def update_document(document_id, user_id, attrs) do
+    case get_document(document_id) do
+      nil ->
+        {:error, :not_found}
+
+      %Document{user_id: ^user_id} = document ->
+        document
+        |> Document.changeset(Map.take(attrs, [:name, :is_public, :meta]))
+        |> Repo.update()
+
+      %Document{} ->
+        {:error, :unauthorized}
+    end
+  end
+
+  @doc """
+  Lists documents accessible to a user (owned or shared), excluding soft-deleted.
+
+  Returns a list of maps with: id, name, type, is_public, updated_at, is_owner, can_write.
+  Ordered by updated_at descending.
+  """
+  def list_user_documents(user_id) do
+    owned_query =
+      from d in Document,
+        where: d.user_id == ^user_id and is_nil(d.deleted_at),
+        select: %{
+          id: d.id,
+          name: d.name,
+          type: d.type,
+          is_public: d.is_public,
+          updated_at: d.updated_at,
+          is_owner: true,
+          can_write: true
+        }
+
+    shared_query =
+      from d in Document,
+        join: du in DocumentUser,
+        on: du.document_id == d.id and du.user_id == ^user_id and is_nil(du.deleted_at),
+        where: is_nil(d.deleted_at) and d.user_id != ^user_id,
+        select: %{
+          id: d.id,
+          name: d.name,
+          type: d.type,
+          is_public: d.is_public,
+          updated_at: d.updated_at,
+          is_owner: false,
+          can_write: du.can_write
+        }
+
+    owned = Repo.all(owned_query)
+    shared = Repo.all(shared_query)
+
+    (owned ++ shared)
+    |> Enum.sort_by(& &1.updated_at, {:desc, DateTime})
+  end
+
+  @doc """
+  Lists themes visible to a user: all system themes plus user-owned themes.
+
+  Returns a list of maps with: id, name, isSystemTheme.
+  Excludes soft-deleted documents.
+  """
+  def list_user_themes(user_id) do
+    system_themes_query =
+      from d in Document,
+        where:
+          d.type == "theme" and
+            is_nil(d.deleted_at) and
+            fragment("?->>'isSystemTheme' = 'true'", d.meta),
+        select: %{id: d.id, name: d.name, isSystemTheme: true}
+
+    user_themes_query =
+      from d in Document,
+        where:
+          d.type == "theme" and
+            d.user_id == ^user_id and
+            is_nil(d.deleted_at) and
+            (is_nil(fragment("?->>'isSystemTheme'", d.meta)) or
+               fragment("?->>'isSystemTheme' != 'true'", d.meta)),
+        select: %{id: d.id, name: d.name, isSystemTheme: false}
+
+    Repo.all(system_themes_query) ++ Repo.all(user_themes_query)
+  end
+
   defp get_document_user(document_id, user_id) do
     DocumentUser
     |> where(

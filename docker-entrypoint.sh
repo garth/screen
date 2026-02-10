@@ -2,7 +2,7 @@
 set -e
 
 echo "Running database migrations..."
-pnpm prisma migrate deploy
+bin/migrate
 
 echo "Starting server..."
-exec node build
+exec bin/server

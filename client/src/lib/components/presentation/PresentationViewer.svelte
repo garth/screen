@@ -743,6 +743,7 @@
 <div
   bind:this={viewerElement}
   class="presentation-viewer h-full w-full overflow-auto"
+  aria-live="polite"
   style:font-family={theme.font}
   style:background-color={theme.backgroundColor}
   style:color={theme.textColor}

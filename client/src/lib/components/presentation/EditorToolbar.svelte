@@ -166,8 +166,8 @@
 <div class="editor-toolbar flex flex-wrap items-center gap-1 border-b border-base-300 bg-base-200 p-2">
   <!-- Undo/Redo -->
   <div class="join mr-1 border-r border-base-300 pr-2">
-    <button type="button" onclick={() => runCommand(undo)} class="btn join-item btn-ghost btn-xs" title="Undo (Ctrl+Z)">
-      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <button type="button" onclick={() => runCommand(undo)} class="btn join-item btn-ghost btn-xs" title="Undo (Ctrl+Z)" aria-label="Undo">
+      <svg class="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -175,8 +175,8 @@
           d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
       </svg>
     </button>
-    <button type="button" onclick={() => runCommand(redo)} class="btn join-item btn-ghost btn-xs" title="Redo (Ctrl+Y)">
-      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <button type="button" onclick={() => runCommand(redo)} class="btn join-item btn-ghost btn-xs" title="Redo (Ctrl+Y)" aria-label="Redo">
+      <svg class="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -282,8 +282,9 @@
       class="btn join-item btn-xs {editorState && isInList(editorState, presentationSchema.nodes.bullet_list) ?
         'btn-active'
       : 'btn-ghost'}"
-      title="Bullet List (Ctrl+Shift+8)">
-      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      title="Bullet List (Ctrl+Shift+8)"
+      aria-label="Bullet list">
+      <svg class="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
       </svg>
     </button>
@@ -293,8 +294,9 @@
       class="btn join-item btn-xs {editorState && isInList(editorState, presentationSchema.nodes.ordered_list) ?
         'btn-active'
       : 'btn-ghost'}"
-      title="Numbered List (Ctrl+Shift+9)">
-      <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+      title="Numbered List (Ctrl+Shift+9)"
+      aria-label="Numbered list">
+      <svg class="h-4 w-4" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
         <text x="2" y="8" font-size="6" font-family="monospace">1.</text>
         <text x="2" y="14" font-size="6" font-family="monospace">2.</text>
         <text x="2" y="20" font-size="6" font-family="monospace">3.</text>
@@ -311,13 +313,14 @@
       type="button"
       onclick={insertBlockquote}
       class="btn join-item btn-ghost btn-xs"
-      title="Quote (Ctrl+Shift+.)">
-      <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
+      title="Quote (Ctrl+Shift+.)"
+      aria-label="Blockquote">
+      <svg class="h-4 w-4" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">
         <path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z" />
       </svg>
     </button>
-    <button type="button" onclick={triggerImageUpload} class="btn join-item btn-ghost btn-xs" title="Insert Image">
-      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <button type="button" onclick={triggerImageUpload} class="btn join-item btn-ghost btn-xs" title="Insert Image" aria-label="Insert image">
+      <svg class="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           stroke-linecap="round"
           stroke-linejoin="round"
@@ -325,8 +328,8 @@
           d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
       </svg>
     </button>
-    <button type="button" onclick={insertDivider} class="btn join-item btn-ghost btn-xs" title="Slide Divider (---)">
-      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <button type="button" onclick={insertDivider} class="btn join-item btn-ghost btn-xs" title="Slide Divider (---)" aria-label="Slide divider">
+      <svg class="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16" />
       </svg>
     </button>
@@ -339,8 +342,9 @@
       onclick={handleMerge}
       disabled={!canMerge && !canUnmerge}
       class="btn join-item btn-xs {canUnmerge ? 'btn-info' : 'btn-ghost'}"
-      title={canUnmerge ? 'Unmerge Segments (Ctrl+Shift+M)' : 'Merge Segments (Ctrl+M)'}>
-      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      title={canUnmerge ? 'Unmerge Segments (Ctrl+Shift+M)' : 'Merge Segments (Ctrl+M)'}
+      aria-label={canUnmerge ? 'Unmerge segments' : 'Merge segments'}>
+      <svg class="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           stroke-linecap="round"
           stroke-linejoin="round"

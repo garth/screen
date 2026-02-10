@@ -101,6 +101,22 @@
     }
   }
 
+  // Sharing state
+  let isPublic = $state(false)
+  let sharingLoading = $state(false)
+
+  async function toggleSharing() {
+    if (!auth.userChannel) return
+    sharingLoading = true
+    try {
+      await auth.userChannel.updateDocument({ id: documentId, isPublic: !isPublic })
+      isPublic = !isPublic
+    } catch {
+      toast('error', 'Failed to update sharing')
+    }
+    sharingLoading = false
+  }
+
   // Themes from auth store (live updates via user channel)
   const themes = $derived(auth.themes.map((t) => ({ id: t.id, name: t.name, isSystemTheme: t.isSystemTheme })))
 
@@ -132,6 +148,37 @@
     </div>
 
     <div class="flex flex-none items-center gap-4">
+      <!-- Sharing Toggle -->
+      <div class="flex items-center gap-2">
+        <label class="flex cursor-pointer items-center gap-1.5">
+          <input
+            type="checkbox"
+            class="toggle toggle-sm toggle-primary"
+            checked={isPublic}
+            disabled={sharingLoading || !doc.synced}
+            onchange={toggleSharing} />
+          <span class="text-sm">{isPublic ? 'Public' : 'Private'}</span>
+        </label>
+        {#if isPublic}
+          <button
+            type="button"
+            class="btn btn-ghost btn-xs"
+            onclick={() => {
+              navigator.clipboard.writeText(`${window.location.origin}/presentation/${documentId}`)
+              toast('success', 'Link copied!')
+            }}
+            aria-label="Copy public link">
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
+            </svg>
+          </button>
+        {/if}
+      </div>
+
       <button
         type="button"
         onclick={() => (showOptionsPopup = true)}
@@ -166,9 +213,10 @@
 
 <!-- Delete Confirmation Dialog -->
 {#if showDeleteDialog}
-  <div class="modal-open modal">
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+  <div class="modal-open modal" role="dialog" aria-modal="true" aria-labelledby="delete-dialog-title" onkeydown={(e) => { if (e.key === 'Escape') showDeleteDialog = false }}>
     <div class="modal-box">
-      <h3 class="text-lg font-bold">Delete Presentation</h3>
+      <h3 id="delete-dialog-title" class="text-lg font-bold">Delete Presentation</h3>
       <p class="py-4 text-base-content/70">
         Are you sure you want to delete "{titleInput || 'Untitled'}"? This action cannot be undone.
       </p>

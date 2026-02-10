@@ -210,9 +210,10 @@
 
 <!-- Delete Account Confirmation Dialog -->
 {#if showDeleteDialog}
-  <div class="modal-open modal">
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+  <div class="modal-open modal" role="dialog" aria-modal="true" aria-labelledby="delete-account-title" onkeydown={(e) => { if (e.key === 'Escape') showDeleteDialog = false }}>
     <div class="modal-box">
-      <h3 class="text-lg font-bold text-error">Delete Account?</h3>
+      <h3 id="delete-account-title" class="text-lg font-bold text-error">Delete Account?</h3>
 
       <div class="space-y-3 py-4 text-sm">
         <p>
