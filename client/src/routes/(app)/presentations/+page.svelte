@@ -4,16 +4,35 @@
   import { resolve } from '$app/paths'
   import { browser } from '$app/environment'
   import { toast } from '$lib/toast.svelte'
-  import { createDocumentListDoc, type DocumentListDocument } from '$lib/stores/documents'
+  import { auth } from '$lib/stores/auth.svelte'
+  import { createDocumentListDoc } from '$lib/stores/documents/document-list.svelte'
 
-  let { data } = $props()
+  interface DocumentListItem {
+    id: string
+    title: string
+    type: string
+    isPublic: boolean
+    isOwner: boolean
+    canWrite: boolean
+    updatedAt: string
+  }
+
+  interface DocList {
+    readonly documents: DocumentListItem[]
+    readonly presentations: DocumentListItem[]
+    readonly themes: DocumentListItem[]
+    readonly events: DocumentListItem[]
+    readonly connected: boolean
+    readonly synced: boolean
+    destroy(): void
+  }
 
   let creating = $state(false)
-  let docList: DocumentListDocument | null = $state(null)
+  let docList = $state<DocList | null>(null)
 
   onMount(() => {
-    if (browser) {
-      docList = createDocumentListDoc({ userId: data.userId })
+    if (browser && auth.userId) {
+      docList = createDocumentListDoc({ userId: auth.userId }) as DocList
     }
   })
 
@@ -22,18 +41,10 @@
   })
 
   async function createPresentation() {
+    if (!auth.userChannel) return
     creating = true
     try {
-      const response = await fetch('/api/presentations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      })
-
-      if (!response.ok) {
-        throw new Error('Failed to create presentation')
-      }
-
-      const { id } = await response.json()
+      const id = await auth.userChannel.createDocument('presentation')
       await goto(resolve(`/presentation/${id}/edit`))
     } catch {
       toast('error', 'Failed to create presentation')

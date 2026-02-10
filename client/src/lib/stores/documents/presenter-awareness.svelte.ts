@@ -1,7 +1,8 @@
 import * as Y from 'yjs'
 import { browser } from '$app/environment'
-import { WebrtcProvider } from 'y-webrtc'
+import { PhoenixChannelProvider } from 'y-phoenix-channel'
 import { IndexeddbPersistence } from 'y-indexeddb'
+import { getSocket } from '$lib/providers/phoenix-socket'
 
 export interface PresenterState {
   segmentId: string
@@ -61,14 +62,10 @@ export function createPresenterAwarenessDoc(
   // IndexedDB persistence
   const indexeddb = new IndexeddbPersistence(`presenter-awareness-${documentId}`, ydoc)
 
-  // WebRTC for P2P sync
-  const webrtc = new WebrtcProvider(`presenter-awareness-${documentId}`, ydoc, {
-    signaling: [
-      'wss://signaling.yjs.dev',
-      'wss://y-webrtc-signaling-eu.herokuapp.com',
-      'wss://y-webrtc-signaling-us.herokuapp.com',
-    ],
-    filterBcConns: false,
+  // Phoenix Channel provider for sync
+  const socket = getSocket()
+  const provider = new PhoenixChannelProvider(socket, `document:presenter-awareness-${documentId}`, ydoc, {
+    params: {},
   })
 
   let synced = $state(false)
@@ -155,7 +152,7 @@ export function createPresenterAwarenessDoc(
     },
 
     destroy() {
-      webrtc.destroy()
+      provider.destroy()
       indexeddb.destroy()
       ydoc.destroy()
     },

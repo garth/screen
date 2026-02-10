@@ -1,6 +1,7 @@
-import { HocuspocusProvider } from '@hocuspocus/provider'
+import { PhoenixChannelProvider } from 'y-phoenix-channel'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import { browser } from '$app/environment'
+import { getSocket } from '$lib/providers/phoenix-socket'
 import * as Y from 'yjs'
 
 // =============================================================================
@@ -92,22 +93,21 @@ export function createDocumentListDoc(options: DocumentListOptions): DocumentLis
     })
   }
 
-  const wsUrl = import.meta.env.VITE_HOCUSPOCUS_URL || 'ws://localhost:1234'
+  const socket = getSocket()
 
-  const provider = new HocuspocusProvider({
-    url: wsUrl,
-    name: documentId,
-    document: ydoc,
-    onConnect: () => {
-      connected = true
-    },
-    onDisconnect: () => {
-      connected = false
-    },
-    onSynced: () => {
+  const provider = new PhoenixChannelProvider(socket, `document:${documentId}`, ydoc, {
+    params: {},
+  })
+
+  provider.on('status', ({ status }) => {
+    connected = status === 'connected'
+  })
+
+  provider.on('sync', (isSynced: boolean) => {
+    if (isSynced) {
       synced = true
       syncDocuments()
-    },
+    }
   })
 
   // Derived arrays for filtered access

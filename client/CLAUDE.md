@@ -4,16 +4,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Chapel Screen is a real-time collaborative presentation editor built with SvelteKit 2, Svelte 5, TypeScript, and PostgreSQL via Prisma ORM.
+Chapel Screen is a real-time collaborative presentation editor. The client is a pure static SPA built with SvelteKit 2, Svelte 5, and TypeScript. All server-side logic (auth, data, sync) is handled by the Phoenix backend — the client connects via Phoenix Channels and Yjs documents.
 
-The app features user authentication, document management, real-time collaboration via Yjs/Hocuspocus/WebRTC, offline support via IndexedDB, and PWA capabilities for native app-like experience.
+Auth pages (login, register, forgot/reset password) are served by Phoenix LiveView. The SPA handles everything else: document editing, presentations, preferences.
 
 ## Commands
 
 ```bash
 # Development
-pnpm dev              # Start dev server
-pnpm build            # Build for production
+pnpm dev              # Start Vite dev server
+pnpm build            # Build static SPA (outputs to build/)
 pnpm preview          # Preview built app
 
 # Code Quality
@@ -25,50 +25,64 @@ pnpm format           # Auto-format code
 pnpm test             # Run unit tests
 pnpm test:unit        # Vitest unit tests only
 # E2e tests live at the repo root — run `pnpm test:e2e` from there
-
-# Database
-pnpm db:start         # Start PostgreSQL + MailDev containers
-pnpm db:push          # Push schema changes to database
-pnpm db:generate      # Generate Prisma client
-pnpm db:migrate       # Create new migration
-pnpm db:studio        # Open Prisma Studio GUI
-pnpm db:seed          # Seed database with test data
-
-# Hocuspocus (collaboration server)
-pnpm hocuspocus       # Start Hocuspocus server
-pnpm hocuspocus:dev   # Start with file watching
 ```
 
 ## Architecture
 
-### Server-Side Patterns
+### Static SPA
 
-- **Authentication**: Custom session-based auth using Argon2 password hashing and SHA256 session tokens. Sessions stored in database, validated on every request via `src/lib/server/auth.ts`. User/session injected into `event.locals`.
+The client uses `adapter-static` with `fallback: 'index.html'` for client-side routing. SSR and prerendering are disabled (`src/routes/+layout.ts`). Phoenix serves the built static files with index.html fallback.
 
-- **Remote Functions**: Server actions defined in `data.remote.ts` files using SvelteKit's experimental remote functions (`command()` and `form()` helpers from `$app/server`). This is the primary pattern for form handling.
+### Data Flow — All Live via Channels
 
-- **Database**: Prisma ORM with PostgreSQL. Schema at `prisma/schema.prisma`. Generated client in `generated/prisma/`. All entities use soft deletes via `deletedAt` field.
+All data flows through WebSocket channels or Yjs documents — no REST endpoints.
+
+| Data | Mechanism |
+|------|-----------|
+| Auth state (user identity) | `user:{userId}` channel join reply + push events |
+| Document content | Yjs sync protocol via `document:{id}` channel |
+| Document metadata (title, themeId) | Yjs `meta` map on each doc |
+| Permissions (isOwner, canWrite) | `document:{id}` channel join reply |
+| Document list | `user-{userId}-documents` Yjs doc via document channel |
+| Theme data | Each theme is a Yjs doc synced via document channel |
+| Theme list | `user:{userId}` channel push events |
+| User profile | `user:{userId}` channel push events |
+
+### Mutations via User Channel
+
+| Action | Channel Event |
+|--------|---------------|
+| Create document | push `"create_document"` |
+| Delete document | push `"delete_document"` |
+| Update profile | push `"update_profile"` |
+| Change password | push `"change_password"` |
+| Delete account | push `"delete_account"` |
+| Logout | Navigate to `/users/log-out` (Phoenix route) |
+
+### Phoenix Channel Providers
+
+- **`src/lib/providers/phoenix-socket.ts`** — shared Socket singleton connecting to `VITE_WS_URL`
+- **`src/lib/providers/user-channel.ts`** — manages `user:{userId}` channel for profile, themes, and mutations
+- **`src/lib/stores/auth.svelte.ts`** — global auth state using Svelte 5 runes; exposes `auth.user`, `auth.themes`, `auth.userChannel`
+
+### Document Sync
+
+Yjs documents sync via `y-phoenix-channel` (PhoenixChannelProvider), which implements the full y-protocols sync over Phoenix Channels with native binary WebSocket frames. This replaces the previous Hocuspocus provider.
 
 ### Frontend Patterns
 
-- **Svelte 5 Runes**: Uses `$state()` for reactive state. Experimental async components enabled.
-
-- **Validation**: Valibot schemas in `src/lib/validation.ts` shared between client and server.
-
-- **Toast Notifications**: Global store at `src/lib/toast.svelte.ts` with `Toasts.svelte` component in root layout.
+- **Svelte 5 Runes**: Uses `$state()` for reactive state
+- **Validation**: Valibot schemas in `src/lib/validation.ts`
+- **Toast Notifications**: Global store at `src/lib/toast.svelte.ts` with `Toasts.svelte` component in root layout
 
 ### Key Directories
 
-- `src/routes/` - SvelteKit pages and server handlers
-- `src/lib/server/` - Server-only code (auth, database, email)
+- `src/routes/` - SvelteKit pages (SPA, no server routes)
+- `src/lib/providers/` - Phoenix socket and channel management
+- `src/lib/stores/` - Svelte stores including auth and document stores
 - `src/lib/components/` - Reusable Svelte components
 - `src/lib/editor/` - ProseMirror editor schema, plugins, and utilities
-- `prisma/` - Database schema and migrations
 - `../e2e/` - Playwright end-to-end tests (at repo root)
-
-### Database Models
-
-User → Session (auth), Document → DocumentUpdate (change tracking), DocumentUser (sharing/collaboration)
 
 ### Presentation System
 
@@ -97,7 +111,7 @@ The presentation feature uses a rich text editor with real-time collaboration:
   - ID-based position tracking (stable across live edits from collaborators)
   - Merged segments navigate and highlight as one unit
   - Viewer auto-scrolls to active segment
-  - Presenter sync via shared awareness channel
+  - Presenter sync via PhoenixChannelProvider awareness
 - **Format Modes**: Control how content is displayed to viewers
   - `single`: shows only 1 logical segment per slide
   - `minimal`: Shows only 2 logical segments at a time (current pair)
@@ -110,73 +124,40 @@ The presentation feature uses a rich text editor with real-time collaboration:
   - A sentence-split paragraph (all sentences combined) = 1 logical segment
   - This ensures a long paragraph with multiple sentences doesn't span across slides
   - Navigation still treats each sentence as a separate presentation point
-  - Example with minimal mode (2 logical segments per slide):
-    - Segments: [Para1], [LongPara sent1], [LongPara sent2], [Para3], [Para4]
-    - Slide 1: Para1 + LongPara (all sentences) — 2 logical segments
-    - Slide 2: Para3 + Para4 — 2 logical segments
 - **PresentationViewer Component** (`src/lib/components/presentation/PresentationViewer.svelte`):
   - Renders Yjs content as HTML with segment wrapping
-  - Three display modes:
-    - `view`: Basic rendering, no segment filtering
-    - `present`: Full content with segment highlighting (for presenter)
-    - `follow`: Applies format modes to filter/style segments (for viewers)
+  - Three display modes: `view`, `present`, `follow`
   - Format effects only apply in `follow` mode
-  - Presenter sees all segments regardless of format mode
-  - Viewer defaults to first segment if no presenter position is set
-  - **Sentence Segment Handling**:
-    - `shouldSplitIntoSentences()` verifies sentence's `parentSegmentId` matches the DOM element's `segmentId`
-    - Prevents cross-paragraph rendering when segment indices are misaligned
-    - `renderSentenceSegments()` renders visible sentences with proper wrapping
-    - Paragraphs with no visible sentences are skipped entirely (return empty string)
-    - Non-sentence paragraphs verify segment ID matches before rendering via `wrapWithSegment()`
-  - In `follow` mode, the following rules apply for automatically arranging the content into slides:
-    - a `presentation point` is a segment of a presentation that can be selected
-    - merged segments should be treated as a single segment in the viewer
-    - when long paragraphs are automatically segmented, do not split the paragraph across slides. treat the paragraph as a single logical segment within the formatting mode, but still navigate the split sentences as individual presentation points.
-    - when a long paragraph is split into sentences, keep all sentences on the slide of the first sentence for all follow modes. Only start a new slide for the following block element.
-    - a `presentation block` is a contiguous set of elements, each having content
-    - any empty top level block node is a candidate `virtual slide divider`
-    - new slides are started either by a `virtual slide divider` (depending on the `Format Mode`) or by `slide_divider` block node
-    - if the content of a slide overflows the `slide viewport`, the content should scroll as the `presentation points` are selected
-    - empty top level blocks at the start or end of a slide should be trimmed
-    - the `slide viewport` is the rectangle within the slide where content can be rendered
-    - the dimensions of the `slide viewport` are defined by the theme
 
 ### Document Stores (`src/lib/stores/documents/`)
 
 Typed Svelte stores wrapping Yjs documents with reactive properties:
 
-- **base.svelte.ts**: Core document infrastructure with dual-provider sync
-  - Hocuspocus provider (primary) for server-mediated sync
-  - WebRTC provider for P2P awareness sync (presenter position, cursors)
+- **base.svelte.ts**: Core document infrastructure with PhoenixChannelProvider sync
+  - PhoenixChannelProvider for server-mediated Yjs sync via Phoenix Channels
   - IndexedDB persistence via y-indexeddb for offline support
   - `createReactiveMetaProperty()` for reactive Yjs Map bindings
 - **presentation.svelte.ts**: Presentation documents (title, themeId, content, theme overrides)
 - **theme.svelte.ts**: Theme documents with inheritance (font, colors, viewport, backgroundImage)
 - **event.svelte.ts**: Event documents (presentations array, channels)
-- **awareness.svelte.ts**: Dual-provider awareness for presenter sync
-  - Writes to both Hocuspocus and WebRTC awareness
-  - Reads from most recent (timestamp-based conflict resolution)
+- **awareness.svelte.ts**: PhoenixChannelProvider awareness for presenter sync
+- **presenter-awareness.svelte.ts**: Dedicated presenter awareness channel
 
 ### Offline Support & PWA
 
 - **IndexedDB**: y-indexeddb caches documents locally for offline editing
 - **Service Worker**: Workbox caches static assets (JS, CSS, images, fonts)
 - **PWA Manifest**: Enables "Add to Home Screen" on mobile/desktop
-- **Dual Providers**: Hocuspocus (when online) + WebRTC (P2P fallback)
 - **Configuration**: `vite.config.ts` contains SvelteKitPWA plugin setup
 
 ## Environment Setup
 
 Copy `.env.example` to `.env`. Required variables:
 
-- `DATABASE_URL` - PostgreSQL connection string
-- `SMTP_*` - Email configuration (MailDev runs on port 1025 locally)
-- `APP_URL` - Application URL for email links
+- `VITE_WS_URL` — Phoenix server WebSocket URL (e.g., `ws://localhost:4000/socket`)
+- `VITE_PHOENIX_URL` — Phoenix server URL for auth redirects (e.g., `http://localhost:4000`)
 
 ## Testing Notes
 
 - Unit tests use Vitest with Playwright browser provider for component tests
 - E2E tests live at the repo root (`e2e/`) and are run via `pnpm test:e2e` from the root
-- E2E tests require `ALLOW_TEST_ENDPOINTS=true` for test API endpoints
-- Run `pnpm db:start` before e2e tests to ensure database and mail services are running

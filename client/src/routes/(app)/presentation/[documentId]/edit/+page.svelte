@@ -2,20 +2,21 @@
   import { onDestroy } from 'svelte'
   import { goto } from '$app/navigation'
   import { resolve } from '$app/paths'
+  import { page } from '$app/state'
   import { toast } from '$lib/toast.svelte'
+  import { auth } from '$lib/stores/auth.svelte'
   import { createPresentationDoc, createThemeDoc, type ThemeDocument } from '$lib/stores/documents'
   import type { PresentationFormat } from '$lib/stores/documents/types'
   import PresentationEditor from '$lib/components/presentation/PresentationEditor.svelte'
   import OptionsPopup from '$lib/components/presentation/OptionsPopup.svelte'
   import { resolveTheme, defaultTheme, type ResolvedTheme } from '$lib/utils/theme-resolver'
 
-  let { data } = $props()
+  const documentId = page.params.documentId!
 
   // Create presentation document store with user info for collaborative cursors
   const doc = createPresentationDoc({
-    documentId: data.document.id,
-    baseDocumentId: data.document.baseDocumentId ?? undefined,
-    user: data.user,
+    documentId,
+    user: auth.user ? { id: auth.user.id, name: `${auth.user.firstName} ${auth.user.lastName}` } : undefined,
   })
 
   // Theme document (loaded when themeId is available)
@@ -50,15 +51,9 @@
   let titleInput = $state('')
 
   // Sync title from doc when it syncs
-  // If Yjs doc has no title but database has one, initialize it from database
   $effect(() => {
     if (doc.synced) {
-      if (!doc.title && data.document.title && !doc.readOnly) {
-        doc.setTitle(data.document.title)
-        titleInput = data.document.title
-      } else {
-        titleInput = doc.title || ''
-      }
+      titleInput = doc.title || ''
     }
   })
 
@@ -93,15 +88,11 @@
   let showDeleteDialog = $state(false)
 
   async function confirmDelete() {
+    if (!auth.userChannel) return
     deleting = true
     showDeleteDialog = false
     try {
-      const response = await fetch(`/api/presentations?id=${data.document.id}`, {
-        method: 'DELETE',
-      })
-      if (!response.ok) {
-        throw new Error('Failed to delete')
-      }
+      await auth.userChannel.deleteDocument(documentId)
       toast('success', 'Presentation deleted')
       await goto(resolve('/presentations'))
     } catch {
@@ -109,6 +100,11 @@
       deleting = false
     }
   }
+
+  // Themes from auth store (live updates via user channel)
+  const themes = $derived(
+    auth.themes.map((t) => ({ id: t.id, name: t.name, isSystemTheme: t.isSystemTheme })),
+  )
 
   onDestroy(() => {
     if (titleTimeout) clearTimeout(titleTimeout)
@@ -118,7 +114,7 @@
 </script>
 
 <svelte:head>
-  <title>Edit: {data.document.title} - Presentation</title>
+  <title>Edit: {doc.synced ? doc.title || 'Untitled' : 'Loading...'} - Presentation</title>
 </svelte:head>
 
 <div class="flex h-screen flex-col">
@@ -146,7 +142,7 @@
         Options
       </button>
 
-      <a href={resolve(`/presentation/${data.document.id}/presenter`)} class="btn btn-sm btn-primary">Present</a>
+      <a href={resolve(`/presentation/${documentId}/presenter`)} class="btn btn-sm btn-primary">Present</a>
 
       <button
         type="button"
@@ -193,7 +189,7 @@
 {#if showOptionsPopup}
   <OptionsPopup
     open={showOptionsPopup}
-    themes={data.themes}
+    {themes}
     currentThemeId={doc.themeId}
     currentFormat={doc.format}
     disabled={!doc.synced || doc.readOnly}

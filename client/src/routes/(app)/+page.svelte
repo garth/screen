@@ -1,8 +1,7 @@
 <script lang="ts">
   import { resolve } from '$app/paths'
   import { page } from '$app/state'
-
-  let { data } = $props()
+  import { auth } from '$lib/stores/auth.svelte'
 
   const title = 'Chapel Screen - Collaborative Presentations'
   const description =
@@ -72,12 +71,12 @@
         mode, and keep your audience focused.
       </p>
 
-      {#if data.user}
+      {#if auth.isAuthenticated}
         <a href={resolve('/presentations')} class="btn btn-lg btn-secondary">My Presentations</a>
       {:else}
         <div class="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-          <a href={resolve('/register')} class="btn w-full btn-lg btn-secondary sm:w-auto">Get Started Free</a>
-          <a href={resolve('/login')} class="btn w-full btn-outline btn-lg sm:w-auto">Log In</a>
+          <button type="button" onclick={() => auth.redirectToRegister()} class="btn w-full btn-lg btn-secondary sm:w-auto">Get Started Free</button>
+          <button type="button" onclick={() => auth.redirectToLogin()} class="btn w-full btn-outline btn-lg sm:w-auto">Log In</button>
         </div>
         <p class="mt-4 text-sm text-base-content/50">No credit card required</p>
       {/if}
@@ -428,8 +427,8 @@
             Install as app (PWA)
           </li>
         </ul>
-        {#if !data.user}
-          <a href={resolve('/register')} class="btn w-full btn-secondary">Get Started Free</a>
+        {#if !auth.isAuthenticated}
+          <button type="button" onclick={() => auth.redirectToRegister()} class="btn w-full btn-secondary">Get Started Free</button>
         {/if}
       </div>
     </div>
@@ -437,14 +436,14 @@
 </div>
 
 <!-- Final CTA -->
-{#if !data.user}
+{#if !auth.isAuthenticated}
   <div class="border-t border-base-300 bg-base-200/50 py-16">
     <div class="mx-auto max-w-2xl px-6 text-center">
       <h2 class="mb-4 text-2xl font-bold">Ready to present?</h2>
       <p class="mb-8 text-base-content/70">
         Create collaborative presentations with real-time sync and presenter mode.
       </p>
-      <a href={resolve('/register')} class="btn btn-lg btn-secondary">Create Your Free Account</a>
+      <button type="button" onclick={() => auth.redirectToRegister()} class="btn btn-lg btn-secondary">Create Your Free Account</button>
     </div>
   </div>
 {/if}

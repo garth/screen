@@ -44,11 +44,8 @@ export function createPresentationDoc(options: DocumentOptions): PresentationDoc
   }
   content.observeDeep(contentObserver)
 
-  // Shared awareness channel for presenter sync via both WebRTC (P2P) and Hocuspocus (server)
-  const awareness = createPresentationAwareness({
-    hocuspocus: base.provider,
-    webrtc: base.webrtcProvider,
-  })
+  // Shared awareness channel for presenter sync via Phoenix Channel
+  const awareness = createPresentationAwareness(base.provider)
 
   function assertWritable() {
     if (base.readOnly) {

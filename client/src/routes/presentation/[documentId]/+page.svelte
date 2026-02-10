@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
+  import { page } from '$app/state'
   import {
     createPresentationDoc,
     createThemeDoc,
@@ -11,17 +12,16 @@
   import { resolveTheme, defaultTheme, type ResolvedTheme } from '$lib/utils/theme-resolver'
   import { parseContentSegments, type ContentSegment } from '$lib/utils/segment-parser'
 
-  let { data } = $props()
+  const documentId = page.params.documentId!
 
   // Create presentation document store
   const doc = createPresentationDoc({
-    documentId: data.document.id,
-    baseDocumentId: data.document.baseDocumentId ?? undefined,
+    documentId,
   })
 
   // Create persistent presenter awareness (viewer has read-only access)
   const presenterAwareness = createPresenterAwarenessDoc({
-    documentId: data.document.id,
+    documentId,
     canWrite: false,
   })
 
@@ -108,7 +108,7 @@
 </script>
 
 <svelte:head>
-  <title>{data.document.title} - Presentation</title>
+  <title>{doc.synced ? doc.title || 'Presentation' : 'Loading...'} - Presentation</title>
 </svelte:head>
 
 <div class="h-screen">

@@ -4,10 +4,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Chapel Screen is a real-time collaborative presentation editor. This is a monorepo with two independent applications:
+Chapel Screen is a real-time collaborative presentation editor. This is a monorepo with two applications:
 
-- **`client/`** — SvelteKit 2 frontend + Hocuspocus collaboration server (TypeScript, Svelte 5, ProseMirror, Yjs, Prisma/PostgreSQL)
-- **`server/`** — Phoenix 1.8 backend providing an alternative Yjs sync backend via Phoenix Channels and Yex (Elixir Yjs NIF bindings)
+- **`client/`** — SvelteKit 2 static SPA (TypeScript, Svelte 5, ProseMirror, Yjs)
+- **`server/`** — Phoenix 1.8 backend providing auth, Yjs sync, and all server-side logic via Phoenix Channels and Yex (Elixir Yjs NIF bindings)
 
 Each app has its own detailed `CLAUDE.md` — refer to `client/CLAUDE.md` and `server/CLAUDE.md` for app-specific architecture, patterns, and commands.
 
@@ -17,19 +17,19 @@ Each app has its own detailed `CLAUDE.md` — refer to `client/CLAUDE.md` and `s
 
 ```bash
 pnpm install          # Install all workspace dependencies
+pnpm dev              # Start client + Phoenix server (concurrent)
+pnpm test:unit        # Run client + server unit tests
 pnpm test:e2e         # Playwright e2e tests (from root)
 ```
 
 ### Client (`client/`)
 
 ```bash
-pnpm dev              # Dev server + Hocuspocus (concurrent)
-pnpm build            # Production build
+pnpm dev              # Vite dev server
+pnpm build            # Production build (static SPA)
 pnpm check            # TypeScript + Svelte type checking
 pnpm lint             # Prettier + ESLint
 pnpm test:unit        # Vitest (browser-mode for .svelte.test.ts, Node for .test.ts)
-pnpm db:start         # Docker: PostgreSQL (5432) + MailDev
-pnpm db:push          # Push Prisma schema to database
 ```
 
 ### Server (`server/`)
@@ -46,20 +46,21 @@ mix precommit         # compile --warnings-as-errors, deps.unlock --unused, form
 
 ### Collaboration Model
 
-Both apps implement the same collaboration protocol — Yjs CRDT document sync over WebSocket:
+Documents use Yjs CRDTs for conflict-free real-time editing, synced over Phoenix Channels:
 
-- **Client path**: Browser ↔ Hocuspocus server (`client/src/hocuspocus.ts`, port 1234) ↔ Prisma/PostgreSQL
-- **Server path**: Browser ↔ Phoenix Channel (`document:*`) ↔ DocServer (GenServer with Yex) ↔ Ecto/PostgreSQL
+- Browser ↔ PhoenixChannelProvider (`y-phoenix-channel`) ↔ Phoenix Channel (`document:*`) ↔ DocServer (GenServer with Yex) ↔ Ecto/PostgreSQL
 
-Additionally, the client uses WebRTC (y-webrtc) for P2P awareness sync (presenter position, cursors) and IndexedDB (y-indexeddb) for offline persistence.
+Awareness data (presenter position, cursors) syncs through the same Phoenix Channel provider. IndexedDB (y-indexeddb) provides offline persistence.
 
-### Databases
+### Auth
 
-The two apps use separate PostgreSQL instances:
-- Client: port 5432 (via `client/compose.yaml`)
-- Server: port 5439 (via `server/docker-compose.yml`)
+Phoenix handles all authentication via LiveView pages (login, register, forgot/reset password). The SPA connects to Phoenix via WebSocket, authenticating through session cookies.
 
-Both have similar schemas (User, Document, DocumentUpdate, DocumentUser, Channel) but are managed independently (Prisma migrations vs Ecto migrations).
+### Database
+
+PostgreSQL managed by the Phoenix server via Ecto migrations:
+- Port 5439 (via `server/docker-compose.yml`)
+- Schema: User, Document, DocumentUpdate, DocumentUser, Channel
 
 ## Commit Conventions
 

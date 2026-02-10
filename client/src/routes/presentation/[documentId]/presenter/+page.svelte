@@ -2,6 +2,8 @@
   import { onDestroy } from 'svelte'
   import { browser } from '$app/environment'
   import { resolve } from '$app/paths'
+  import { page } from '$app/state'
+  import { auth } from '$lib/stores/auth.svelte'
   import {
     createPresentationDoc,
     createThemeDoc,
@@ -14,17 +16,16 @@
   import { resolveTheme, defaultTheme, type ResolvedTheme } from '$lib/utils/theme-resolver'
   import { parseContentSegments, clampSegmentIndex, type ContentSegment } from '$lib/utils/segment-parser'
 
-  let { data } = $props()
+  const documentId = page.params.documentId!
 
   // Create presentation document store
   const doc = createPresentationDoc({
-    documentId: data.document.id,
-    baseDocumentId: data.document.baseDocumentId ?? undefined,
+    documentId,
   })
 
   // Create persistent presenter awareness (presenter has write access)
   const presenterAwareness = createPresenterAwarenessDoc({
-    documentId: data.document.id,
+    documentId,
     canWrite: true,
   })
 
@@ -224,6 +225,11 @@
   // Options popup state
   let showOptionsPopup = $state(false)
 
+  // Themes from auth store (live updates via user channel)
+  const themes = $derived(
+    auth.themes.map((t) => ({ id: t.id, name: t.name, isSystemTheme: t.isSystemTheme })),
+  )
+
   function handleThemeChange(themeId: string | null) {
     if (doc.synced) {
       doc.setThemeId(themeId)
@@ -238,7 +244,7 @@
 </script>
 
 <svelte:head>
-  <title>{data.document.title} - Presenter</title>
+  <title>{doc.synced ? doc.title || 'Presenter' : 'Loading...'} - Presenter</title>
 </svelte:head>
 
 <div class="flex h-screen flex-col">
@@ -246,7 +252,7 @@
   <header class="navbar min-h-0 border-b border-base-300 bg-base-200 px-4 py-2">
     <div class="flex-1">
       <h1 class="text-lg font-medium">
-        {doc.synced && doc.title ? doc.title : data.document.title || 'Untitled'}
+        {doc.synced && doc.title ? doc.title : 'Untitled'}
       </h1>
     </div>
 
@@ -258,8 +264,8 @@
         class="btn btn-ghost btn-sm">
         Options
       </button>
-      <a href={resolve(`/presentation/${data.document.id}`)} class="btn btn-ghost btn-sm">View</a>
-      <a href={resolve(`/presentation/${data.document.id}/edit`)} class="btn btn-ghost btn-sm">Edit</a>
+      <a href={resolve(`/presentation/${documentId}`)} class="btn btn-ghost btn-sm">View</a>
+      <a href={resolve(`/presentation/${documentId}/edit`)} class="btn btn-ghost btn-sm">Edit</a>
     </div>
   </header>
 
@@ -307,7 +313,7 @@
 {#if showOptionsPopup}
   <OptionsPopup
     open={showOptionsPopup}
-    themes={data.themes}
+    {themes}
     currentThemeId={doc.themeId}
     currentFormat={doc.format}
     disabled={!doc.synced}

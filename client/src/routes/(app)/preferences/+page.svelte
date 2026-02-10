@@ -3,9 +3,7 @@
   import { goto } from '$app/navigation'
   import { toast } from '$lib/toast.svelte'
   import { theme, type ThemePreference } from '$lib/theme.svelte'
-  import { updateName, updatePassword, deleteAccount } from './data.remote'
-
-  let { data } = $props()
+  import { auth } from '$lib/stores/auth.svelte'
 
   const themeOptions: { value: ThemePreference; label: string }[] = [
     { value: 'system', label: 'System' },
@@ -13,14 +11,78 @@
     { value: 'dark', label: 'Dark' },
   ]
 
+  // Profile form state
+  let firstName = $state(auth.user?.firstName ?? '')
+  let lastName = $state(auth.user?.lastName ?? '')
+  let savingName = $state(false)
+
+  // Sync from auth when it updates
+  $effect(() => {
+    if (auth.user) {
+      firstName = auth.user.firstName
+      lastName = auth.user.lastName
+    }
+  })
+
+  async function handleUpdateName(event: SubmitEvent) {
+    event.preventDefault()
+    if (!auth.userChannel) return
+    savingName = true
+    try {
+      await auth.userChannel.updateProfile({ firstName, lastName })
+      toast('success', 'Name updated successfully')
+    } catch {
+      toast('error', 'Failed to update name')
+    } finally {
+      savingName = false
+    }
+  }
+
+  // Password form state
+  let currentPassword = $state('')
+  let newPassword = $state('')
+  let confirmPassword = $state('')
+  let savingPassword = $state(false)
+  let passwordError = $state('')
+
+  async function handleUpdatePassword(event: SubmitEvent) {
+    event.preventDefault()
+    if (!auth.userChannel) return
+
+    passwordError = ''
+    if (newPassword !== confirmPassword) {
+      passwordError = 'Passwords do not match'
+      return
+    }
+    if (newPassword.length < 8) {
+      passwordError = 'Password must be at least 8 characters'
+      return
+    }
+
+    savingPassword = true
+    try {
+      await auth.userChannel.changePassword({ currentPassword, newPassword })
+      toast('success', 'Password changed successfully')
+      currentPassword = ''
+      newPassword = ''
+      confirmPassword = ''
+    } catch (e) {
+      passwordError = e instanceof Error ? e.message : 'Failed to change password'
+    } finally {
+      savingPassword = false
+    }
+  }
+
   // Delete account state
   let showDeleteDialog = $state(false)
   let deleting = $state(false)
 
   async function handleDeleteAccount() {
+    if (!auth.userChannel) return
     deleting = true
     try {
-      await deleteAccount()
+      await auth.userChannel.deleteAccount()
+      auth.destroy()
       await goto(resolve('/'))
     } catch {
       toast('error', 'Failed to delete account')
@@ -37,28 +99,16 @@
     <div class="card-body">
       <h2 class="card-title">Profile</h2>
 
-      <form
-        {...updateName.enhance(async ({ submit }) => {
-          try {
-            await submit()
-            toast('success', 'Name updated successfully')
-          } catch {
-            toast('error', 'Failed to update name')
-          }
-        })}
-        class="flex flex-col gap-4">
+      <form onsubmit={handleUpdateName} class="flex flex-col gap-4">
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label for="firstName" class="label">
               <span class="label-text">First Name</span>
             </label>
-            {#each updateName.fields.firstName.issues() as issue (issue.message)}
-              <p class="text-sm text-error">{issue.message}</p>
-            {/each}
             <input
               id="firstName"
-              {...updateName.fields.firstName.as('text')}
-              value={data.user.firstName}
+              type="text"
+              bind:value={firstName}
               class="input input-bordered w-full" />
           </div>
 
@@ -66,18 +116,17 @@
             <label for="lastName" class="label">
               <span class="label-text">Last Name</span>
             </label>
-            {#each updateName.fields.lastName.issues() as issue (issue.message)}
-              <p class="text-sm text-error">{issue.message}</p>
-            {/each}
             <input
               id="lastName"
-              {...updateName.fields.lastName.as('text')}
-              value={data.user.lastName}
+              type="text"
+              bind:value={lastName}
               class="input input-bordered w-full" />
           </div>
         </div>
 
-        <button type="submit" class="btn btn-primary w-fit">Save Name</button>
+        <button type="submit" disabled={savingName} class="btn btn-primary w-fit">
+          {savingName ? 'Saving...' : 'Save Name'}
+        </button>
       </form>
     </div>
   </section>
@@ -108,29 +157,21 @@
     <div class="card-body">
       <h2 class="card-title">Security</h2>
 
-      {#if updatePassword.error}
+      {#if passwordError}
         <div class="alert alert-error">
-          <span>{updatePassword.error.message}</span>
+          <span>{passwordError}</span>
         </div>
       {/if}
 
-      <form
-        {...updatePassword.enhance(async ({ submit, form }) => {
-          await submit()
-          toast('success', 'Password changed successfully')
-          form.reset()
-        })}
-        class="flex flex-col gap-4">
+      <form onsubmit={handleUpdatePassword} class="flex flex-col gap-4">
         <div>
           <label for="currentPassword" class="label">
             <span class="label-text">Current Password</span>
           </label>
-          {#each updatePassword.fields.currentPassword.issues() as issue (issue.message)}
-            <p class="text-sm text-error">{issue.message}</p>
-          {/each}
           <input
             id="currentPassword"
-            {...updatePassword.fields.currentPassword.as('password')}
+            type="password"
+            bind:value={currentPassword}
             class="input input-bordered w-full" />
         </div>
 
@@ -138,12 +179,10 @@
           <label for="newPassword" class="label">
             <span class="label-text">New Password</span>
           </label>
-          {#each updatePassword.fields.newPassword.issues() as issue (issue.message)}
-            <p class="text-sm text-error">{issue.message}</p>
-          {/each}
           <input
             id="newPassword"
-            {...updatePassword.fields.newPassword.as('password')}
+            type="password"
+            bind:value={newPassword}
             class="input input-bordered w-full" />
         </div>
 
@@ -151,16 +190,16 @@
           <label for="confirmPassword" class="label">
             <span class="label-text">Confirm New Password</span>
           </label>
-          {#each updatePassword.fields.confirmPassword.issues() as issue (issue.message)}
-            <p class="text-sm text-error">{issue.message}</p>
-          {/each}
           <input
             id="confirmPassword"
-            {...updatePassword.fields.confirmPassword.as('password')}
+            type="password"
+            bind:value={confirmPassword}
             class="input input-bordered w-full" />
         </div>
 
-        <button type="submit" class="btn btn-primary w-fit">Change Password</button>
+        <button type="submit" disabled={savingPassword} class="btn btn-primary w-fit">
+          {savingPassword ? 'Changing...' : 'Change Password'}
+        </button>
       </form>
     </div>
   </section>

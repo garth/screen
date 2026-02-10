@@ -1,7 +1,7 @@
-import { HocuspocusProvider } from '@hocuspocus/provider'
-import { WebrtcProvider } from 'y-webrtc'
+import { PhoenixChannelProvider } from 'y-phoenix-channel'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import { browser } from '$app/environment'
+import { getSocket } from '$lib/providers/phoenix-socket'
 import * as Y from 'yjs'
 import type { DocumentOptions } from './types'
 
@@ -34,9 +34,8 @@ export interface BaseDocument {
   readonly meta: Y.Map<unknown>
   readonly baseYdoc: Y.Doc | null
   readonly baseMeta: Y.Map<unknown> | null
-  readonly provider: HocuspocusProvider
-  readonly baseProvider: HocuspocusProvider | null
-  readonly webrtcProvider: WebrtcProvider | null
+  readonly provider: PhoenixChannelProvider
+  readonly baseProvider: PhoenixChannelProvider | null
   destroy(): void
 }
 
@@ -51,28 +50,27 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
   // IndexedDB persistence for offline support and faster initial loads (browser only)
   const indexeddbProvider = browser ? new IndexeddbPersistence(`doc-${options.documentId}`, ydoc) : null
 
-  const wsUrl = import.meta.env.VITE_HOCUSPOCUS_URL || 'ws://localhost:1234'
+  const socket = getSocket()
 
-  const provider = new HocuspocusProvider({
-    url: wsUrl,
-    name: options.documentId,
-    document: ydoc,
-    onConnect: () => {
-      connected = true
-    },
-    onDisconnect: () => {
-      connected = false
-    },
-    onSynced: () => {
+  const provider = new PhoenixChannelProvider(socket, `document:${options.documentId}`, ydoc, {
+    params: {},
+  })
+
+  provider.on('status', ({ status }) => {
+    connected = status === 'connected'
+  })
+
+  provider.on('sync', (isSynced: boolean) => {
+    if (isSynced && !synced) {
       synced = true
       options.onDocumentSynced?.()
-    },
+    }
   })
 
   // Set user awareness state for collaborative cursors
   if (options.user) {
     const color = options.user.color || generateUserColor(options.user.id)
-    provider.awareness?.setLocalStateField('user', {
+    provider.awareness.setLocalStateField('user', {
       name: options.user.name,
       color,
     })
@@ -80,45 +78,15 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
 
   // Handle base document if specified (for theme inheritance)
   let baseYdoc: Y.Doc | null = null
-  let baseProvider: HocuspocusProvider | null = null
+  let baseProvider: PhoenixChannelProvider | null = null
   let baseMeta: Y.Map<unknown> | null = null
 
   if (options.baseDocumentId) {
     baseYdoc = new Y.Doc()
     baseMeta = baseYdoc.getMap('meta')
-    baseProvider = new HocuspocusProvider({
-      url: wsUrl,
-      name: options.baseDocumentId,
-      document: baseYdoc,
+    baseProvider = new PhoenixChannelProvider(socket, `document:${options.baseDocumentId}`, baseYdoc, {
+      params: {},
     })
-  }
-
-  // Create WebRTC provider for P2P awareness sync (browser only)
-  // Uses a separate Y.Doc so only awareness is synced, not document content
-  let webrtcYdoc: Y.Doc | null = null
-  let webrtcProvider: WebrtcProvider | null = null
-
-  if (browser) {
-    webrtcYdoc = new Y.Doc()
-    webrtcProvider = new WebrtcProvider(`awareness-${options.documentId}`, webrtcYdoc, {
-      // Use default public signaling servers
-      signaling: [
-        'wss://signaling.yjs.dev',
-        'wss://y-webrtc-signaling-eu.herokuapp.com',
-        'wss://y-webrtc-signaling-us.herokuapp.com',
-      ],
-      // Disable BroadcastChannel filtering to ensure all tabs connect via WebRTC
-      filterBcConns: false,
-    })
-
-    // Set user awareness on WebRTC provider
-    if (options.user) {
-      const color = options.user.color || generateUserColor(options.user.id)
-      webrtcProvider.awareness.setLocalStateField('user', {
-        name: options.user.name,
-        color,
-      })
-    }
   }
 
   // Meta observation for DB sync with debouncing
@@ -134,7 +102,9 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
     })
   }
 
-  provider.on('synced', observeMeta)
+  provider.on('sync', (isSynced: boolean) => {
+    if (isSynced) observeMeta()
+  })
 
   return {
     get connected() {
@@ -164,13 +134,8 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
     get baseProvider() {
       return baseProvider
     },
-    get webrtcProvider() {
-      return webrtcProvider
-    },
     destroy() {
       if (metaObserverTimeout) clearTimeout(metaObserverTimeout)
-      webrtcProvider?.destroy()
-      webrtcYdoc?.destroy()
       baseProvider?.destroy()
       baseYdoc?.destroy()
       provider.destroy()

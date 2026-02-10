@@ -61,7 +61,7 @@ export interface PresentationDocument {
 
   readonly ydoc: Y.Doc
   readonly meta: Y.Map<unknown>
-  readonly provider: import('@hocuspocus/provider').HocuspocusProvider
+  readonly provider: import('y-phoenix-channel').PhoenixChannelProvider
   readonly awareness: PresentationAwareness
 
   destroy(): void

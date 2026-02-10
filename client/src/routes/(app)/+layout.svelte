@@ -1,20 +1,18 @@
 <script lang="ts">
   import { page } from '$app/state'
   import { resolve } from '$app/paths'
-  import { goto, invalidateAll } from '$app/navigation'
-  import { logout } from '../data.remote'
+  import { auth } from '$lib/stores/auth.svelte'
 
-  async function handleLogout() {
-    await logout()
-    await invalidateAll()
-    await goto(resolve('/login'))
+  function handleLogout() {
+    auth.destroy()
+    const phoenixUrl = import.meta.env.VITE_PHOENIX_URL || 'http://localhost:4000'
+    window.location.href = `${phoenixUrl}/users/log-out`
   }
 
-  let { children, data } = $props()
+  let { children } = $props()
 
   const navLinks = [
-    { href: '/presentations', label: 'Presentations' },
-    { href: '/events', label: 'Events' },
+    { href: '/presentations' as const, label: 'Presentations' },
   ]
 
   let userMenuOpen = $state(false)
@@ -33,7 +31,7 @@
   <div class="flex w-full items-center justify-between">
     <div class="flex items-center gap-6">
       <a href={resolve('/')} class="text-lg font-semibold">Chapel Screen</a>
-      {#if data.user}
+      {#if auth.isAuthenticated}
         <div class="flex gap-4">
           {#each navLinks as link (link.href)}
             {@const isActive = page.url.pathname === link.href}
@@ -46,13 +44,10 @@
     </div>
 
     <div class="flex items-center gap-4">
-      {#if data.user}
+      {#if auth.user}
         <div class="dropdown dropdown-end">
           <button onclick={() => (userMenuOpen = !userMenuOpen)} class="btn gap-2 btn-ghost btn-sm">
-            <img
-              src={data.user.gravatarUrl}
-              alt={`${data.user.firstName} ${data.user.lastName}`}
-              class="h-8 w-8 rounded-full" />
+            <span class="font-medium">{auth.user.firstName} {auth.user.lastName}</span>
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
             </svg>
@@ -71,8 +66,8 @@
           {/if}
         </div>
       {:else}
-        <a href={resolve('/login')} class="link link-hover">Log in</a>
-        <a href={resolve('/register')} class="btn btn-sm btn-primary">Register</a>
+        <button onclick={() => auth.redirectToLogin()} class="link link-hover">Log in</button>
+        <button onclick={() => auth.redirectToRegister()} class="btn btn-sm btn-primary">Register</button>
       {/if}
     </div>
   </div>

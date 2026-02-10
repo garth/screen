@@ -11,14 +11,11 @@ export default defineConfig({
       cwd: 'client',
       port: 4173,
       reuseExistingServer: !process.env.CI,
-      env: {
-        ALLOW_TEST_ENDPOINTS: 'true',
-      },
     },
     {
-      command: 'pnpm hocuspocus',
-      cwd: 'client',
-      port: 1234,
+      command: 'mix phx.server',
+      cwd: 'server',
+      port: 4000,
       reuseExistingServer: !process.env.CI,
     },
   ],
