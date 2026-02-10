@@ -59,9 +59,7 @@
 
   // Parse content into segments for navigation
   // Include contentVersion in dependency to trigger re-parse when content changes
-  const segments: ContentSegment[] = $derived(
-    doc.synced ? parseContentSegments(doc.content, doc.contentVersion) : [],
-  )
+  const segments: ContentSegment[] = $derived(doc.synced ? parseContentSegments(doc.content, doc.contentVersion) : [])
 
   // Track by STABLE segment ID (not index)
   let currentSegmentId = $state<string | null>(null)
@@ -75,7 +73,16 @@
   // Initialize segment position when synced
   // Priority: 1) persistent awareness position, 2) first segment
   $effect(() => {
-    console.log('[Presenter Init] doc.synced:', doc.synced, 'presenterAwareness.synced:', presenterAwareness.synced, 'segments.length:', segments.length, 'currentSegmentId:', currentSegmentId)
+    console.log(
+      '[Presenter Init] doc.synced:',
+      doc.synced,
+      'presenterAwareness.synced:',
+      presenterAwareness.synced,
+      'segments.length:',
+      segments.length,
+      'currentSegmentId:',
+      currentSegmentId,
+    )
     if (doc.synced && presenterAwareness.synced && segments.length > 0 && !currentSegmentId) {
       // Check if there's an existing presenter position in persistent awareness
       const existingPresenter = presenterAwareness.getPresenter()
@@ -130,7 +137,12 @@
 
   // Broadcast position to persistent awareness when synced
   $effect(() => {
-    console.log('[Presenter Broadcast] presenterAwareness.synced:', presenterAwareness.synced, 'currentSegmentId:', currentSegmentId)
+    console.log(
+      '[Presenter Broadcast] presenterAwareness.synced:',
+      presenterAwareness.synced,
+      'currentSegmentId:',
+      currentSegmentId,
+    )
     if (presenterAwareness.synced && currentSegmentId) {
       console.log('[Presenter Broadcast] Broadcasting position:', currentSegmentId)
       lastLocalUpdate = Date.now()
@@ -226,9 +238,7 @@
   let showOptionsPopup = $state(false)
 
   // Themes from auth store (live updates via user channel)
-  const themes = $derived(
-    auth.themes.map((t) => ({ id: t.id, name: t.name, isSystemTheme: t.isSystemTheme })),
-  )
+  const themes = $derived(auth.themes.map((t) => ({ id: t.id, name: t.name, isSystemTheme: t.isSystemTheme })))
 
   function handleThemeChange(themeId: string | null) {
     if (doc.synced) {

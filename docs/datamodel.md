@@ -13,18 +13,18 @@ Chapel Screen uses two complementary data layers:
 
 User accounts with authentication support.
 
-| Field | Type | Constraints | Notes |
-|-------|------|-------------|-------|
-| id | string (24) | PK | ExCuid2 |
-| email | citext | UNIQUE, NOT NULL | Case-insensitive |
-| hashed_password | string | | Bcrypt-hashed |
-| confirmed_at | utc_datetime | | Email confirmation |
-| first_name | string | NOT NULL | |
-| last_name | string | NOT NULL | |
-| discoverable | boolean | default: false | Profile visibility |
-| deleted_at | utc_datetime | | Soft delete |
-| inserted_at | utc_datetime | NOT NULL | |
-| updated_at | utc_datetime | NOT NULL | |
+| Field           | Type         | Constraints      | Notes              |
+| --------------- | ------------ | ---------------- | ------------------ |
+| id              | string (24)  | PK               | ExCuid2            |
+| email           | citext       | UNIQUE, NOT NULL | Case-insensitive   |
+| hashed_password | string       |                  | Bcrypt-hashed      |
+| confirmed_at    | utc_datetime |                  | Email confirmation |
+| first_name      | string       | NOT NULL         |                    |
+| last_name       | string       | NOT NULL         |                    |
+| discoverable    | boolean      | default: false   | Profile visibility |
+| deleted_at      | utc_datetime |                  | Soft delete        |
+| inserted_at     | utc_datetime | NOT NULL         |                    |
+| updated_at      | utc_datetime | NOT NULL         |                    |
 
 **Indexes:** `email` (unique)
 
@@ -32,15 +32,15 @@ User accounts with authentication support.
 
 Session and email authentication tokens.
 
-| Field | Type | Constraints | Notes |
-|-------|------|-------------|-------|
-| id | string (24) | PK | ExCuid2 |
-| user_id | string (24) | FK → users, CASCADE | Token owner |
-| token | binary | NOT NULL | Hashed or raw token |
-| context | string | NOT NULL | "session", "login", or "change:email" |
-| sent_to | string | | Email address for validation |
-| authenticated_at | utc_datetime | | Auth timestamp |
-| inserted_at | utc_datetime | NOT NULL | |
+| Field            | Type         | Constraints         | Notes                                 |
+| ---------------- | ------------ | ------------------- | ------------------------------------- |
+| id               | string (24)  | PK                  | ExCuid2                               |
+| user_id          | string (24)  | FK → users, CASCADE | Token owner                           |
+| token            | binary       | NOT NULL            | Hashed or raw token                   |
+| context          | string       | NOT NULL            | "session", "login", or "change:email" |
+| sent_to          | string       |                     | Email address for validation          |
+| authenticated_at | utc_datetime |                     | Auth timestamp                        |
+| inserted_at      | utc_datetime | NOT NULL            |                                       |
 
 **Indexes:** `user_id`, unique `(context, token)`
 
@@ -48,18 +48,18 @@ Session and email authentication tokens.
 
 Core document storage. Documents are Yjs-based with metadata stored in both the database and the Yjs `meta` map.
 
-| Field | Type | Constraints | Notes |
-|-------|------|-------------|-------|
-| id | string (24) | PK | ExCuid2 |
-| user_id | string (24) | FK → users, CASCADE | Document owner |
-| name | string | NOT NULL | Display title |
-| type | string | NOT NULL | "presentation", "theme", or "event" |
-| base_document_id | string (24) | FK → documents, NILIFY | For theme inheritance |
-| is_public | boolean | default: false | Public access flag |
-| meta | map | default: {} | Serialized Yjs meta |
-| deleted_at | utc_datetime | | Soft delete |
-| inserted_at | utc_datetime | NOT NULL | |
-| updated_at | utc_datetime | NOT NULL | |
+| Field            | Type         | Constraints            | Notes                               |
+| ---------------- | ------------ | ---------------------- | ----------------------------------- |
+| id               | string (24)  | PK                     | ExCuid2                             |
+| user_id          | string (24)  | FK → users, CASCADE    | Document owner                      |
+| name             | string       | NOT NULL               | Display title                       |
+| type             | string       | NOT NULL               | "presentation", "theme", or "event" |
+| base_document_id | string (24)  | FK → documents, NILIFY | For theme inheritance               |
+| is_public        | boolean      | default: false         | Public access flag                  |
+| meta             | map          | default: {}            | Serialized Yjs meta                 |
+| deleted_at       | utc_datetime |                        | Soft delete                         |
+| inserted_at      | utc_datetime | NOT NULL               |                                     |
+| updated_at       | utc_datetime | NOT NULL               |                                     |
 
 **Indexes:** `user_id`, `base_document_id`
 
@@ -67,15 +67,15 @@ Core document storage. Documents are Yjs-based with metadata stored in both the 
 
 Yjs CRDT update history. Each row is a binary Yjs update.
 
-| Field | Type | Constraints | Notes |
-|-------|------|-------------|-------|
-| id | string (24) | PK | ExCuid2 |
-| document_id | string (24) | FK → documents, CASCADE | Parent document |
-| user_id | string (24) | FK → users, CASCADE | Update author |
-| update | binary | NOT NULL | Encoded Yjs update |
-| deleted_at | utc_datetime | | Soft delete |
-| inserted_at | utc_datetime | NOT NULL | |
-| updated_at | utc_datetime | NOT NULL | |
+| Field       | Type         | Constraints             | Notes              |
+| ----------- | ------------ | ----------------------- | ------------------ |
+| id          | string (24)  | PK                      | ExCuid2            |
+| document_id | string (24)  | FK → documents, CASCADE | Parent document    |
+| user_id     | string (24)  | FK → users, CASCADE     | Update author      |
+| update      | binary       | NOT NULL                | Encoded Yjs update |
+| deleted_at  | utc_datetime |                         | Soft delete        |
+| inserted_at | utc_datetime | NOT NULL                |                    |
+| updated_at  | utc_datetime | NOT NULL                |                    |
 
 **Indexes:** `document_id`, `user_id`
 
@@ -83,15 +83,15 @@ Yjs CRDT update history. Each row is a binary Yjs update.
 
 Access control for shared documents.
 
-| Field | Type | Constraints | Notes |
-|-------|------|-------------|-------|
-| id | string (24) | PK | ExCuid2 |
-| document_id | string (24) | FK → documents, CASCADE | |
-| user_id | string (24) | FK → users, CASCADE | Granted user |
-| can_write | boolean | default: false | Write permission |
-| deleted_at | utc_datetime | | Soft delete |
-| inserted_at | utc_datetime | NOT NULL | |
-| updated_at | utc_datetime | NOT NULL | |
+| Field       | Type         | Constraints             | Notes            |
+| ----------- | ------------ | ----------------------- | ---------------- |
+| id          | string (24)  | PK                      | ExCuid2          |
+| document_id | string (24)  | FK → documents, CASCADE |                  |
+| user_id     | string (24)  | FK → users, CASCADE     | Granted user     |
+| can_write   | boolean      | default: false          | Write permission |
+| deleted_at  | utc_datetime |                         | Soft delete      |
+| inserted_at | utc_datetime | NOT NULL                |                  |
+| updated_at  | utc_datetime | NOT NULL                |                  |
 
 **Indexes:** unique `(document_id, user_id)`, `user_id`
 
@@ -99,16 +99,16 @@ Access control for shared documents.
 
 Event channels for broadcasting presentations.
 
-| Field | Type | Constraints | Notes |
-|-------|------|-------------|-------|
-| id | string (24) | PK | ExCuid2 |
-| user_id | string (24) | FK → users, CASCADE | Channel owner |
-| event_document_id | string (24) | FK → documents, CASCADE | Associated event |
-| name | string | NOT NULL | Display name |
-| slug | string | | URL-friendly identifier |
-| deleted_at | utc_datetime | | Soft delete |
-| inserted_at | utc_datetime | NOT NULL | |
-| updated_at | utc_datetime | NOT NULL | |
+| Field             | Type         | Constraints             | Notes                   |
+| ----------------- | ------------ | ----------------------- | ----------------------- |
+| id                | string (24)  | PK                      | ExCuid2                 |
+| user_id           | string (24)  | FK → users, CASCADE     | Channel owner           |
+| event_document_id | string (24)  | FK → documents, CASCADE | Associated event        |
+| name              | string       | NOT NULL                | Display name            |
+| slug              | string       |                         | URL-friendly identifier |
+| deleted_at        | utc_datetime |                         | Soft delete             |
+| inserted_at       | utc_datetime | NOT NULL                |                         |
+| updated_at        | utc_datetime | NOT NULL                |                         |
 
 **Indexes:** `user_id`, `event_document_id`, unique `slug`
 

@@ -1010,9 +1010,7 @@ describe('PresentationViewer', () => {
 
       // All three sentences should be visible (entire paragraph)
       await expect.element(page.getByText('First sentence of a long paragraph.')).toBeInTheDocument()
-      await expect
-        .element(page.getByText('Second sentence continues the thought.'))
-        .toBeInTheDocument()
+      await expect.element(page.getByText('Second sentence continues the thought.')).toBeInTheDocument()
       await expect.element(page.getByText('Third sentence wraps it up.')).toBeInTheDocument()
 
       // Other paragraphs should NOT be visible
@@ -1022,10 +1020,7 @@ describe('PresentationViewer', () => {
 
     it('individual sentences have separate data-segment-id attributes', async () => {
       const content = createContent()
-      const longParaId = addLongParagraph(
-        content,
-        'Sentence one here. Sentence two here. Sentence three here.',
-      )
+      const longParaId = addLongParagraph(content, 'Sentence one here. Sentence two here. Sentence three here.')
 
       const segments: ContentSegment[] = createSentenceSegments(
         longParaId,
@@ -1054,10 +1049,7 @@ describe('PresentationViewer', () => {
 
     it('only the active sentence has segment-active class', async () => {
       const content = createContent()
-      const longParaId = addLongParagraph(
-        content,
-        'Active sentence. Inactive sibling one. Inactive sibling two.',
-      )
+      const longParaId = addLongParagraph(content, 'Active sentence. Inactive sibling one. Inactive sibling two.')
 
       const segments: ContentSegment[] = createSentenceSegments(
         longParaId,
@@ -1075,9 +1067,7 @@ describe('PresentationViewer', () => {
       })
 
       // Only the first sentence should have segment-active class
-      const activeElement = document.querySelector(
-        `[data-segment-id="${longParaId}:s0"]`,
-      ) as HTMLElement
+      const activeElement = document.querySelector(`[data-segment-id="${longParaId}:s0"]`) as HTMLElement
       const sibling1 = document.querySelector(`[data-segment-id="${longParaId}:s1"]`) as HTMLElement
       const sibling2 = document.querySelector(`[data-segment-id="${longParaId}:s2"]`) as HTMLElement
 
@@ -1186,10 +1176,7 @@ describe('PresentationViewer', () => {
     it('keeps sentence segments on the same block in block mode', async () => {
       const content = createContent()
       const id0 = addParagraph(content, 'Block 1 paragraph')
-      const longParaId = addLongParagraph(
-        content,
-        'First sentence here. Second sentence here. Third sentence here.',
-      )
+      const longParaId = addLongParagraph(content, 'First sentence here. Second sentence here. Third sentence here.')
       addEmptyParagraph(content) // Block boundary
       const id2 = addParagraph(content, 'Block 2 paragraph')
 
@@ -1226,20 +1213,13 @@ describe('PresentationViewer', () => {
     it('uses first sentence index for pair computation in minimal mode', async () => {
       const content = createContent()
       const id0 = addParagraph(content, 'First paragraph')
-      const longParaId = addLongParagraph(
-        content,
-        'Sentence one here. Sentence two here. Sentence three here.',
-      )
+      const longParaId = addLongParagraph(content, 'Sentence one here. Sentence two here. Sentence three here.')
       const id2 = addParagraph(content, 'Third paragraph')
       const id3 = addParagraph(content, 'Fourth paragraph')
 
       const segments: ContentSegment[] = [
         { id: id0, index: 0, label: 'First paragraph', type: 'paragraph', slideIndex: 0 },
-        ...createSentenceSegments(
-          longParaId,
-          ['Sentence one here.', 'Sentence two here.', 'Sentence three here.'],
-          1,
-        ),
+        ...createSentenceSegments(longParaId, ['Sentence one here.', 'Sentence two here.', 'Sentence three here.'], 1),
         { id: id2, index: 4, label: 'Third paragraph', type: 'paragraph', slideIndex: 0 },
         { id: id3, index: 5, label: 'Fourth paragraph', type: 'paragraph', slideIndex: 0 },
       ]
@@ -1269,20 +1249,13 @@ describe('PresentationViewer', () => {
     it('does not show sentence paragraph on subsequent slides in minimal mode', async () => {
       const content = createContent()
       const id0 = addParagraph(content, 'First paragraph')
-      const longParaId = addLongParagraph(
-        content,
-        'Sentence one here. Sentence two here. Sentence three here.',
-      )
+      const longParaId = addLongParagraph(content, 'Sentence one here. Sentence two here. Sentence three here.')
       const id2 = addParagraph(content, 'Third paragraph')
       const id3 = addParagraph(content, 'Fourth paragraph')
 
       const segments: ContentSegment[] = [
         { id: id0, index: 0, label: 'First paragraph', type: 'paragraph', slideIndex: 0 },
-        ...createSentenceSegments(
-          longParaId,
-          ['Sentence one here.', 'Sentence two here.', 'Sentence three here.'],
-          1,
-        ),
+        ...createSentenceSegments(longParaId, ['Sentence one here.', 'Sentence two here.', 'Sentence three here.'], 1),
         { id: id2, index: 4, label: 'Third paragraph', type: 'paragraph', slideIndex: 0 },
         { id: id3, index: 5, label: 'Fourth paragraph', type: 'paragraph', slideIndex: 0 },
       ]
@@ -1375,18 +1348,11 @@ describe('PresentationViewer', () => {
 
     it('does not show sentence paragraph on subsequent slides in single mode', async () => {
       const content = createContent()
-      const longParaId = addLongParagraph(
-        content,
-        'First sentence here. Second sentence here.',
-      )
+      const longParaId = addLongParagraph(content, 'First sentence here. Second sentence here.')
       const id1 = addParagraph(content, 'Second paragraph')
 
       const segments: ContentSegment[] = [
-        ...createSentenceSegments(
-          longParaId,
-          ['First sentence here.', 'Second sentence here.'],
-          0,
-        ),
+        ...createSentenceSegments(longParaId, ['First sentence here.', 'Second sentence here.'], 0),
         { id: id1, index: 2, label: 'Second paragraph', type: 'paragraph', slideIndex: 0 },
       ]
 
@@ -1410,19 +1376,12 @@ describe('PresentationViewer', () => {
 
     it('does not show sentence paragraph on subsequent slides in block mode', async () => {
       const content = createContent()
-      const longParaId = addLongParagraph(
-        content,
-        'Block1 sentence one. Block1 sentence two.',
-      )
+      const longParaId = addLongParagraph(content, 'Block1 sentence one. Block1 sentence two.')
       addEmptyParagraph(content) // Block boundary
       const id1 = addParagraph(content, 'Block2 paragraph')
 
       const segments: ContentSegment[] = [
-        ...createSentenceSegments(
-          longParaId,
-          ['Block1 sentence one.', 'Block1 sentence two.'],
-          0,
-        ),
+        ...createSentenceSegments(longParaId, ['Block1 sentence one.', 'Block1 sentence two.'], 0),
         { id: id1, index: 2, label: 'Block2 paragraph', type: 'paragraph', slideIndex: 0 },
       ]
 

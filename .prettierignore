@@ -1,0 +1,23 @@
+# Lock files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+bun.lock
+bun.lockb
+
+# Client generated
+client/.svelte-kit/
+client/build/
+client/dev-dist/
+client/static/
+
+# Server build artifacts
+server/_build/
+server/deps/
+server/priv/static/
+
+# Vendor files (third-party)
+server/assets/vendor/
+
+# Other
+.claude

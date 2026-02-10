@@ -5,12 +5,18 @@
   "scripts": {
     "dev": "concurrently -c blue,magenta -n client,server \"pnpm --filter @chapel/client dev\" \"cd server && mix phx.server\"",
     "test:unit": "concurrently -n client,server \"pnpm --filter @chapel/client test:unit --run\" \"cd server && mix test\"",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "lint": "concurrently -n client,server \"pnpm --filter @chapel/client lint\" \"cd server && mix compile --warnings-as-errors\"",
+    "format": "prettier --write . && cd server && mix format",
+    "lint:format": "prettier --check . && cd server && mix format --check-formatted"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "concurrently": "^9.2.1",
-    "playwright": "^1.57.0"
+    "playwright": "^1.57.0",
+    "prettier": "^3.8.0",
+    "prettier-plugin-svelte": "^3.4.1",
+    "prettier-plugin-tailwindcss": "^0.7.2"
   },
   "packageManager": "pnpm@10.28.0"
 }

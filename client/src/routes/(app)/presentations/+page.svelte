@@ -76,7 +76,7 @@
       {#if !synced}
         <span class="text-sm text-base-content/50">Loading...</span>
       {:else if !connected}
-        <span class="badge badge-warning gap-1">
+        <span class="badge gap-1 badge-warning">
           <span class="inline-block h-2 w-2 rounded-full bg-warning"></span>
           Offline
         </span>
@@ -84,7 +84,7 @@
     </div>
     <button type="button" onclick={createPresentation} disabled={creating} class="btn btn-primary">
       {#if creating}
-        <span class="loading loading-spinner loading-sm"></span>
+        <span class="loading loading-sm loading-spinner"></span>
         Creating...
       {:else}
         New Presentation
@@ -94,14 +94,14 @@
 
   {#if !synced}
     <div class="card bg-base-200">
-      <div class="card-body items-center text-center py-12">
-        <span class="loading loading-spinner loading-lg"></span>
+      <div class="card-body items-center py-12 text-center">
+        <span class="loading loading-lg loading-spinner"></span>
         <p class="text-base-content/70">Loading presentations...</p>
       </div>
     </div>
   {:else if presentations.length === 0}
     <div class="card bg-base-200">
-      <div class="card-body items-center text-center py-12">
+      <div class="card-body items-center py-12 text-center">
         <p class="mb-4 text-base-content/70">You don't have any presentations yet.</p>
         <button type="button" onclick={createPresentation} disabled={creating} class="btn btn-primary">
           Create your first presentation
@@ -119,12 +119,12 @@
                   {presentation.title || 'Untitled'}
                 </h2>
                 {#if presentation.isPublic}
-                  <span class="badge badge-success badge-sm">Public</span>
+                  <span class="badge badge-sm badge-success">Public</span>
                 {:else}
                   <span class="badge badge-ghost badge-sm">Private</span>
                 {/if}
                 {#if !presentation.isOwner}
-                  <span class="badge badge-info badge-sm">Shared</span>
+                  <span class="badge badge-sm badge-info">Shared</span>
                 {/if}
               </div>
               <p class="mt-1 text-sm text-base-content/50">
@@ -136,7 +136,7 @@
               <a href={resolve(`/presentation/${presentation.id}`)} class="btn btn-ghost btn-sm">View</a>
               {#if presentation.canWrite}
                 <a href={resolve(`/presentation/${presentation.id}/edit`)} class="btn btn-ghost btn-sm">Edit</a>
-                <a href={resolve(`/presentation/${presentation.id}/presenter`)} class="btn btn-primary btn-sm">
+                <a href={resolve(`/presentation/${presentation.id}/presenter`)} class="btn btn-sm btn-primary">
                   Present
                 </a>
               {/if}

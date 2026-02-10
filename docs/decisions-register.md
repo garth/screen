@@ -4,13 +4,13 @@ This document records significant architectural, technical, and scope decisions 
 
 ## Decision Index
 
-| ID | Date | Decision | Status |
-|----|------|----------|--------|
+| ID      | Date       | Decision                                          | Status |
+| ------- | ---------- | ------------------------------------------------- | ------ |
 | DEC-001 | 2026-01-11 | Use Phoenix as sole backend, client as static SPA | Active |
-| DEC-002 | 2026-01-11 | Use y-phoenix-channel for Yjs sync | Active |
-| DEC-003 | 2026-01-11 | Use Phoenix Channels for all live data (no REST) | Active |
-| DEC-004 | 2026-01-11 | Phoenix LiveView handles all auth pages | Active |
-| DEC-005 | 2026-01-11 | Use ExCuid2 for all primary keys | Active |
+| DEC-002 | 2026-01-11 | Use y-phoenix-channel for Yjs sync                | Active |
+| DEC-003 | 2026-01-11 | Use Phoenix Channels for all live data (no REST)  | Active |
+| DEC-004 | 2026-01-11 | Phoenix LiveView handles all auth pages           | Active |
+| DEC-005 | 2026-01-11 | Use ExCuid2 for all primary keys                  | Active |
 | DEC-006 | 2026-01-11 | Soft deletes via deleted_at on all major entities | Active |
 
 ---

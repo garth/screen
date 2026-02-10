@@ -95,7 +95,7 @@
   <h1 class="mb-6 text-2xl font-bold">Preferences</h1>
 
   <!-- Profile Section -->
-  <section class="card bg-base-200 mb-8">
+  <section class="card mb-8 bg-base-200">
     <div class="card-body">
       <h2 class="card-title">Profile</h2>
 
@@ -105,26 +105,18 @@
             <label for="firstName" class="label">
               <span class="label-text">First Name</span>
             </label>
-            <input
-              id="firstName"
-              type="text"
-              bind:value={firstName}
-              class="input input-bordered w-full" />
+            <input id="firstName" type="text" bind:value={firstName} class="input-bordered input w-full" />
           </div>
 
           <div>
             <label for="lastName" class="label">
               <span class="label-text">Last Name</span>
             </label>
-            <input
-              id="lastName"
-              type="text"
-              bind:value={lastName}
-              class="input input-bordered w-full" />
+            <input id="lastName" type="text" bind:value={lastName} class="input-bordered input w-full" />
           </div>
         </div>
 
-        <button type="submit" disabled={savingName} class="btn btn-primary w-fit">
+        <button type="submit" disabled={savingName} class="btn w-fit btn-primary">
           {savingName ? 'Saving...' : 'Save Name'}
         </button>
       </form>
@@ -132,7 +124,7 @@
   </section>
 
   <!-- Appearance Section -->
-  <section class="card bg-base-200 mb-8">
+  <section class="card mb-8 bg-base-200">
     <div class="card-body">
       <h2 class="card-title">Appearance</h2>
 
@@ -153,7 +145,7 @@
   </section>
 
   <!-- Security Section -->
-  <section class="card bg-base-200 mb-8">
+  <section class="card mb-8 bg-base-200">
     <div class="card-body">
       <h2 class="card-title">Security</h2>
 
@@ -172,18 +164,14 @@
             id="currentPassword"
             type="password"
             bind:value={currentPassword}
-            class="input input-bordered w-full" />
+            class="input-bordered input w-full" />
         </div>
 
         <div>
           <label for="newPassword" class="label">
             <span class="label-text">New Password</span>
           </label>
-          <input
-            id="newPassword"
-            type="password"
-            bind:value={newPassword}
-            class="input input-bordered w-full" />
+          <input id="newPassword" type="password" bind:value={newPassword} class="input-bordered input w-full" />
         </div>
 
         <div>
@@ -194,10 +182,10 @@
             id="confirmPassword"
             type="password"
             bind:value={confirmPassword}
-            class="input input-bordered w-full" />
+            class="input-bordered input w-full" />
         </div>
 
-        <button type="submit" disabled={savingPassword} class="btn btn-primary w-fit">
+        <button type="submit" disabled={savingPassword} class="btn w-fit btn-primary">
           {savingPassword ? 'Changing...' : 'Change Password'}
         </button>
       </form>
@@ -205,7 +193,7 @@
   </section>
 
   <!-- Delete Account Section -->
-  <section class="card bg-base-200 border border-error/30">
+  <section class="card border border-error/30 bg-base-200">
     <div class="card-body">
       <h2 class="card-title text-error">Delete Account</h2>
 
@@ -213,7 +201,7 @@
         Permanently delete your account and all associated data. This action cannot be undone.
       </p>
 
-      <div class="card-actions mt-4">
+      <div class="mt-4 card-actions">
         <button type="button" onclick={() => (showDeleteDialog = true)} class="btn btn-error">Delete Account</button>
       </div>
     </div>
@@ -222,11 +210,11 @@
 
 <!-- Delete Account Confirmation Dialog -->
 {#if showDeleteDialog}
-  <div class="modal modal-open">
+  <div class="modal-open modal">
     <div class="modal-box">
       <h3 class="text-lg font-bold text-error">Delete Account?</h3>
 
-      <div class="py-4 space-y-3 text-sm">
+      <div class="space-y-3 py-4 text-sm">
         <p>
           <strong>Warning:</strong> This will permanently delete your account and all your data, including:
         </p>
@@ -243,7 +231,7 @@
         </button>
         <button type="button" onclick={handleDeleteAccount} disabled={deleting} class="btn btn-error">
           {#if deleting}
-            <span class="loading loading-spinner loading-sm"></span>
+            <span class="loading loading-sm loading-spinner"></span>
             Deleting...
           {:else}
             Delete My Account

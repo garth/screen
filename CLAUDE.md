@@ -20,6 +20,9 @@ pnpm install          # Install all workspace dependencies
 pnpm dev              # Start client + Phoenix server (concurrent)
 pnpm test:unit        # Run client + server unit tests
 pnpm test:e2e         # Playwright e2e tests (from root)
+pnpm lint             # Run client ESLint + server compile --warnings-as-errors
+pnpm format           # Format all files (Prettier + mix format)
+pnpm lint:format      # Check formatting (Prettier + mix format --check-formatted)
 ```
 
 ### Client (`client/`)
@@ -28,7 +31,7 @@ pnpm test:e2e         # Playwright e2e tests (from root)
 pnpm dev              # Vite dev server
 pnpm build            # Production build (static SPA)
 pnpm check            # TypeScript + Svelte type checking
-pnpm lint             # Prettier + ESLint
+pnpm lint             # ESLint
 pnpm test:unit        # Vitest (browser-mode for .svelte.test.ts, Node for .test.ts)
 ```
 
@@ -59,6 +62,7 @@ Phoenix handles all authentication via LiveView pages (login, register, forgot/r
 ### Database
 
 PostgreSQL managed by the Phoenix server via Ecto migrations:
+
 - Port 5439 (via `server/docker-compose.yml`)
 - Schema: User, Document, DocumentUpdate, DocumentUser, Channel
 

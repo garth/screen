@@ -11,9 +11,7 @@
 
   let { children } = $props()
 
-  const navLinks = [
-    { href: '/presentations' as const, label: 'Presentations' },
-  ]
+  const navLinks = [{ href: '/presentations' as const, label: 'Presentations' }]
 
   let userMenuOpen = $state(false)
 

@@ -17,6 +17,15 @@ importers:
       playwright:
         specifier: ^1.57.0
         version: 1.58.2
+      prettier:
+        specifier: ^3.8.0
+        version: 3.8.1
+      prettier-plugin-svelte:
+        specifier: ^3.4.1
+        version: 3.4.1(prettier@3.8.1)(svelte@5.50.1)
+      prettier-plugin-tailwindcss:
+        specifier: ^0.7.2
+        version: 0.7.2(prettier-plugin-svelte@3.4.1(prettier@3.8.1)(svelte@5.50.1))(prettier@3.8.1)
 
   client:
     dependencies:
@@ -135,15 +144,6 @@ importers:
       mdsvex:
         specifier: ^0.12.6
         version: 0.12.6(svelte@5.50.1)
-      prettier:
-        specifier: ^3.8.0
-        version: 3.8.1
-      prettier-plugin-svelte:
-        specifier: ^3.4.1
-        version: 3.4.1(prettier@3.8.1)(svelte@5.50.1)
-      prettier-plugin-tailwindcss:
-        specifier: ^0.7.2
-        version: 0.7.2(prettier-plugin-svelte@3.4.1(prettier@3.8.1)(svelte@5.50.1))(prettier@3.8.1)
       svelte:
         specifier: ^5.46.4
         version: 5.50.1

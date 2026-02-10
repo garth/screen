@@ -31,8 +31,8 @@
       <ul>
         <li>
           <strong>Affiliate</strong> means an entity that controls, is controlled by or is under common control with a party,
-          where "control" means ownership of 50% or more of the shares, equity interest or other securities entitled to
-          vote for election of directors or other managing authority.
+          where "control" means ownership of 50% or more of the shares, equity interest or other securities entitled to vote
+          for election of directors or other managing authority.
         </li>
         <li>
           <strong>Account</strong> means a unique account created for You to access our Service or parts of our Service.

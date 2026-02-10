@@ -107,6 +107,7 @@ Awareness data (presenter position, cursors) syncs through the same channel prov
 Content is authored in a ProseMirror editor with a custom schema. The segment plugin automatically assigns stable UUIDs to content blocks and splits long paragraphs into sentences for granular presenter navigation. Segments can be merged into groups that navigate as a single unit.
 
 Display formats control how content is arranged into slides for viewers:
+
 - **single** — one logical segment per slide
 - **minimal** — two logical segments per slide
 - **block** — one contiguous content block per slide

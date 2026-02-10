@@ -102,9 +102,7 @@
   }
 
   // Themes from auth store (live updates via user channel)
-  const themes = $derived(
-    auth.themes.map((t) => ({ id: t.id, name: t.name, isSystemTheme: t.isSystemTheme })),
-  )
+  const themes = $derived(auth.themes.map((t) => ({ id: t.id, name: t.name, isSystemTheme: t.isSystemTheme })))
 
   onDestroy(() => {
     if (titleTimeout) clearTimeout(titleTimeout)

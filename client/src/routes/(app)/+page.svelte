@@ -75,8 +75,12 @@
         <a href={resolve('/presentations')} class="btn btn-lg btn-secondary">My Presentations</a>
       {:else}
         <div class="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
-          <button type="button" onclick={() => auth.redirectToRegister()} class="btn w-full btn-lg btn-secondary sm:w-auto">Get Started Free</button>
-          <button type="button" onclick={() => auth.redirectToLogin()} class="btn w-full btn-outline btn-lg sm:w-auto">Log In</button>
+          <button
+            type="button"
+            onclick={() => auth.redirectToRegister()}
+            class="btn w-full btn-lg btn-secondary sm:w-auto">Get Started Free</button>
+          <button type="button" onclick={() => auth.redirectToLogin()} class="btn w-full btn-outline btn-lg sm:w-auto"
+            >Log In</button>
         </div>
         <p class="mt-4 text-sm text-base-content/50">No credit card required</p>
       {/if}
@@ -428,7 +432,8 @@
           </li>
         </ul>
         {#if !auth.isAuthenticated}
-          <button type="button" onclick={() => auth.redirectToRegister()} class="btn w-full btn-secondary">Get Started Free</button>
+          <button type="button" onclick={() => auth.redirectToRegister()} class="btn w-full btn-secondary"
+            >Get Started Free</button>
         {/if}
       </div>
     </div>
@@ -443,7 +448,8 @@
       <p class="mb-8 text-base-content/70">
         Create collaborative presentations with real-time sync and presenter mode.
       </p>
-      <button type="button" onclick={() => auth.redirectToRegister()} class="btn btn-lg btn-secondary">Create Your Free Account</button>
+      <button type="button" onclick={() => auth.redirectToRegister()} class="btn btn-lg btn-secondary"
+        >Create Your Free Account</button>
     </div>
   </div>
 {/if}

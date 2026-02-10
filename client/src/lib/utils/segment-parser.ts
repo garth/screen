@@ -87,10 +87,7 @@ function mapNodeTypeToSegmentType(nodeName: string): ContentSegment['type'] {
  * @param content The Yjs XmlFragment to parse
  * @param _version Optional version number to trigger reactive updates (not used internally)
  */
-export function parseContentSegments(
-  content: Y.XmlFragment | null,
-  _version?: number,
-): ContentSegment[] {
+export function parseContentSegments(content: Y.XmlFragment | null, _version?: number): ContentSegment[] {
   if (!content) return []
 
   const segments: ContentSegment[] = []

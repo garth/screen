@@ -142,7 +142,6 @@
     padding: 0.1px 0;
   }
 
-
   .editor-content :global(.ProseMirror h1) {
     font-size: 2.5rem;
     font-weight: bold;

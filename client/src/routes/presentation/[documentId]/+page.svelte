@@ -55,9 +55,7 @@
 
   // Parse content into segments for follow mode
   // Include contentVersion in dependency to trigger re-parse when content changes
-  const segments: ContentSegment[] = $derived(
-    doc.synced ? parseContentSegments(doc.content, doc.contentVersion) : [],
-  )
+  const segments: ContentSegment[] = $derived(doc.synced ? parseContentSegments(doc.content, doc.contentVersion) : [])
 
   // Follow mode state
   let followMode = $state(true)

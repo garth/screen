@@ -37,27 +37,27 @@ The client uses `adapter-static` with `fallback: 'index.html'` for client-side r
 
 All data flows through WebSocket channels or Yjs documents — no REST endpoints.
 
-| Data | Mechanism |
-|------|-----------|
-| Auth state (user identity) | `user:{userId}` channel join reply + push events |
-| Document content | Yjs sync protocol via `document:{id}` channel |
-| Document metadata (title, themeId) | Yjs `meta` map on each doc |
-| Permissions (isOwner, canWrite) | `document:{id}` channel join reply |
-| Document list | `user-{userId}-documents` Yjs doc via document channel |
-| Theme data | Each theme is a Yjs doc synced via document channel |
-| Theme list | `user:{userId}` channel push events |
-| User profile | `user:{userId}` channel push events |
+| Data                               | Mechanism                                              |
+| ---------------------------------- | ------------------------------------------------------ |
+| Auth state (user identity)         | `user:{userId}` channel join reply + push events       |
+| Document content                   | Yjs sync protocol via `document:{id}` channel          |
+| Document metadata (title, themeId) | Yjs `meta` map on each doc                             |
+| Permissions (isOwner, canWrite)    | `document:{id}` channel join reply                     |
+| Document list                      | `user-{userId}-documents` Yjs doc via document channel |
+| Theme data                         | Each theme is a Yjs doc synced via document channel    |
+| Theme list                         | `user:{userId}` channel push events                    |
+| User profile                       | `user:{userId}` channel push events                    |
 
 ### Mutations via User Channel
 
-| Action | Channel Event |
-|--------|---------------|
-| Create document | push `"create_document"` |
-| Delete document | push `"delete_document"` |
-| Update profile | push `"update_profile"` |
-| Change password | push `"change_password"` |
-| Delete account | push `"delete_account"` |
-| Logout | Navigate to `/users/log-out` (Phoenix route) |
+| Action          | Channel Event                                |
+| --------------- | -------------------------------------------- |
+| Create document | push `"create_document"`                     |
+| Delete document | push `"delete_document"`                     |
+| Update profile  | push `"update_profile"`                      |
+| Change password | push `"change_password"`                     |
+| Delete account  | push `"delete_account"`                      |
+| Logout          | Navigate to `/users/log-out` (Phoenix route) |
 
 ### Phoenix Channel Providers
 

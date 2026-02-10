@@ -125,7 +125,7 @@
         <span class="flex-shrink-0 text-xs opacity-50">{segment.index + 1}.</span>
         <span class="truncate">{segment.label}</span>
         {#if segment.mergedCount && segment.mergedCount > 1}
-          <span class="badge badge-info badge-sm ml-auto flex-shrink-0">
+          <span class="ml-auto badge flex-shrink-0 badge-sm badge-info">
             {segment.mergedCount} merged
           </span>
         {/if}

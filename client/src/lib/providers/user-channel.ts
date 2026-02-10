@@ -121,10 +121,7 @@ export function createUserChannel(userId: string) {
       })
     },
 
-    async changePassword(data: {
-      currentPassword: string
-      newPassword: string
-    }): Promise<void> {
+    async changePassword(data: { currentPassword: string; newPassword: string }): Promise<void> {
       return new Promise((resolve, reject) => {
         channel
           .push('change_password', data)

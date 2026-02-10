@@ -166,11 +166,7 @@
 <div class="editor-toolbar flex flex-wrap items-center gap-1 border-b border-base-300 bg-base-200 p-2">
   <!-- Undo/Redo -->
   <div class="join mr-1 border-r border-base-300 pr-2">
-    <button
-      type="button"
-      onclick={() => runCommand(undo)}
-      class="btn btn-ghost btn-xs join-item"
-      title="Undo (Ctrl+Z)">
+    <button type="button" onclick={() => runCommand(undo)} class="btn join-item btn-ghost btn-xs" title="Undo (Ctrl+Z)">
       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           stroke-linecap="round"
@@ -179,11 +175,7 @@
           d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
       </svg>
     </button>
-    <button
-      type="button"
-      onclick={() => runCommand(redo)}
-      class="btn btn-ghost btn-xs join-item"
-      title="Redo (Ctrl+Y)">
+    <button type="button" onclick={() => runCommand(redo)} class="btn join-item btn-ghost btn-xs" title="Redo (Ctrl+Y)">
       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           stroke-linecap="round"
@@ -199,45 +191,44 @@
     <button
       type="button"
       onclick={() => toggleFormat(presentationSchema.marks.strong)}
-      class="btn btn-xs join-item {editorState && isMarkActive(editorState, presentationSchema.marks.strong)
-        ? 'btn-active'
-        : 'btn-ghost'}"
+      class="btn join-item btn-xs {editorState && isMarkActive(editorState, presentationSchema.marks.strong) ?
+        'btn-active'
+      : 'btn-ghost'}"
       title="Bold (Ctrl+B)">
       <span class="text-sm font-bold">B</span>
     </button>
     <button
       type="button"
       onclick={() => toggleFormat(presentationSchema.marks.em)}
-      class="btn btn-xs join-item {editorState && isMarkActive(editorState, presentationSchema.marks.em)
-        ? 'btn-active'
-        : 'btn-ghost'}"
+      class="btn join-item btn-xs {editorState && isMarkActive(editorState, presentationSchema.marks.em) ? 'btn-active'
+      : 'btn-ghost'}"
       title="Italic (Ctrl+I)">
       <span class="text-sm italic">I</span>
     </button>
     <button
       type="button"
       onclick={() => toggleFormat(presentationSchema.marks.underline)}
-      class="btn btn-xs join-item {editorState && isMarkActive(editorState, presentationSchema.marks.underline)
-        ? 'btn-active'
-        : 'btn-ghost'}"
+      class="btn join-item btn-xs {editorState && isMarkActive(editorState, presentationSchema.marks.underline) ?
+        'btn-active'
+      : 'btn-ghost'}"
       title="Underline (Ctrl+U)">
       <span class="text-sm underline">U</span>
     </button>
     <button
       type="button"
       onclick={() => toggleFormat(presentationSchema.marks.strikethrough)}
-      class="btn btn-xs join-item {editorState && isMarkActive(editorState, presentationSchema.marks.strikethrough)
-        ? 'btn-active'
-        : 'btn-ghost'}"
+      class="btn join-item btn-xs {editorState && isMarkActive(editorState, presentationSchema.marks.strikethrough) ?
+        'btn-active'
+      : 'btn-ghost'}"
       title="Strikethrough (Ctrl+Shift+S)">
       <span class="text-sm line-through">S</span>
     </button>
     <button
       type="button"
       onclick={() => toggleFormat(presentationSchema.marks.code)}
-      class="btn btn-xs join-item {editorState && isMarkActive(editorState, presentationSchema.marks.code)
-        ? 'btn-active'
-        : 'btn-ghost'}"
+      class="btn join-item btn-xs {editorState && isMarkActive(editorState, presentationSchema.marks.code) ?
+        'btn-active'
+      : 'btn-ghost'}"
       title="Code (Ctrl+`)">
       <span class="font-mono text-xs">&lt;/&gt;</span>
     </button>
@@ -245,37 +236,39 @@
 
   <!-- Headings -->
   <div class="join mr-1 border-r border-base-300 pr-2">
-    <button
-      type="button"
-      onclick={setParagraph}
-      class="btn btn-ghost btn-xs join-item"
-      title="Paragraph (Ctrl+0)">
+    <button type="button" onclick={setParagraph} class="btn join-item btn-ghost btn-xs" title="Paragraph (Ctrl+0)">
       P
     </button>
     <button
       type="button"
       onclick={() => setHeading(1)}
-      class="btn btn-xs join-item {editorState && isBlockActive(editorState, presentationSchema.nodes.heading, { level: 1 })
-        ? 'btn-active'
-        : 'btn-ghost'}"
+      class="btn join-item btn-xs {(
+        editorState && isBlockActive(editorState, presentationSchema.nodes.heading, { level: 1 })
+      ) ?
+        'btn-active'
+      : 'btn-ghost'}"
       title="Heading 1 (Ctrl+1)">
       H1
     </button>
     <button
       type="button"
       onclick={() => setHeading(2)}
-      class="btn btn-xs join-item {editorState && isBlockActive(editorState, presentationSchema.nodes.heading, { level: 2 })
-        ? 'btn-active'
-        : 'btn-ghost'}"
+      class="btn join-item btn-xs {(
+        editorState && isBlockActive(editorState, presentationSchema.nodes.heading, { level: 2 })
+      ) ?
+        'btn-active'
+      : 'btn-ghost'}"
       title="Heading 2 (Ctrl+2)">
       H2
     </button>
     <button
       type="button"
       onclick={() => setHeading(3)}
-      class="btn btn-xs join-item {editorState && isBlockActive(editorState, presentationSchema.nodes.heading, { level: 3 })
-        ? 'btn-active'
-        : 'btn-ghost'}"
+      class="btn join-item btn-xs {(
+        editorState && isBlockActive(editorState, presentationSchema.nodes.heading, { level: 3 })
+      ) ?
+        'btn-active'
+      : 'btn-ghost'}"
       title="Heading 3 (Ctrl+3)">
       H3
     </button>
@@ -286,9 +279,9 @@
     <button
       type="button"
       onclick={toggleBulletList}
-      class="btn btn-xs join-item {editorState && isInList(editorState, presentationSchema.nodes.bullet_list)
-        ? 'btn-active'
-        : 'btn-ghost'}"
+      class="btn join-item btn-xs {editorState && isInList(editorState, presentationSchema.nodes.bullet_list) ?
+        'btn-active'
+      : 'btn-ghost'}"
       title="Bullet List (Ctrl+Shift+8)">
       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -297,9 +290,9 @@
     <button
       type="button"
       onclick={toggleOrderedList}
-      class="btn btn-xs join-item {editorState && isInList(editorState, presentationSchema.nodes.ordered_list)
-        ? 'btn-active'
-        : 'btn-ghost'}"
+      class="btn join-item btn-xs {editorState && isInList(editorState, presentationSchema.nodes.ordered_list) ?
+        'btn-active'
+      : 'btn-ghost'}"
       title="Numbered List (Ctrl+Shift+9)">
       <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
         <text x="2" y="8" font-size="6" font-family="monospace">1.</text>
@@ -317,17 +310,13 @@
     <button
       type="button"
       onclick={insertBlockquote}
-      class="btn btn-ghost btn-xs join-item"
+      class="btn join-item btn-ghost btn-xs"
       title="Quote (Ctrl+Shift+.)">
       <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 24 24">
         <path d="M6 17h3l2-4V7H5v6h3zm8 0h3l2-4V7h-6v6h3z" />
       </svg>
     </button>
-    <button
-      type="button"
-      onclick={triggerImageUpload}
-      class="btn btn-ghost btn-xs join-item"
-      title="Insert Image">
+    <button type="button" onclick={triggerImageUpload} class="btn join-item btn-ghost btn-xs" title="Insert Image">
       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
           stroke-linecap="round"
@@ -336,11 +325,7 @@
           d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
       </svg>
     </button>
-    <button
-      type="button"
-      onclick={insertDivider}
-      class="btn btn-ghost btn-xs join-item"
-      title="Slide Divider (---)">
+    <button type="button" onclick={insertDivider} class="btn join-item btn-ghost btn-xs" title="Slide Divider (---)">
       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 12h16" />
       </svg>
@@ -353,7 +338,7 @@
       type="button"
       onclick={handleMerge}
       disabled={!canMerge && !canUnmerge}
-      class="btn btn-xs join-item {canUnmerge ? 'btn-info' : 'btn-ghost'}"
+      class="btn join-item btn-xs {canUnmerge ? 'btn-info' : 'btn-ghost'}"
       title={canUnmerge ? 'Unmerge Segments (Ctrl+Shift+M)' : 'Merge Segments (Ctrl+M)'}>
       <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path

@@ -38,9 +38,7 @@ export interface PresenterAwarenessDoc {
 // Compaction interval (compact after this many updates)
 const COMPACTION_THRESHOLD = 100
 
-export function createPresenterAwarenessDoc(
-  options: PresenterAwarenessDocOptions,
-): PresenterAwarenessDoc {
+export function createPresenterAwarenessDoc(options: PresenterAwarenessDocOptions): PresenterAwarenessDoc {
   const { documentId, canWrite } = options
 
   if (!browser) {

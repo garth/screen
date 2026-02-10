@@ -82,12 +82,7 @@ export function createSegmentPlugin(schema: Schema): Plugin {
         // Remove segment IDs from nodes that have become empty
         const emptySegmentNodes: { pos: number; node: Node }[] = []
         newState.doc.descendants((node, pos) => {
-          if (
-            isSegmentNode(node) &&
-            node.attrs.segmentId &&
-            node.type.name !== 'image' &&
-            !node.textContent.trim()
-          ) {
+          if (isSegmentNode(node) && node.attrs.segmentId && node.type.name !== 'image' && !node.textContent.trim()) {
             emptySegmentNodes.push({ pos, node })
           }
         })
@@ -201,11 +196,7 @@ export function createSegmentPlugin(schema: Schema): Plugin {
         // Create a new slice with regenerated segment IDs
         const fragment = transformFragmentSegmentIds(slice.content)
         // Use Slice constructor directly - it's the same class
-        const Slice = slice.constructor as new (
-          content: Fragment,
-          openStart: number,
-          openEnd: number,
-        ) => typeof slice
+        const Slice = slice.constructor as new (content: Fragment, openStart: number, openEnd: number) => typeof slice
         return new Slice(fragment, slice.openStart, slice.openEnd)
       },
     },

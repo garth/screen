@@ -179,10 +179,7 @@
   /**
    * Check if a paragraph/list-item should be split into sentence segments
    */
-  function shouldSplitIntoSentences(
-    ctx: SegmentContext,
-    elementSegmentId: string | null,
-  ): boolean {
+  function shouldSplitIntoSentences(ctx: SegmentContext, elementSegmentId: string | null): boolean {
     if (!ctx.inPresenterMode || ctx.segments.length === 0) return false
 
     const segment = ctx.segments[ctx.segmentIndex]
@@ -497,10 +494,7 @@
    * contiguous block share the same block index. Empty blocks and slide_dividers
    * create boundaries between blocks.
    */
-  function computeBlockBoundaries(
-    content: Y.XmlFragment,
-    segments: ContentSegment[],
-  ): Map<string, number> {
+  function computeBlockBoundaries(content: Y.XmlFragment, segments: ContentSegment[]): Map<string, number> {
     const segmentToBlock = new Map<string, number>()
     let currentBlockIndex = 0
     let lastWasEmpty = true // Start as true to handle leading empty blocks
@@ -591,9 +585,7 @@
       let effectiveSegIdx = segIdx
       if (currentSegment?.parentSegmentId) {
         // Find first sibling sentence (lowest index with same parentSegmentId)
-        const firstSibling = _segments.find(
-          (s) => s.parentSegmentId === currentSegment.parentSegmentId,
-        )
+        const firstSibling = _segments.find((s) => s.parentSegmentId === currentSegment.parentSegmentId)
         if (firstSibling) {
           effectiveSegIdx = _segments.findIndex((s) => s.id === firstSibling.id)
         }
@@ -654,9 +646,7 @@
         let logicalIdx = 0
         if (currentSegment?.parentSegmentId) {
           // For sentence, find the logical index of its first sibling
-          const firstSibling = _segments.find(
-            (s) => s.parentSegmentId === currentSegment.parentSegmentId,
-          )
+          const firstSibling = _segments.find((s) => s.parentSegmentId === currentSegment.parentSegmentId)
           if (firstSibling) {
             logicalIdx = logicalSegments.findIndex((s) => s.id === firstSibling.id)
           }
