@@ -6,7 +6,7 @@
 #
 ARG ELIXIR_VERSION=1.19.4
 ARG OTP_VERSION=28.2
-ARG DEBIAN_VERSION=bookworm-20250113-slim
+ARG DEBIAN_VERSION=bookworm-20260202-slim
 
 ARG BUILDER_IMAGE="docker.io/hexpm/elixir:${ELIXIR_VERSION}-erlang-${OTP_VERSION}-debian-${DEBIAN_VERSION}"
 ARG RUNNER_IMAGE="docker.io/debian:${DEBIAN_VERSION}"
@@ -40,25 +40,26 @@ RUN mix local.hex --force \
 ENV MIX_ENV="prod"
 
 # install mix dependencies
-COPY mix.exs mix.lock ./
+COPY server/mix.exs server/mix.lock ./
 RUN mix deps.get --only $MIX_ENV
 RUN mkdir config
 
 # copy compile-time config files before we compile dependencies
 # to ensure any relevant config change will trigger the dependencies
 # to be re-compiled.
-COPY config/config.exs config/${MIX_ENV}.exs config/
+COPY server/config/config.exs server/config/${MIX_ENV}.exs config/
 RUN mix deps.compile
 
-COPY priv priv
+COPY server/priv priv
 COPY --from=client /app/server/priv/static/ priv/static/
-COPY lib lib
+COPY server/lib lib
 
 # Compile the release
 RUN mix compile
 
 # Changes to config/runtime.exs don't require recompiling the code
-COPY config/runtime.exs config/
+COPY server/config/runtime.exs config/
+COPY server/rel rel
 
 RUN mix assets.deploy
 RUN mix release
