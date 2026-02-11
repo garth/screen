@@ -66,6 +66,10 @@ PostgreSQL managed by the Phoenix server via Ecto migrations:
 - Port 5439 (via root `docker-compose.yml`)
 - Schema: User, UserToken, Document, DocumentUpdate, DocumentUser, Channel
 
+## Tooling Preferences
+
+- Always use `pnpm`/`pnpx` over `npm`/`npx`
+
 ## Commit Conventions
 
 - Imperative present tense, no conventional commit prefixes (e.g., "Add presentation viewer specs", "Fix responsive updates")

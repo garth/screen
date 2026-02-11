@@ -26,8 +26,7 @@ config :screen, ScreenWeb.Endpoint,
   debug_errors: true,
   secret_key_base: "C44TsN886p1WS+J8b23CVoZ8cUSpSQ7HsYEVDww0aV3BxJ8FpedrVAZRS23a/aD4",
   watchers: [
-    esbuild: {Esbuild, :install_and_run, [:screen, ~w(--sourcemap=inline --watch)]},
-    tailwind: {Tailwind, :install_and_run, [:screen, ~w(--watch)]}
+    esbuild: {Esbuild, :install_and_run, [:screen, ~w(--sourcemap=inline --watch)]}
   ]
 
 # ## SSL Support

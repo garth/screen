@@ -20,6 +20,7 @@ COPY client/package.json client/
 RUN pnpm install --frozen-lockfile
 COPY client/ client/
 RUN cd client && pnpm build
+RUN cd client && pnpx @tailwindcss/cli --input src/routes/layout.css --output ../server/priv/static/assets/css/app.css --minify
 
 # ---- Server build ----
 FROM ${BUILDER_IMAGE} AS builder

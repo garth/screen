@@ -126,9 +126,7 @@
       },
     };
 
-  if (typeof module === "object" && typeof module.exports === "object") {
-    module.exports = topbar;
-  } else if (typeof define === "function" && define.amd) {
+  if (typeof define === "function" && define.amd) {
     define(function () {
       return topbar;
     });
@@ -136,3 +134,5 @@
     this.topbar = topbar;
   }
 }.call(this, window, document));
+
+export default topbar;

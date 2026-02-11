@@ -1,4 +1,6 @@
 @import 'tailwindcss';
+@source '../../../server/lib/screen_web';
+
 @plugin '@tailwindcss/typography';
 @plugin 'daisyui' {
   themes: false;
@@ -6,6 +8,7 @@
 }
 @plugin './catppuccin-latte.ts';
 @plugin './catppuccin-mocha.ts';
+@plugin './heroicons.js';
 
 @utility input {
   @apply rounded-xs;
@@ -23,4 +26,18 @@
 .select-ghost:focus {
   border-color: transparent;
   outline-color: color-mix(in oklch, var(--color-base-content) 50%, transparent);
+}
+
+/* LiveView variants */
+@custom-variant phx-click-loading (.phx-click-loading&, .phx-click-loading &);
+@custom-variant phx-submit-loading (.phx-submit-loading&, .phx-submit-loading &);
+@custom-variant phx-change-loading (.phx-change-loading&, .phx-change-loading &);
+
+/* Dark mode via data attribute */
+@custom-variant dark (&:where([data-theme=mocha], [data-theme=mocha] *));
+
+/* LiveView wrapper divs */
+[data-phx-session],
+[data-phx-teleported-src] {
+  display: contents;
 }
