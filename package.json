@@ -9,7 +9,8 @@
     "lint": "concurrently -n client,server \"pnpm --filter @chapel/client lint\" \"cd server && mix compile --warnings-as-errors\"",
     "format": "prettier --write . && cd server && mix format",
     "build": "pnpm --filter @chapel/client build && pnpm --filter @chapel/client build:css && cd server && MIX_ENV=prod mix do deps.get, compile, assets.deploy",
-    "lint:format": "prettier --check . && cd server && mix format --check-formatted"
+    "lint:format": "prettier --check . && cd server && mix format --check-formatted",
+    "clean": "rm -rf client/node_modules/.vite client/.svelte-kit server/_build server/deps server/priv/static"
   },
   "devDependencies": {
     "@playwright/test": "^1.57.0",
@@ -19,5 +20,11 @@
     "prettier-plugin-svelte": "^3.4.1",
     "prettier-plugin-tailwindcss": "^0.7.2"
   },
-  "packageManager": "pnpm@10.28.0"
+  "packageManager": "pnpm@10.28.0",
+  "pnpm": {
+    "overrides": {
+      "@y/y": "npm:yjs@^13",
+      "@y/protocols": "npm:y-protocols@^1"
+    }
+  }
 }

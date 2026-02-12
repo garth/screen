@@ -1,44 +1,10 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte'
   import { goto } from '$app/navigation'
   import { resolve } from '$app/paths'
-  import { browser } from '$app/environment'
   import { toast } from '$lib/toast.svelte'
   import { auth } from '$lib/stores/auth.svelte'
-  import { createDocumentListDoc } from '$lib/stores/documents/document-list.svelte'
-
-  interface DocumentListItem {
-    id: string
-    title: string
-    type: string
-    isPublic: boolean
-    isOwner: boolean
-    canWrite: boolean
-    updatedAt: string
-  }
-
-  interface DocList {
-    readonly documents: DocumentListItem[]
-    readonly presentations: DocumentListItem[]
-    readonly themes: DocumentListItem[]
-    readonly events: DocumentListItem[]
-    readonly connected: boolean
-    readonly synced: boolean
-    destroy(): void
-  }
 
   let creating = $state(false)
-  let docList = $state<DocList | null>(null)
-
-  onMount(() => {
-    if (browser && auth.userId) {
-      docList = createDocumentListDoc({ userId: auth.userId }) as DocList
-    }
-  })
-
-  onDestroy(() => {
-    docList?.destroy()
-  })
 
   async function createPresentation() {
     if (!auth.userChannel) return
@@ -63,23 +29,15 @@
     })
   }
 
-  // Derived state from document list
-  const presentations = $derived(docList?.presentations ?? [])
-  const connected = $derived(docList?.connected ?? false)
-  const synced = $derived(docList?.synced ?? false)
+  const presentations = $derived(auth.documents.filter((d) => d.type === 'presentation'))
 </script>
 
 <div class="mx-auto max-w-4xl p-6">
   <div class="mb-6 flex items-center justify-between">
     <div class="flex items-center gap-3">
       <h1 class="text-2xl font-bold">Presentations</h1>
-      {#if !synced}
+      {#if !auth.ready}
         <span class="text-sm text-base-content/50">Loading...</span>
-      {:else if !connected}
-        <span class="badge gap-1 badge-warning">
-          <span class="inline-block h-2 w-2 rounded-full bg-warning"></span>
-          Offline
-        </span>
       {/if}
     </div>
     <button type="button" onclick={createPresentation} disabled={creating} class="btn btn-primary">
@@ -92,7 +50,7 @@
     </button>
   </div>
 
-  {#if !synced}
+  {#if !auth.ready}
     <div class="card bg-base-200">
       <div class="card-body items-center py-12 text-center">
         <span class="loading loading-lg loading-spinner" role="status" aria-label="Loading"></span>

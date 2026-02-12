@@ -1,25 +1,10 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte'
   import { goto } from '$app/navigation'
   import { resolve } from '$app/paths'
-  import { browser } from '$app/environment'
   import { toast } from '$lib/toast.svelte'
   import { auth } from '$lib/stores/auth.svelte'
-  import { createDocumentListDoc } from '$lib/stores/documents/document-list.svelte'
-  import type { DocumentListDocument, DocumentListItem } from '$lib/stores/documents/document-list.svelte'
 
   let creating = $state(false)
-  let docList = $state<DocumentListDocument | null>(null)
-
-  onMount(() => {
-    if (browser && auth.userId) {
-      docList = createDocumentListDoc({ userId: auth.userId })
-    }
-  })
-
-  onDestroy(() => {
-    docList?.destroy()
-  })
 
   async function createEvent() {
     if (!auth.userChannel) return
@@ -44,22 +29,15 @@
     })
   }
 
-  const events: DocumentListItem[] = $derived(docList?.events ?? [])
-  const synced = $derived(docList?.synced ?? false)
-  const connected = $derived(docList?.connected ?? false)
+  const events = $derived(auth.documents.filter((d) => d.type === 'event'))
 </script>
 
 <div class="mx-auto max-w-4xl p-6">
   <div class="mb-6 flex items-center justify-between">
     <div class="flex items-center gap-3">
       <h1 class="text-2xl font-bold">Events</h1>
-      {#if !synced}
+      {#if !auth.ready}
         <span class="text-sm text-base-content/50">Loading...</span>
-      {:else if !connected}
-        <span class="badge gap-1 badge-warning">
-          <span class="inline-block h-2 w-2 rounded-full bg-warning"></span>
-          Offline
-        </span>
       {/if}
     </div>
     <button type="button" onclick={createEvent} disabled={creating} class="btn btn-primary">
@@ -72,7 +50,7 @@
     </button>
   </div>
 
-  {#if !synced}
+  {#if !auth.ready}
     <div class="card bg-base-200">
       <div class="card-body items-center py-12 text-center">
         <span class="loading loading-lg loading-spinner" role="status" aria-label="Loading"></span>

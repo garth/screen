@@ -1,40 +1,26 @@
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte'
+  import { onDestroy } from 'svelte'
   import { goto } from '$app/navigation'
   import { resolve } from '$app/paths'
   import { page } from '$app/state'
-  import { browser } from '$app/environment'
   import { toast } from '$lib/toast.svelte'
   import { auth } from '$lib/stores/auth.svelte'
   import ConfirmDialog from '$lib/components/ConfirmDialog.svelte'
   import { createEventDoc } from '$lib/stores/documents'
-  import {
-    createDocumentListDoc,
-    type DocumentListDocument,
-    type DocumentListItem,
-  } from '$lib/stores/documents/document-list.svelte'
 
   const documentId = page.params.documentId!
 
   const doc = createEventDoc({ documentId })
 
-  // Document list for presentation picker
-  let docList = $state<DocumentListDocument | null>(null)
-
-  onMount(() => {
-    if (browser && auth.userId) {
-      docList = createDocumentListDoc({ userId: auth.userId })
-    }
-  })
-
   // Available presentations (not already added to event)
+  const userPresentations = $derived(auth.documents.filter((d) => d.type === 'presentation'))
   const availablePresentations = $derived(
-    (docList?.presentations ?? []).filter((p) => !doc.presentations.includes(p.id)),
+    userPresentations.filter((p) => !doc.presentations.includes(p.id)),
   )
 
   // Helper to look up presentation title by ID
   function getPresentationTitle(id: string): string {
-    const item = docList?.presentations.find((p) => p.id === id)
+    const item = userPresentations.find((p) => p.id === id)
     return item?.title || 'Untitled'
   }
 
@@ -97,7 +83,6 @@
 
   onDestroy(() => {
     if (titleTimeout) clearTimeout(titleTimeout)
-    docList?.destroy()
     doc.destroy()
   })
 </script>

@@ -14,9 +14,20 @@ export interface ThemeListItem {
   isSystemTheme: boolean
 }
 
+export interface DocumentListItem {
+  id: string
+  title: string
+  type: 'presentation' | 'theme' | 'event'
+  isPublic: boolean
+  isOwner: boolean
+  canWrite: boolean
+  updatedAt: string
+}
+
 export interface UserChannelState {
   readonly user: UserProfile | null
   readonly themes: ThemeListItem[]
+  readonly documents: DocumentListItem[]
   readonly joined: boolean
 }
 
@@ -55,6 +66,7 @@ export function createUserChannel(userId: string) {
 
   let user: UserProfile | null = null
   let themes: ThemeListItem[] = []
+  let documents: DocumentListItem[] = []
   let joined = false
   const listeners: Set<Listener> = new Set()
 
@@ -68,6 +80,7 @@ export function createUserChannel(userId: string) {
     .receive('ok', (resp: Record<string, unknown>) => {
       user = resp.user as UserProfile
       themes = (resp.themes as ThemeListItem[]) ?? []
+      documents = (resp.documents as DocumentListItem[]) ?? []
       joined = true
       notify()
     })
@@ -86,12 +99,20 @@ export function createUserChannel(userId: string) {
     notify()
   })
 
+  channel.on('documents_updated', (payload: Record<string, unknown>) => {
+    documents = payload.documents as DocumentListItem[]
+    notify()
+  })
+
   return {
     get user() {
       return user
     },
     get themes() {
       return themes
+    },
+    get documents() {
+      return documents
     },
     get joined() {
       return joined

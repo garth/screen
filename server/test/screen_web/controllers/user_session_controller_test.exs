@@ -18,7 +18,7 @@ defmodule ScreenWeb.UserSessionControllerTest do
         })
 
       assert get_session(conn, :user_token)
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/presentations"
     end
 
     test "logs the user in with remember me", %{conn: conn, user: user} do
@@ -34,7 +34,7 @@ defmodule ScreenWeb.UserSessionControllerTest do
         })
 
       assert conn.resp_cookies["_screen_web_user_remember_me"]
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/presentations"
     end
 
     test "logs the user in with return to", %{conn: conn, user: user} do
@@ -75,7 +75,7 @@ defmodule ScreenWeb.UserSessionControllerTest do
         })
 
       assert get_session(conn, :user_token)
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/presentations"
     end
 
     test "confirms unconfirmed user", %{conn: conn, unconfirmed_user: user} do
@@ -89,7 +89,7 @@ defmodule ScreenWeb.UserSessionControllerTest do
         })
 
       assert get_session(conn, :user_token)
-      assert redirected_to(conn) == ~p"/"
+      assert redirected_to(conn) == ~p"/presentations"
       assert Phoenix.Flash.get(conn.assigns.flash, :info) =~ "User confirmed successfully."
 
       assert Accounts.get_user!(user.id).confirmed_at

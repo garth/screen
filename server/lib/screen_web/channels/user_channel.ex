@@ -40,7 +40,8 @@ defmodule ScreenWeb.UserChannel do
           lastName: user.last_name,
           email: user.email
         },
-        themes: Documents.list_user_themes(user.id)
+        themes: Documents.list_user_themes(user.id),
+        documents: format_documents(Documents.list_user_documents(user.id))
       }
 
       {:ok, reply, socket}
@@ -53,6 +54,7 @@ defmodule ScreenWeb.UserChannel do
   def handle_in("create_document", %{"type" => type}, socket) do
     case Documents.create_document(socket.assigns.user.id, type) do
       {:ok, document} ->
+        push_documents(socket)
         {:reply, {:ok, %{id: document.id}}, socket}
 
       {:error, :invalid_type} ->
@@ -67,6 +69,7 @@ defmodule ScreenWeb.UserChannel do
   def handle_in("delete_document", %{"id" => doc_id}, socket) do
     case Documents.delete_document(doc_id, socket.assigns.user.id) do
       {:ok, _document} ->
+        push_documents(socket)
         {:reply, :ok, socket}
 
       {:error, :not_found} ->
@@ -191,6 +194,7 @@ defmodule ScreenWeb.UserChannel do
 
     case Documents.update_document(id, socket.assigns.user.id, attrs) do
       {:ok, _document} ->
+        push_documents(socket)
         {:reply, :ok, socket}
 
       {:error, :not_found} ->
@@ -202,5 +206,26 @@ defmodule ScreenWeb.UserChannel do
       {:error, _changeset} ->
         {:reply, {:error, %{reason: "failed to update document"}}, socket}
     end
+  end
+
+  # --- Private Helpers ---
+
+  defp push_documents(socket) do
+    documents = Documents.list_user_documents(socket.assigns.user.id)
+    push(socket, "documents_updated", %{documents: format_documents(documents)})
+  end
+
+  defp format_documents(documents) do
+    Enum.map(documents, fn doc ->
+      %{
+        id: doc.id,
+        title: doc.name,
+        type: doc.type,
+        isPublic: doc.is_public,
+        isOwner: doc.is_owner,
+        canWrite: doc.can_write,
+        updatedAt: doc.updated_at
+      }
+    end)
   end
 end
