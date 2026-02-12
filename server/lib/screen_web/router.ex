@@ -54,6 +54,7 @@ defmodule ScreenWeb.Router do
       post "/update-document", TestController, :update_document
       get "/document-meta/:id", TestController, :document_meta
       post "/create-document-user", TestController, :create_document_user
+      post "/create-channel", TestController, :create_channel
     end
   end
 

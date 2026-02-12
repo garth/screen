@@ -119,6 +119,29 @@ export async function getDocumentMeta(page: Page, documentId: string): Promise<R
   return response.json()
 }
 
+export async function createChannel(
+  page: Page,
+  data: {
+    userId: string
+    eventDocumentId: string
+    name: string
+    slug: string
+  },
+): Promise<{
+  id: string
+  name: string
+  slug: string
+  eventDocumentId: string
+}> {
+  const response = await page.request.post('/api/test/create-channel', { data })
+
+  if (!response.ok()) {
+    throw new Error(`Failed to create channel: ${response.status()}`)
+  }
+
+  return response.json()
+}
+
 export async function createDocumentUser(
   page: Page,
   data: { documentId: string; userId: string; write?: boolean },

@@ -98,4 +98,25 @@ export default defineConfig({
   },
 
   clearScreen: false,
+
+  server: {
+    proxy: {
+      '/users': 'http://localhost:4000',
+      '/dev/': 'http://localhost:4000',
+      '/health': 'http://localhost:4000',
+      '/assets': 'http://localhost:4000',
+      '/live': {
+        target: 'http://localhost:4000',
+        ws: true,
+      },
+      '/phoenix': {
+        target: 'http://localhost:4000',
+        ws: true,
+      },
+      '/socket': {
+        target: 'http://localhost:4000',
+        ws: true,
+      },
+    },
+  },
 })

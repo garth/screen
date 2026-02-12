@@ -109,6 +109,29 @@ defmodule Screen.ChannelsTest do
     end
   end
 
+  describe "get_channel_by_slug_with_event/1" do
+    test "returns channel with preloaded event document", %{user: user, event: event} do
+      {:ok, channel} =
+        Channels.create_channel(user.id, event.id, %{name: "Test", slug: "with-event"})
+
+      found = Channels.get_channel_by_slug_with_event("with-event")
+      assert found.id == channel.id
+      assert found.event_document.id == event.id
+    end
+
+    test "returns nil for nonexistent slug" do
+      assert Channels.get_channel_by_slug_with_event("nonexistent") == nil
+    end
+
+    test "excludes soft-deleted channels", %{user: user, event: event} do
+      {:ok, channel} =
+        Channels.create_channel(user.id, event.id, %{name: "Del", slug: "del-event"})
+
+      {:ok, _} = Channels.delete_channel(channel)
+      assert Channels.get_channel_by_slug_with_event("del-event") == nil
+    end
+  end
+
   describe "get_channel/1" do
     test "returns channel by id", %{user: user, event: event} do
       {:ok, channel} =

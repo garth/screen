@@ -51,15 +51,13 @@ function destroy() {
 
 function redirectToLogin() {
   if (browser) {
-    const phoenixUrl = import.meta.env.VITE_PHOENIX_URL || 'http://localhost:4000'
-    window.location.href = `${phoenixUrl}/users/log-in`
+    window.location.href = '/users/log-in'
   }
 }
 
 function redirectToRegister() {
   if (browser) {
-    const phoenixUrl = import.meta.env.VITE_PHOENIX_URL || 'http://localhost:4000'
-    window.location.href = `${phoenixUrl}/users/register`
+    window.location.href = '/users/register'
   }
 }
 

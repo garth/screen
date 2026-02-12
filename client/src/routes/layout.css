@@ -4,7 +4,7 @@
 @plugin '@tailwindcss/typography';
 @plugin 'daisyui' {
   themes: false;
-  log: false;
+  logs: false;
 }
 @plugin './catppuccin-latte.ts';
 @plugin './catppuccin-mocha.ts';

@@ -28,6 +28,17 @@ defmodule Screen.Channels do
   end
 
   @doc """
+  Gets a channel by slug with its event document preloaded.
+  Returns nil if not found or soft-deleted.
+  """
+  def get_channel_by_slug_with_event(slug) do
+    Channel
+    |> where([c], c.slug == ^slug and is_nil(c.deleted_at))
+    |> preload(:event_document)
+    |> Repo.one()
+  end
+
+  @doc """
   Gets a channel by ID, excluding soft-deleted.
   """
   def get_channel(id) do

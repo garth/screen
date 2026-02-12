@@ -5,8 +5,7 @@
 
   function handleLogout() {
     auth.destroy()
-    const phoenixUrl = import.meta.env.VITE_PHOENIX_URL || 'http://localhost:4000'
-    window.location.href = `${phoenixUrl}/users/log-out`
+    window.location.href = '/users/log-out'
   }
 
   let { children } = $props()
@@ -103,7 +102,7 @@
           {/if}
         </div>
       {:else}
-        <button onclick={() => auth.redirectToLogin()} class="link link-hover">Log in</button>
+        <button onclick={() => auth.redirectToLogin()} class="btn btn-sm btn-ghost">Log in</button>
         <button onclick={() => auth.redirectToRegister()} class="btn btn-sm btn-primary">Register</button>
       {/if}
     </div>

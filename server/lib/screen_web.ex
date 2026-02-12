@@ -17,7 +17,9 @@ defmodule ScreenWeb do
   those modules here.
   """
 
-  def static_paths, do: ~w(assets fonts images _app favicon.ico robots.txt sw.js manifest.webmanifest apple-touch-icon.png pwa-192x192.png pwa-512x512.png)
+  def static_paths,
+    do:
+      ~w(assets fonts images _app favicon.ico robots.txt sw.js manifest.webmanifest apple-touch-icon.png pwa-192x192.png pwa-512x512.png)
 
   def router do
     quote do

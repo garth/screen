@@ -11,43 +11,14 @@
     <script defer phx-track-static type="text/javascript" src={~p"/assets/js/app.js"}>
     </script>
     <script>
-      (() => {
-        const applyTheme = (pref) => {
-          const isDark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-          document.documentElement.setAttribute('data-theme', isDark ? 'mocha' : 'latte');
-        };
-        const setTheme = (pref) => {
-          if (pref === 'system') localStorage.removeItem('theme-preference');
-          else localStorage.setItem('theme-preference', pref);
-          applyTheme(pref);
-        };
-        applyTheme(localStorage.getItem('theme-preference') || 'system');
-        window.addEventListener('storage', (e) => e.key === 'theme-preference' && applyTheme(e.newValue || 'system'));
-        window.addEventListener('phx:set-theme', (e) => setTheme(e.target.dataset.phxTheme));
+      ;(function () {
+        const pref = localStorage.getItem('theme-preference');
+        const dark = pref === 'dark' || (pref !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+        document.documentElement.setAttribute('data-theme', dark ? 'mocha' : 'latte');
       })();
     </script>
   </head>
-  <body>
-    <ul class="menu menu-horizontal w-full relative z-10 flex items-center gap-4 px-4 sm:px-6 lg:px-8 justify-end">
-      <%= if @current_scope do %>
-        <li>
-          {@current_scope.user.email}
-        </li>
-        <li>
-          <.link href={~p"/users/settings"}>Settings</.link>
-        </li>
-        <li>
-          <.link href={~p"/users/log-out"} method="delete">Log out</.link>
-        </li>
-      <% else %>
-        <li>
-          <.link href={~p"/users/register"}>Register</.link>
-        </li>
-        <li>
-          <.link href={~p"/users/log-in"}>Log in</.link>
-        </li>
-      <% end %>
-    </ul>
+  <body class="bg-base-100 text-base-content">
     {@inner_content}
   </body>
 </html>

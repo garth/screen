@@ -72,6 +72,7 @@
       </p>
 
       {#if auth.isAuthenticated}
+        <p class="mb-4 text-lg text-base-content/70">Welcome back, {auth.user?.firstName ?? auth.user?.email}</p>
         <a href={resolve('/presentations')} class="btn btn-lg btn-secondary">My Presentations</a>
       {:else}
         <div class="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">

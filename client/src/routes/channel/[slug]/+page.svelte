@@ -3,18 +3,22 @@
   import { page } from '$app/state'
   import {
     createPresentationDoc,
+    createEventDoc,
     createThemeDoc,
     createPresenterAwarenessDoc,
     type ThemeDocument,
     type PersistentPresenterState,
+    type EventDocument,
   } from '$lib/stores/documents'
+  import { getSocket } from '$lib/providers/phoenix-socket'
   import PresentationViewer from '$lib/components/presentation/PresentationViewer.svelte'
   import { resolveTheme, defaultTheme, type ResolvedTheme } from '$lib/utils/theme-resolver'
   import { parseContentSegments, type ContentSegment } from '$lib/utils/segment-parser'
+  import type { Channel } from 'phoenix'
 
   const slug = page.params.slug!
 
-  // Channel data loaded from API
+  // Channel data loaded via Phoenix Channel
   let channelData = $state<{
     presentationId: string
     themeOverrideId?: string
@@ -22,26 +26,77 @@
   let loading = $state(true)
   let errorMessage = $state<string | null>(null)
 
-  // Load channel data by slug
+  // Track resources for cleanup
+  let lookupChannel: Channel | null = null
+  let eventDoc = $state<EventDocument | null>(null)
+
+  // Load channel data by joining the channel:slug topic
   $effect(() => {
-    async function loadChannel() {
-      try {
-        const resp = await fetch(`/api/channel/${slug}`)
-        if (!resp.ok) {
-          errorMessage = resp.status === 404 ? 'Channel not found' : 'Failed to load channel'
-          loading = false
-          return
+    const socket = getSocket()
+    const channel = socket.channel(`channel:slug:${slug}`, {})
+    lookupChannel = channel
+
+    channel
+      .join()
+      .receive('ok', (reply) => {
+        const { name: channelName, eventDocumentId } = reply as {
+          id: string
+          name: string
+          slug: string
+          eventDocumentId: string
         }
-        const data = await resp.json()
-        channelData = data
+        // Got channel info — now join the event doc to resolve the presentation
+        eventDoc = createEventDoc({ documentId: eventDocumentId })
+
+        // Leave the lookup channel now that we have the data
+        channel.leave()
+        lookupChannel = null
+
+        // Watch for event doc to sync, then resolve the channel's presentation
+        const checkInterval = setInterval(() => {
+          if (eventDoc?.synced) {
+            clearInterval(checkInterval)
+            resolvePresentation(channelName)
+          }
+        }, 50)
+
+        // Timeout after 15s
+        setTimeout(() => {
+          clearInterval(checkInterval)
+          if (loading) {
+            errorMessage = 'Failed to load channel data'
+            loading = false
+          }
+        }, 15_000)
+      })
+      .receive('error', (resp) => {
+        const { reason } = resp as { reason?: string }
+        errorMessage = reason === 'not found' ? 'Channel not found' : 'Failed to load channel'
         loading = false
-      } catch {
-        errorMessage = 'Failed to load channel'
-        loading = false
-      }
-    }
-    loadChannel()
+      })
   })
+
+  function resolvePresentation(channelName: string) {
+    if (!eventDoc?.synced) return
+
+    // Find the channel in the event doc's Yjs state by name
+    // (DB channels and Yjs event channels are linked by name per spec)
+    const eventChannel = eventDoc.channels.find((c) => c.name === channelName)
+
+    if (!eventChannel || eventChannel.presentations.length === 0) {
+      errorMessage = 'No presentation available for this channel'
+      loading = false
+      return
+    }
+
+    // Use the first presentation assigned to this channel
+    const relation = eventChannel.presentations[0]
+    channelData = {
+      presentationId: relation.presentationId,
+      themeOverrideId: relation.themeOverrideId,
+    }
+    loading = false
+  }
 
   // Presentation document (loaded once channel data is available)
   let doc = $state<ReturnType<typeof createPresentationDoc> | null>(null)
@@ -125,9 +180,11 @@
   const hasActiveState = $derived(currentSegmentId !== null)
 
   onDestroy(() => {
+    lookupChannel?.leave()
     themeDoc?.destroy()
     presenterAwareness?.destroy()
     doc?.destroy()
+    eventDoc?.destroy()
   })
 </script>
 

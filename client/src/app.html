@@ -48,8 +48,8 @@
     </script>
     <script>
       ;(function () {
-        const pref = localStorage.getItem('theme-preference') || 'system'
-        const dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        const pref = localStorage.getItem('theme-preference')
+        const dark = pref === 'dark' || (pref !== 'light' && window.matchMedia('(prefers-color-scheme: dark)').matches)
         document.documentElement.setAttribute('data-theme', dark ? 'mocha' : 'latte')
         // Update theme-color meta tag (Catppuccin base colors)
         const themeColor = document.getElementById('theme-color')

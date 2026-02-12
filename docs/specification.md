@@ -1,6 +1,6 @@
 # System Requirements
 
-_Last updated: 2026-02-10_
+_Last updated: 2026-02-11_
 
 ## Sync
 
@@ -10,7 +10,7 @@ _Last updated: 2026-02-10_
 - simultaneous changes by multiple users get synced on the server and all clients receive the same result
 - updates should include deleting, modifying and adding content to a document
 - readonly clients can receive updates but cannot send updates
-- every update is stored in the database with the id of the user who sent it
+- every update is stored in the database with the id of the user who sent it (system-generated compaction records may have a null user_id)
 - if a document is public, authentication is not required, but the document should be readonly
 - to write to a document, the user must be the owner or granted access via DocumentUser.canWrite
 - non public documents require an entry in the DocumentUsers table to read
@@ -76,7 +76,7 @@ _Last updated: 2026-02-10_
 - users can sign up with first name, last name, email and password
 - user emails are verified, by sending an email to the user, before they are added to the user table
 - users can reset their passwords via a "forgot password" form which will send them an email with a link to a password reset form
-- users can delete their account. they will be asked to confirm before all data is deleted
+- users can delete their account. they will be asked to confirm before the account is soft-deleted (the user record is marked as deleted rather than physically removed, per DEC-006)
 
 ### Presentations
 
@@ -145,10 +145,12 @@ _Last updated: 2026-02-10_
 
 ### Channels
 
-- A channel is registered in the Channel table
-- channels can be access by /channel/[slug]
+- A channel is registered in the Channel table with a name, slug, and reference to an event document
+- channels can be accessed by /channel/[slug]
 - a channel points to an event document where the channel is stored by name
+- channel slug lookup uses a Phoenix Channel (`channel:slug:*`) — no REST endpoints
+- the client joins `channel:slug:{slug}` to get channel info, then joins the event document to resolve which presentation is mapped to the channel
 - access to the channel is managed by the event Document.isPublic
-- authentication is required for private channels, and the user must be the channel owner or in the DocumentUser list
+- authentication is required for private channels, and the user must be the event document owner or in the DocumentUser list
 - users do not need to authenticate for public events
-- when viewing a channel, the presentation currently selected in the event will be displayed via the presentation viewer
+- when viewing a channel, the first presentation assigned to the channel in the event document will be displayed via the presentation viewer

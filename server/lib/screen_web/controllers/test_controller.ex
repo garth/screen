@@ -3,6 +3,7 @@ if Application.compile_env(:screen, :dev_routes) do
     use ScreenWeb, :controller
 
     alias Screen.Accounts
+    alias Screen.Channels
     alias Screen.Documents
     alias Screen.Documents.{Document, DocumentUser}
     alias Screen.Repo
@@ -134,6 +135,21 @@ if Application.compile_env(:screen, :dev_routes) do
         documentId: du.document_id,
         userId: du.user_id,
         write: du.can_write
+      })
+    end
+
+    def create_channel(conn, params) do
+      {:ok, channel} =
+        Channels.create_channel(params["userId"], params["eventDocumentId"], %{
+          name: params["name"],
+          slug: params["slug"]
+        })
+
+      json(conn, %{
+        id: channel.id,
+        name: channel.name,
+        slug: channel.slug,
+        eventDocumentId: channel.event_document_id
       })
     end
   end

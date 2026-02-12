@@ -133,6 +133,6 @@
   } else {
     this.topbar = topbar;
   }
-}.call(this, window, document));
+}.call(window, window, document));
 
 export default topbar;

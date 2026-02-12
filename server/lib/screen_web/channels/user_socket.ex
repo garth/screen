@@ -3,6 +3,7 @@ defmodule ScreenWeb.UserSocket do
 
   channel "document:*", ScreenWeb.DocumentChannel
   channel "user:*", ScreenWeb.UserChannel
+  channel "channel:slug:*", ScreenWeb.ChannelLookupChannel
 
   @impl true
   def connect(_params, socket, connect_info) do
