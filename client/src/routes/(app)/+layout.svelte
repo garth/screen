@@ -15,6 +15,25 @@
     window.location.href = '/users/log-out'
   }
 
+  let gravatarUrl = $state('')
+
+  async function sha256Hex(input: string): Promise<string> {
+    const data = new TextEncoder().encode(input)
+    const hash = await crypto.subtle.digest('SHA-256', data)
+    return Array.from(new Uint8Array(hash))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+  }
+
+  $effect(() => {
+    const email = auth.user?.email
+    if (email) {
+      sha256Hex(email.trim().toLowerCase()).then((hash) => {
+        gravatarUrl = `https://gravatar.com/avatar/${hash}?s=64&d=mp`
+      })
+    }
+  })
+
   let { children } = $props()
 
   const navLinks: { href: string; label: string }[] = [
@@ -65,7 +84,7 @@
     <div class="flex items-center gap-6">
       <a href={resolve('/')} class="text-lg font-semibold">Chapel Screen</a>
       {#if auth.isAuthenticated}
-        <div class="flex gap-4">
+        <div class="hidden gap-4 sm:flex">
           {#each navLinks as link (link.href)}
             {@const isActive = page.url.pathname === link.href}
             <a
@@ -88,10 +107,13 @@
             class="btn gap-2 btn-ghost btn-sm"
             aria-expanded={userMenuOpen}
             aria-haspopup="true">
-            <span class="font-medium">{auth.user.firstName} {auth.user.lastName}</span>
-            <svg class="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-            </svg>
+            {#if gravatarUrl}
+              <img
+                src={gravatarUrl}
+                alt=""
+                class="size-6 rounded-full" />
+            {/if}
+            <span class="hero-chevron-down-micro size-4" aria-hidden="true"></span>
           </button>
 
           {#if userMenuOpen}
@@ -100,10 +122,16 @@
               role="menu"
               class="dropdown-content menu z-20 mt-1 w-48 rounded-box border border-base-300 bg-base-200 p-2 shadow-lg">
               <li role="none">
-                <a role="menuitem" href={resolve('/preferences')} onclick={() => (userMenuOpen = false)}>Preferences</a>
+                <a role="menuitem" href={resolve('/preferences')} onclick={() => (userMenuOpen = false)}>
+                  <span class="hero-cog-6-tooth-mini size-5" aria-hidden="true"></span>
+                  Preferences
+                </a>
               </li>
               <li role="none">
-                <button role="menuitem" onclick={handleLogout} class="text-error">Log out</button>
+                <button role="menuitem" onclick={handleLogout} class="text-error">
+                  <span class="hero-arrow-left-start-on-rectangle-mini size-5" aria-hidden="true"></span>
+                  Log out
+                </button>
               </li>
             </ul>
           {/if}
