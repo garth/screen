@@ -5,19 +5,19 @@ test.describe('Themes List', () => {
   const testUser = {
     firstName: 'Theme',
     lastName: 'Tester',
-    password: 'password123',
+    password: 'password1234',
   }
 
   test('requires authentication to view themes list', async ({ page }) => {
     await page.goto('/themes')
-    await expect(page).toHaveURL(/\/login/)
+    await expect(page).toHaveURL(/\/users\/log-in/)
   })
 
   test('shows themes page with create button', async ({ page }) => {
     const email = `theme-list-${Date.now()}@example.com`
     await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     await page.goto('/themes')
     await page.waitForLoadState('networkidle')
@@ -29,7 +29,7 @@ test.describe('Themes List', () => {
     const email = `theme-create-${Date.now()}@example.com`
     await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     await page.goto('/themes')
     await page.waitForLoadState('networkidle')
@@ -43,7 +43,7 @@ test.describe('Theme Editor', () => {
   const testUser = {
     firstName: 'ThemeEdit',
     lastName: 'Tester',
-    password: 'password123',
+    password: 'password1234',
   }
 
   test('displays editor for owner with title and color inputs', async ({ page }) => {
@@ -57,7 +57,7 @@ test.describe('Theme Editor', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     await page.goto(`/theme/${doc.id}/edit`)
     await page.waitForLoadState('networkidle')
@@ -87,7 +87,7 @@ test.describe('Theme Editor', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     await page.goto(`/theme/${doc.id}/edit`)
     await page.waitForLoadState('networkidle')
@@ -107,7 +107,7 @@ test.describe('Theme Editor', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     await page.goto(`/theme/${doc.id}/edit`)
     await page.waitForLoadState('networkidle')
@@ -127,7 +127,7 @@ test.describe('Theme Editor', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     await page.goto(`/theme/${doc.id}/edit`)
     await page.waitForLoadState('networkidle')

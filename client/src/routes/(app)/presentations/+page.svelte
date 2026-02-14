@@ -3,6 +3,7 @@
   import { resolve } from '$app/paths'
   import { toast } from '$lib/toast.svelte'
   import { auth } from '$lib/stores/auth.svelte'
+  import { generatePresentationName } from '$lib/utils/name-generator'
 
   let creating = $state(false)
 
@@ -10,7 +11,8 @@
     if (!auth.userChannel) return
     creating = true
     try {
-      const id = await auth.userChannel.createDocument('presentation')
+      const name = generatePresentationName()
+      const id = await auth.userChannel.createDocument('presentation', name)
       await goto(resolve(`/presentation/${id}/edit`))
     } catch {
       toast('error', 'Failed to create presentation')

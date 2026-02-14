@@ -31,6 +31,7 @@ export interface BaseDocument {
   readonly synced: boolean
   readonly syncTimedOut: boolean
   readonly readOnly: boolean
+  readonly error: string | null
   readonly ydoc: Y.Doc
   readonly meta: Y.Map<unknown>
   readonly baseYdoc: Y.Doc | null
@@ -46,6 +47,7 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
   let synced = $state(false)
   let syncTimedOut = $state(false)
   let readOnly = $state(false)
+  let error = $state<string | null>(null)
 
   const SYNC_TIMEOUT_MS = 15_000
   let syncTimeout: ReturnType<typeof setTimeout> | null = null
@@ -76,13 +78,77 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
   // (y-phoenix-channel ignores the join reply payload, so the server sends a separate event)
   let permissionsListenerAdded = false
 
+  // Intercept channel join errors to detect permission/not-found issues.
+  // Uses both joinPush error callback and channel onError for reliability.
+  let joinErrorHandlerAdded = false
+
+  function setupJoinErrorHandler() {
+    if (joinErrorHandlerAdded || !provider.channel) return
+    joinErrorHandlerAdded = true
+
+    const channel = provider.channel
+
+    // Hook into the joinPush to detect join error replies (e.g. "not found")
+    const joinPush = (channel as unknown as Record<string, unknown>).joinPush as
+      | {
+          receive: (status: string, callback: (response: Record<string, unknown>) => void) => unknown
+          receivedResp?: { status: string; response: Record<string, unknown> }
+        }
+      | undefined
+
+    if (joinPush) {
+      // Check if already received an error (in case we're late)
+      if (joinPush.receivedResp?.status === 'error') {
+        error = (joinPush.receivedResp.response?.reason as string) || 'error'
+        syncTimedOut = true
+        if (syncTimeout) clearTimeout(syncTimeout)
+        return
+      }
+
+      joinPush.receive('error', (response) => {
+        error = (response?.reason as string) || 'error'
+        syncTimedOut = true
+        if (syncTimeout) clearTimeout(syncTimeout)
+      })
+    }
+
+    // Also use channel.onError as a fallback (fires on phx_error / channel crash)
+    channel.onError(() => {
+      if (!synced && !error) {
+        const resp = (channel as unknown as Record<string, unknown>).joinPush as
+          | { receivedResp?: { status: string; response: Record<string, unknown> } }
+          | undefined
+        if (resp?.receivedResp?.status === 'error') {
+          error = (resp.receivedResp.response?.reason as string) || 'error'
+        } else {
+          error = 'error'
+        }
+        syncTimedOut = true
+        if (syncTimeout) clearTimeout(syncTimeout)
+      }
+    })
+  }
+
+  // Set up immediately (channel exists from constructor)
+  setupJoinErrorHandler()
+
   provider.on('status', ({ status }) => {
     connected = status === 'connected'
 
+    if (status === 'connected') {
+      error = null // Clear error on successful connection
+    }
+
+    // Also try to set up on connecting (for reconnects or delayed socket connection)
+    if (status === 'connecting') {
+      joinErrorHandlerAdded = false // Reset for new channel
+      setupJoinErrorHandler()
+    }
+
     if (status === 'connected' && provider.channel && !permissionsListenerAdded) {
       permissionsListenerAdded = true
-      provider.channel.on('permissions', (payload: { read_only: boolean }) => {
-        readOnly = payload.read_only
+      provider.channel.on('permissions', (payload: Record<string, unknown>) => {
+        readOnly = payload.read_only as boolean
       })
     }
   })
@@ -150,6 +216,9 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
     },
     get readOnly() {
       return readOnly
+    },
+    get error() {
+      return error
     },
     get ydoc() {
       return ydoc

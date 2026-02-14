@@ -105,6 +105,11 @@ defmodule Screen.Documents.DocServer do
       end
     end)
 
+    # Seed Yjs meta from DB meta for keys not already present in the Yjs doc.
+    # This ensures DB-only meta (e.g. isSystemTheme set at creation) is available
+    # to clients through the Yjs document sync protocol.
+    seed_meta_from_db(doc, doc_name)
+
     # Clean local awareness state (server doesn't have its own awareness)
     if awareness, do: Awareness.clean_local_state(awareness)
 
@@ -303,6 +308,23 @@ defmodule Screen.Documents.DocServer do
         timer = Process.send_after(self(), :sync_meta, @meta_debounce_ms)
         assign(state, meta_timer: timer, meta_first_pending: first_pending)
     end
+  end
+
+  defp seed_meta_from_db(doc, doc_name) do
+    document = Documents.get_document!(doc_name)
+    db_meta = document.meta || %{}
+
+    if db_meta != %{} do
+      meta = Yex.Doc.get_map(doc, "meta")
+
+      Enum.each(db_meta, fn {key, value} ->
+        unless Yex.Map.has_key?(meta, key) do
+          Yex.Map.set(meta, to_string(key), value)
+        end
+      end)
+    end
+  rescue
+    e -> Logger.warning("Failed to seed meta from DB for #{doc_name}: #{inspect(e)}")
   end
 
   defp do_sync_meta(state) do

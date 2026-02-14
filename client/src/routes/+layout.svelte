@@ -4,6 +4,10 @@
   import './layout.css'
   import Toasts from '$lib/components/Toasts.svelte'
   import '$lib/theme.svelte'
+  import { auth } from '$lib/stores/auth.svelte'
+
+  // Initialize auth (connects socket + joins user channel)
+  auth.init()
 
   // Register PWA service worker
   onMount(async () => {

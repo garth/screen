@@ -67,6 +67,9 @@ export function createPresentationDoc(options: DocumentOptions): PresentationDoc
     get readOnly() {
       return base.readOnly
     },
+    get error() {
+      return base.error
+    },
 
     // Meta accessors
     get title() {

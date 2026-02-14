@@ -40,6 +40,7 @@ export interface PresentationDocument {
   readonly synced: boolean
   readonly syncTimedOut: boolean
   readonly readOnly: boolean
+  readonly error: string | null
 
   readonly title: string
   readonly themeId: string | null
@@ -93,6 +94,7 @@ export interface ThemeDocument {
   readonly synced: boolean
   readonly syncTimedOut: boolean
   readonly readOnly: boolean
+  readonly error: string | null
   readonly isSystemTheme: boolean
 
   readonly font: string
@@ -142,6 +144,7 @@ export interface EventDocument {
   readonly synced: boolean
   readonly syncTimedOut: boolean
   readonly readOnly: boolean
+  readonly error: string | null
 
   readonly title: string
   setTitle(value: string): void

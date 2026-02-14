@@ -1,6 +1,6 @@
 import { Socket } from 'phoenix'
 
-const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:4000/socket'
+const wsUrl = import.meta.env.VITE_WS_URL || '/socket'
 
 let socket: Socket | null = null
 

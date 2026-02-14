@@ -25,12 +25,23 @@
     }
   })
 
+  let nameError = $state('')
+
   async function handleUpdateName(event: SubmitEvent) {
     event.preventDefault()
+    nameError = ''
+    if (!firstName.trim()) {
+      nameError = 'First name is required'
+      return
+    }
+    if (!lastName.trim()) {
+      nameError = 'Last name is required'
+      return
+    }
     if (!auth.userChannel) return
     savingName = true
     try {
-      await auth.userChannel.updateProfile({ firstName, lastName })
+      await auth.userChannel.updateProfile({ firstName: firstName.trim(), lastName: lastName.trim() })
       toast('success', 'Name updated successfully')
     } catch {
       toast('error', 'Failed to update name')
@@ -101,6 +112,11 @@
       <h2 class="card-title">Profile</h2>
 
       <form onsubmit={handleUpdateName} class="flex flex-col gap-4">
+        {#if nameError}
+          <div class="alert alert-error">
+            <span>{nameError}</span>
+          </div>
+        {/if}
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label for="firstName" class="label">

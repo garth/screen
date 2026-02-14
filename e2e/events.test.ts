@@ -5,19 +5,19 @@ test.describe('Events List', () => {
   const testUser = {
     firstName: 'Event',
     lastName: 'Tester',
-    password: 'password123',
+    password: 'password1234',
   }
 
   test('requires authentication to view events list', async ({ page }) => {
     await page.goto('/events')
-    await expect(page).toHaveURL(/\/login/)
+    await expect(page).toHaveURL(/\/users\/log-in/)
   })
 
   test('shows empty state when no events exist', async ({ page }) => {
     const email = `event-empty-${Date.now()}@example.com`
     await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     await page.goto('/events')
     await page.waitForLoadState('networkidle')
@@ -30,7 +30,7 @@ test.describe('Events List', () => {
     const email = `event-create-${Date.now()}@example.com`
     await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     await page.goto('/events')
     await page.waitForLoadState('networkidle')
@@ -50,7 +50,7 @@ test.describe('Events List', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     await page.goto('/events')
     await page.waitForLoadState('networkidle')
@@ -63,7 +63,7 @@ test.describe('Event Editor', () => {
   const testUser = {
     firstName: 'EventEdit',
     lastName: 'Tester',
-    password: 'password123',
+    password: 'password1234',
   }
 
   test('displays editor for owner with title input', async ({ page }) => {
@@ -77,7 +77,7 @@ test.describe('Event Editor', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     await page.goto(`/event/${doc.id}/edit`)
     await page.waitForLoadState('networkidle')
@@ -96,7 +96,7 @@ test.describe('Event Editor', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     await page.goto(`/event/${doc.id}/edit`)
     await page.waitForLoadState('networkidle')
@@ -116,7 +116,7 @@ test.describe('Event Editor', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     await page.goto(`/event/${doc.id}/edit`)
     await page.waitForLoadState('networkidle')

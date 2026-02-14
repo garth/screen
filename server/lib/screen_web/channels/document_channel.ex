@@ -13,6 +13,7 @@ defmodule ScreenWeb.DocumentChannel do
   ## Incoming Events
 
   - `yjs` — binary Yjs sync message, delegated to DocServer
+  - `yjs_sync` — binary initial sync step 1, delegated to DocServer
 
   ## Outgoing Events
 
@@ -56,8 +57,22 @@ defmodule ScreenWeb.DocumentChannel do
     end
   end
 
+  # Binary frames from y-phoenix-channel (standard path)
   @impl true
+  def handle_in("yjs", {:binary, data}, socket) do
+    handle_yjs_message(data, socket)
+  end
+
+  def handle_in("yjs_sync", {:binary, data}, socket) do
+    handle_yjs_message(data, socket)
+  end
+
+  # JSON payload fallback
   def handle_in("yjs", %{"data" => data}, socket) when is_binary(data) do
+    handle_yjs_message(data, socket)
+  end
+
+  defp handle_yjs_message(data, socket) do
     if socket.assigns.read_only do
       # Read-only clients can only send sync step1 (reads) and awareness
       case Yex.Sync.message_decode(data) do
@@ -95,7 +110,7 @@ defmodule ScreenWeb.DocumentChannel do
 
   @impl true
   def handle_info({:yjs, message, _server}, socket) do
-    push(socket, "yjs", %{"data" => message})
+    push(socket, "yjs", {:binary, message})
     {:noreply, socket}
   end
 

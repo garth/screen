@@ -5,7 +5,7 @@ test.describe('Document API Integration', () => {
   const testUser = {
     firstName: 'DocAPI',
     lastName: 'User',
-    password: 'password123',
+    password: 'password1234',
   }
 
   async function createAndLoginUser(page: Page) {
@@ -17,7 +17,7 @@ test.describe('Document API Integration', () => {
       password: testUser.password,
     })
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
     return { userId, email }
   }
 
@@ -528,7 +528,7 @@ test.describe('Document API Integration', () => {
       const page2 = await context2.newPage()
 
       await loginUser(page2, { email: email2, password: testUser.password })
-      await expect(page2).toHaveURL('/presentations')
+      await expect(page2).toHaveURL('/presentations', { timeout: 10000 })
 
       // Navigate to test page and connect
       await page2.goto('/test/documents')

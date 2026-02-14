@@ -171,7 +171,7 @@ defmodule ScreenWeb.DocumentChannelTest do
 
       # The channel sends :start_sync after join, which triggers a sync_step1
       # The server responds with sync_step2 + sync_step1 messages
-      assert_push "yjs", %{"data" => data}, 1000
+      assert_push "yjs", {:binary, data}, 1000
       assert is_binary(data)
     end
   end
@@ -285,7 +285,7 @@ defmodule ScreenWeb.DocumentChannelTest do
       push(socket, "yjs", %{"data" => step1})
 
       # Should receive sync_step2 response
-      assert_push "yjs", %{"data" => _data}, 1000
+      assert_push "yjs", {:binary, _data}, 1000
     end
   end
 

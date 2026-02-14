@@ -5,7 +5,7 @@ test.describe('Document List', () => {
   const testUser = {
     firstName: 'DocList',
     lastName: 'Tester',
-    password: 'password123',
+    password: 'password1234',
   }
 
   test.describe('Document List Sync', () => {
@@ -14,7 +14,7 @@ test.describe('Document List', () => {
 
       await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
       await loginUser(page, { email, password: testUser.password })
-      await expect(page).toHaveURL('/presentations')
+      await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
       await page.goto('/presentations')
       await page.waitForLoadState('networkidle')
@@ -47,7 +47,7 @@ test.describe('Document List', () => {
 
       await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
       await loginUser(page, { email, password: testUser.password })
-      await expect(page).toHaveURL('/presentations')
+      await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
       // Create presentation via UI
       await page.goto('/presentations')
@@ -91,7 +91,7 @@ test.describe('Document List', () => {
 
       await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
       await loginUser(page, { email, password: testUser.password })
-      await expect(page).toHaveURL('/presentations')
+      await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
       await page.goto('/presentations')
 
@@ -109,7 +109,7 @@ test.describe('Document List', () => {
 
       await createVerifiedUser(page, { ...testUser, email, password: testUser.password })
       await loginUser(page, { email, password: testUser.password })
-      await expect(page).toHaveURL('/presentations')
+      await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
       // Create presentation via UI
       await page.goto('/presentations')

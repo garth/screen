@@ -90,6 +90,9 @@ export function createThemeDoc(options: DocumentOptions): ThemeDocument {
     get readOnly() {
       return base.readOnly
     },
+    get error() {
+      return base.error
+    },
     get isSystemTheme() {
       return isSystemTheme.get()
     },

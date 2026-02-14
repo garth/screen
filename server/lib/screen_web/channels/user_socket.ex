@@ -15,8 +15,11 @@ defmodule ScreenWeb.UserSocket do
 
     if user_token do
       case Screen.Accounts.get_user_by_session_token(user_token) do
-        {user, _inserted_at} -> {:ok, assign(socket, :user, user)}
-        nil -> {:ok, assign(socket, :user, nil)}
+        {user, _inserted_at} ->
+          {:ok, assign(socket, :user, user)}
+
+        nil ->
+          {:ok, assign(socket, :user, nil)}
       end
     else
       {:ok, assign(socket, :user, nil)}

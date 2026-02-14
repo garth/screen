@@ -115,6 +115,9 @@ export function createEventDoc(options: DocumentOptions): EventDocument {
     get readOnly() {
       return base.readOnly
     },
+    get error() {
+      return base.error
+    },
     get title() {
       return title.get()
     },

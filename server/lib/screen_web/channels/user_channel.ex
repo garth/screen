@@ -32,7 +32,9 @@ defmodule ScreenWeb.UserChannel do
   def join("user:" <> user_id, _params, socket) do
     user = socket.assigns.user
 
-    if user && user.id == user_id do
+    if user && (user_id == "me" || user.id == user_id) do
+      Phoenix.PubSub.subscribe(Screen.PubSub, "user_documents:#{user.id}")
+
       reply = %{
         user: %{
           id: user.id,
@@ -51,8 +53,14 @@ defmodule ScreenWeb.UserChannel do
   end
 
   @impl true
-  def handle_in("create_document", %{"type" => type}, socket) do
-    case Documents.create_document(socket.assigns.user.id, type) do
+  def handle_in("create_document", %{"type" => type} = params, socket) do
+    attrs =
+      case params do
+        %{"name" => name} when is_binary(name) and name != "" -> %{name: name}
+        _ -> %{}
+      end
+
+    case Documents.create_document(socket.assigns.user.id, type, attrs) do
       {:ok, document} ->
         push_documents(socket)
         {:reply, {:ok, %{id: document.id}}, socket}
@@ -206,6 +214,12 @@ defmodule ScreenWeb.UserChannel do
       {:error, _changeset} ->
         {:reply, {:error, %{reason: "failed to update document"}}, socket}
     end
+  end
+
+  @impl true
+  def handle_info(:documents_updated, socket) do
+    push_documents(socket)
+    {:noreply, socket}
   end
 
   # --- Private Helpers ---

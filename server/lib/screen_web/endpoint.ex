@@ -14,7 +14,10 @@ defmodule ScreenWeb.Endpoint do
     websocket: [connect_info: [session: @session_options]],
     longpoll: [connect_info: [session: @session_options]]
 
-  socket "/socket", ScreenWeb.UserSocket, websocket: [connect_info: [session: @session_options]]
+  # The SPA is a static page without access to the session CSRF token,
+  # so we disable check_csrf for the user socket and rely on check_origin instead.
+  socket "/socket", ScreenWeb.UserSocket,
+    websocket: [connect_info: [session: @session_options], check_csrf: false, check_origin: :conn]
 
   # Serve at "/" the static files from "priv/static" directory.
   #

@@ -21,6 +21,8 @@ defmodule Screen.Documents do
     Document
     |> where([d], d.id == ^id and is_nil(d.deleted_at))
     |> Repo.one()
+  rescue
+    Ecto.Query.CastError -> nil
   end
 
   @doc """
@@ -133,13 +135,32 @@ defmodule Screen.Documents do
 
   @doc """
   Updates the meta column on a document.
+  Also syncs the `name` column from `meta["title"]` when present.
+  Broadcasts a document list update to the owner when the name changes.
   """
   def update_document_meta!(document_id, meta) when is_map(meta) do
     document = get_document!(document_id)
 
-    document
-    |> Ecto.Changeset.change(%{meta: meta})
-    |> Repo.update!()
+    changes =
+      case meta do
+        %{"title" => title} when is_binary(title) and title != "" -> %{meta: meta, name: title}
+        _ -> %{meta: meta}
+      end
+
+    updated =
+      document
+      |> Ecto.Changeset.change(changes)
+      |> Repo.update!()
+
+    if changes[:name] && changes[:name] != document.name do
+      Phoenix.PubSub.broadcast(
+        Screen.PubSub,
+        "user_documents:#{document.user_id}",
+        :documents_updated
+      )
+    end
+
+    updated
   end
 
   @doc """

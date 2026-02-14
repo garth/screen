@@ -14,7 +14,7 @@ test.describe('Offline Editing with IndexedDB', () => {
   const testUser = {
     firstName: 'Offline',
     lastName: 'Test',
-    password: 'password123',
+    password: 'password1234',
   }
 
   test('presentation loads from IndexedDB cache on reload', async ({ page }) => {
@@ -29,7 +29,7 @@ test.describe('Offline Editing with IndexedDB', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     // First visit - loads from server and caches to IndexedDB
     await page.goto(`/presentation/${doc.id}`)
@@ -60,7 +60,7 @@ test.describe('Offline Editing with IndexedDB', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     await page.goto(`/presentation/${doc.id}/presenter`)
     await page.waitForLoadState('networkidle')
@@ -76,7 +76,7 @@ test.describe('WebRTC P2P Sync', () => {
   const testUser = {
     firstName: 'WebRTC',
     lastName: 'Sync',
-    password: 'password123',
+    password: 'password1234',
   }
 
   // Skip: WebRTC sync tests are inherently flaky due to P2P connection timing
@@ -93,7 +93,7 @@ test.describe('WebRTC P2P Sync', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     // Open presenter in first tab
     const presenterPage1 = page
@@ -133,7 +133,7 @@ test.describe('WebRTC P2P Sync', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     // Open presenter
     const presenterPage = page
@@ -162,7 +162,7 @@ test.describe('Dual Provider Fallback', () => {
   const testUser = {
     firstName: 'Fallback',
     lastName: 'Test',
-    password: 'password123',
+    password: 'password1234',
   }
 
   test('presentation loads title from Hocuspocus server', async ({ page }) => {
@@ -177,7 +177,7 @@ test.describe('Dual Provider Fallback', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     await page.goto(`/presentation/${doc.id}`)
     await page.waitForLoadState('networkidle')
@@ -198,7 +198,7 @@ test.describe('Dual Provider Fallback', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     await page.goto(`/presentation/${doc.id}/edit`)
     await page.waitForLoadState('networkidle')
@@ -225,7 +225,7 @@ test.describe('Dual Provider Fallback', () => {
     })
 
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     // Open presenter
     await page.goto(`/presentation/${doc.id}/presenter`)

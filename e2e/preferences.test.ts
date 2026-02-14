@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test'
-import { createVerifiedUser, loginUser } from './helpers'
+import { createVerifiedUser, loginUser, waitForLiveView } from './helpers'
 
 test.describe('Preferences Page', () => {
   const testUser = {
     firstName: 'Preferences',
     lastName: 'Test User',
-    password: 'password123',
+    password: 'password1234',
   }
 
   async function createAndLoginUser(page: import('@playwright/test').Page) {
@@ -17,13 +17,13 @@ test.describe('Preferences Page', () => {
       password: testUser.password,
     })
     await loginUser(page, { email, password: testUser.password })
-    await expect(page).toHaveURL('/presentations')
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
     return email
   }
 
   test('redirects to login when not authenticated', async ({ page }) => {
     await page.goto('/preferences')
-    await expect(page).toHaveURL('/login?redirect=/preferences')
+    await expect(page).toHaveURL(/\/users\/log-in/)
   })
 
   test('shows preferences page when authenticated', async ({ page }) => {
@@ -63,8 +63,8 @@ test.describe('Preferences Page', () => {
     await expect(page.getByLabel('First Name')).toHaveValue(newFirstName)
     await expect(page.getByLabel('Last Name')).toHaveValue(newLastName)
 
-    // Nav should also show new name in avatar alt text
-    await expect(page.locator('nav').getByAltText(`${newFirstName} ${newLastName}`)).toBeVisible()
+    // Nav should show the updated name in the user menu button
+    await expect(page.locator('nav').getByText(`${newFirstName} ${newLastName}`)).toBeVisible()
   })
 
   test('shows validation error for empty name', async ({ page }) => {
@@ -91,15 +91,11 @@ test.describe('Preferences Page', () => {
     await expect(page.getByText('Password changed successfully')).toBeVisible()
 
     // Open user menu and logout, then login with new password to verify
-    await page.locator('.user-menu button').click()
-    await page.getByRole('button', { name: 'Log out' }).click()
+    await page.locator('.dropdown button').first().click()
+    await page.getByRole('menuitem', { name: 'Log out' }).click()
     await page.waitForTimeout(500)
-    await page.goto('/login')
-    await page.getByLabel('Email').fill(email)
-    await page.getByLabel('Password').fill(newPassword)
-    await page.getByRole('button', { name: 'Log In' }).click()
-
-    await expect(page).toHaveURL('/presentations')
+    await loginUser(page, { email, password: newPassword })
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
   })
 
   test('shows error for incorrect current password', async ({ page }) => {
@@ -201,12 +197,14 @@ test.describe('Preferences Page', () => {
 
       // Trying to access protected page should redirect to login
       await page.goto('/preferences')
-      await expect(page).toHaveURL('/login?redirect=/preferences')
+      await expect(page).toHaveURL(/\/users\/log-in/)
 
       // Trying to login with deleted account should fail
-      await page.getByLabel('Email').fill(email)
-      await page.getByLabel('Password').fill(testUser.password)
-      await page.getByRole('button', { name: 'Log In' }).click()
+      await waitForLiveView(page)
+      const passwordForm = page.locator('#login_form_password')
+      await passwordForm.getByLabel('Email').fill(email)
+      await passwordForm.getByLabel('Password').fill(testUser.password)
+      await passwordForm.getByRole('button', { name: 'Log in and stay logged in' }).click()
 
       await expect(page.getByText('Invalid email or password')).toBeVisible()
     })

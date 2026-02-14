@@ -1,5 +1,22 @@
 import type { Page } from '@playwright/test'
 
+/**
+ * Wait for the Phoenix LiveView socket to be connected.
+ * Required before interacting with LiveView forms that use phx-submit
+ * (as opposed to phx-trigger-action which falls back to regular POST).
+ */
+export async function waitForLiveView(page: Page) {
+  await page.waitForFunction(
+    () => {
+      const ls = (window as unknown as { liveSocket?: { socket?: { isConnected?: () => boolean } } })
+        .liveSocket
+      return ls?.socket?.isConnected?.() === true
+    },
+    null,
+    { timeout: 10000 },
+  )
+}
+
 export async function createVerifiedUser(
   page: Page,
   user: { name?: string; firstName?: string; lastName?: string; email: string; password: string },
@@ -52,10 +69,11 @@ export async function createUnverifiedUser(
 
 export async function loginUser(page: Page, credentials: { email: string; password: string }) {
   await page.goto('/users/log-in')
-  await page.waitForLoadState('networkidle')
-  await page.getByLabel('Email').fill(credentials.email)
-  await page.getByLabel('Password').fill(credentials.password)
-  await page.getByRole('button', { name: 'Log In' }).click()
+  await waitForLiveView(page)
+  const passwordForm = page.locator('#login_form_password')
+  await passwordForm.getByLabel('Email').fill(credentials.email)
+  await passwordForm.getByLabel('Password').fill(credentials.password)
+  await passwordForm.getByRole('button', { name: 'Log in and stay logged in' }).click()
 }
 
 export async function createPasswordReset(page: Page, email: string): Promise<{ email: string; resetToken: string }> {

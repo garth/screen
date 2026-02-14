@@ -10,28 +10,22 @@ interface AuthState {
   readonly documents: DocumentListItem[]
   readonly ready: boolean
   readonly userChannel: UserChannel | null
-  init(userId: string): void
+  init(): void
   destroy(): void
   redirectToLogin(): void
   redirectToRegister(): void
 }
 
 let ready = $state(false)
-let userId = $state<string | null>(null)
 let user = $state<UserProfile | null>(null)
 let themes = $state<ThemeListItem[]>([])
 let documents = $state<DocumentListItem[]>([])
 let userChannel = $state<UserChannel | null>(null)
 
-function init(id: string) {
-  if (!browser) return
+function init() {
+  if (!browser || userChannel) return
 
-  // Clean up any existing channel
-  userChannel?.destroy()
-
-  userId = id
-
-  const channel = createUserChannel(id)
+  const channel = createUserChannel()
   userChannel = channel
 
   channel.subscribe(() => {
@@ -40,13 +34,17 @@ function init(id: string) {
     documents = channel.documents
     ready = true
   })
+
+  channel.onAuthError(() => {
+    // User is not authenticated — mark as ready with empty data
+    ready = true
+  })
 }
 
 function destroy() {
   userChannel?.destroy()
   userChannel = null
   disconnectSocket()
-  userId = null
   user = null
   themes = []
   documents = []
@@ -65,22 +63,12 @@ function redirectToRegister() {
   }
 }
 
-/**
- * Connect to the Phoenix socket eagerly so document channels
- * can join immediately when pages mount.
- */
-function ensureSocket() {
-  if (browser) {
-    getSocket()
-  }
-}
-
 export const auth: AuthState = {
   get isAuthenticated() {
-    return userId !== null
+    return user !== null
   },
   get userId() {
-    return userId
+    return user?.id ?? null
   },
   get user() {
     return user
@@ -97,10 +85,7 @@ export const auth: AuthState = {
   get userChannel() {
     return userChannel
   },
-  init(id: string) {
-    ensureSocket()
-    init(id)
-  },
+  init,
   destroy,
   redirectToLogin,
   redirectToRegister,

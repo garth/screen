@@ -250,6 +250,85 @@ defmodule Screen.Documents.DocServerTest do
     end
   end
 
+  describe "meta seeding from DB" do
+    test "seeds Yjs meta from DB meta on startup", %{user: user} do
+      # Create a document with DB meta containing isSystemTheme
+      {:ok, document} =
+        Documents.create_document(user.id, "theme", %{
+          name: "System Theme",
+          meta: %{"isSystemTheme" => true, "title" => "System Theme"}
+        })
+
+      # Start DocServer — it should seed Yjs meta from DB
+      server = start_server(document)
+      DocServer.observe(server)
+
+      # Sync the document state to a fresh doc
+      {:ok, sv} = Yex.encode_state_vector(Yex.Doc.new())
+      {:ok, step1} = Yex.Sync.message_encode({:sync, {:sync_step1, sv}})
+      DocServer.send_yjs_message(server, step1)
+
+      assert_receive {:yjs, reply_data, ^server}, 1000
+      {:ok, {:sync, {:sync_step2, state_update}}} = Yex.Sync.message_decode(reply_data)
+
+      # Apply the state and check the meta map
+      new_doc = Yex.Doc.new()
+      :ok = Yex.apply_update(new_doc, state_update)
+      meta = Yex.Doc.get_map(new_doc, "meta")
+      assert Yex.Map.get(meta, "isSystemTheme") == true
+      assert Yex.Map.get(meta, "title") == "System Theme"
+
+      DocServer.unobserve(server)
+      wait_for_exit(server)
+    end
+
+    test "does not overwrite existing Yjs meta with DB meta", %{user: user} do
+      # Create a document with DB meta
+      {:ok, document} =
+        Documents.create_document(user.id, "theme", %{
+          name: "Old Title",
+          meta: %{"title" => "Old Title"}
+        })
+
+      # Persist a Yjs update that sets a different title in meta
+      doc = Yex.Doc.new()
+      meta = Yex.Doc.get_map(doc, "meta")
+      {:ok, _} = Yex.Doc.monitor_update(doc)
+      Yex.Map.set(meta, "title", "New Title")
+
+      update =
+        receive do
+          {:update_v1, update_bin, _origin, _metadata} -> update_bin
+        after
+          1000 -> raise "expected update"
+        end
+
+      Documents.create_document_update!(document.id, user.id, update)
+
+      # Start DocServer — it should NOT overwrite the Yjs meta title
+      server = start_server(document)
+      DocServer.observe(server)
+
+      # Sync the document state
+      {:ok, sv} = Yex.encode_state_vector(Yex.Doc.new())
+      {:ok, step1} = Yex.Sync.message_encode({:sync, {:sync_step1, sv}})
+      DocServer.send_yjs_message(server, step1)
+
+      assert_receive {:yjs, reply_data, ^server}, 1000
+      {:ok, {:sync, {:sync_step2, state_update}}} = Yex.Sync.message_decode(reply_data)
+
+      new_doc = Yex.Doc.new()
+      :ok = Yex.apply_update(new_doc, state_update)
+      result_meta = Yex.Doc.get_map(new_doc, "meta")
+
+      # Title should be from the Yjs update, not the DB
+      assert Yex.Map.get(result_meta, "title") == "New Title"
+
+      DocServer.unobserve(server)
+      wait_for_exit(server)
+    end
+  end
+
   describe "meta sync" do
     test "syncs meta map to database after debounce", %{document: document, user: user} do
       server = start_server(document)

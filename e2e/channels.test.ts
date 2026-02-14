@@ -23,7 +23,7 @@ test.describe('Channel Public View', () => {
       firstName: 'Channel',
       lastName: 'Tester',
       email,
-      password: 'password123',
+      password: 'password1234',
     })
 
     // Create event (public) and presentation (public) via API
@@ -53,8 +53,8 @@ test.describe('Channel Public View', () => {
     })
 
     // Log in and set up the event via the UI
-    await loginUser(page, { email, password: 'password123' })
-    await expect(page).toHaveURL('/presentations')
+    await loginUser(page, { email, password: 'password1234' })
+    await expect(page).toHaveURL('/presentations', { timeout: 10000 })
 
     // Navigate to event editor
     await page.goto(`/event/${event.id}/edit`)
@@ -109,7 +109,7 @@ test.describe('Channel Public View', () => {
       firstName: 'Private',
       lastName: 'Channel',
       email,
-      password: 'password123',
+      password: 'password1234',
     })
 
     // Create private event

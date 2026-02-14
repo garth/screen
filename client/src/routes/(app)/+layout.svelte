@@ -3,6 +3,13 @@
   import { resolve } from '$app/paths'
   import { auth } from '$lib/stores/auth.svelte'
 
+  // Redirect to login if not authenticated
+  $effect(() => {
+    if (auth.ready && !auth.isAuthenticated) {
+      auth.redirectToLogin()
+    }
+  })
+
   function handleLogout() {
     auth.destroy()
     window.location.href = '/users/log-out'

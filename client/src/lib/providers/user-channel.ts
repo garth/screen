@@ -57,18 +57,19 @@ function pushAsync<T = void>(
 }
 
 /**
- * Manages the `user:{userId}` channel for authenticated users.
- * Provides user profile, theme list, and mutation methods.
+ * Manages the `user:me` channel for authenticated users.
+ * Provides user profile, theme list, document list, and mutation methods.
  */
-export function createUserChannel(userId: string) {
+export function createUserChannel() {
   const socket = getSocket()
-  const channel: Channel = socket.channel(`user:${userId}`, {})
+  const channel: Channel = socket.channel('user:me', {})
 
   let user: UserProfile | null = null
   let themes: ThemeListItem[] = []
   let documents: DocumentListItem[] = []
   let joined = false
   const listeners: Set<Listener> = new Set()
+  const authErrorListeners: Set<Listener> = new Set()
 
   function notify() {
     for (const fn of listeners) fn()
@@ -85,7 +86,8 @@ export function createUserChannel(userId: string) {
       notify()
     })
     .receive('error', (resp: Record<string, unknown>) => {
-      console.error('[UserChannel] join error:', resp)
+      console.debug('[UserChannel] join error (not authenticated):', resp)
+      for (const fn of authErrorListeners) fn()
     })
 
   // Listen for live updates
@@ -123,11 +125,16 @@ export function createUserChannel(userId: string) {
       return () => listeners.delete(fn)
     },
 
-    createDocument(type: string = 'presentation'): Promise<string> {
+    onAuthError(fn: Listener): () => void {
+      authErrorListeners.add(fn)
+      return () => authErrorListeners.delete(fn)
+    },
+
+    createDocument(type: string = 'presentation', name?: string): Promise<string> {
       return pushAsync(
         channel,
         'create_document',
-        { type },
+        { type, ...(name && { name }) },
         {
           errorMessage: 'Failed to create document',
           extractResult: (resp) => resp.id as string,

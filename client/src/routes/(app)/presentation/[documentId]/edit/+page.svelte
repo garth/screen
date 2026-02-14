@@ -50,10 +50,22 @@
 
   // Local title state for input
   let titleInput = $state('')
+  let initialTitleSet = false
 
   // Sync title from doc when it syncs
   $effect(() => {
     if (doc.synced) {
+      // For new documents, the Yjs title is empty but the DB name has the generated name
+      if (!initialTitleSet && !doc.title && !doc.readOnly) {
+        const docInfo = auth.documents.find((d) => d.id === documentId)
+        if (docInfo?.title && docInfo.title !== 'Untitled') {
+          doc.setTitle(docInfo.title)
+          titleInput = docInfo.title
+          initialTitleSet = true
+          return
+        }
+      }
+      initialTitleSet = true
       titleInput = doc.title || ''
     }
   })
@@ -239,7 +251,13 @@
 
   <!-- Editor -->
   <main class="flex flex-1 flex-col overflow-hidden">
-    {#if doc.synced}
+    {#if doc.error}
+      <div class="flex h-full flex-col items-center justify-center gap-4">
+        <h2 class="text-2xl font-bold">Presentation not found</h2>
+        <p class="text-base-content/70">This presentation doesn't exist or you don't have access to it.</p>
+        <a href={resolve('/presentations')} class="btn btn-sm btn-primary">Back to presentations</a>
+      </div>
+    {:else if doc.synced}
       <PresentationEditor {doc} theme={resolvedTheme} />
     {:else if doc.syncTimedOut}
       <div class="flex h-full flex-col items-center justify-center gap-4">

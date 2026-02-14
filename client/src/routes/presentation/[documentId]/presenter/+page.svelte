@@ -280,7 +280,12 @@
   </header>
 
   <main class="relative flex-1 overflow-hidden">
-    {#if doc.synced}
+    {#if doc.error}
+      <div class="flex h-full flex-col items-center justify-center gap-4">
+        <h2 class="text-2xl font-bold">Presentation not found</h2>
+        <p class="text-base-content/70">This presentation doesn't exist or you don't have access to it.</p>
+      </div>
+    {:else if doc.synced}
       <PresentationViewer
         content={doc.content}
         theme={resolvedTheme}
