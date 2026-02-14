@@ -4,9 +4,7 @@
   import {
     createPresentationDoc,
     createEventDoc,
-    createThemeDoc,
     createPresenterAwarenessDoc,
-    type ThemeDocument,
     type PersistentPresenterState,
     type EventDocument,
   } from '$lib/stores/documents'
@@ -14,6 +12,7 @@
   import PresentationViewer from '$lib/components/presentation/PresentationViewer.svelte'
   import { resolveTheme, defaultTheme, type ResolvedTheme } from '$lib/utils/theme-resolver'
   import { parseContentSegments, type ContentSegment } from '$lib/utils/segment-parser'
+  import { createThemeLoader } from '$lib/utils/theme-loader.svelte'
   import type { Channel } from 'phoenix'
 
   const slug = page.params.slug!
@@ -101,7 +100,6 @@
   // Presentation document (loaded once channel data is available)
   let doc = $state<ReturnType<typeof createPresentationDoc> | null>(null)
   let presenterAwareness = $state<ReturnType<typeof createPresenterAwarenessDoc> | null>(null)
-  let themeDoc = $state<ThemeDocument | null>(null)
 
   $effect(() => {
     if (channelData?.presentationId && !doc) {
@@ -114,17 +112,9 @@
   })
 
   // Load theme when presentation syncs
-  $effect(() => {
-    if (doc?.synced) {
-      const themeId = channelData?.themeOverrideId || doc.themeId
-      if (themeId) {
-        themeDoc?.destroy()
-        themeDoc = createThemeDoc({ documentId: themeId })
-      } else {
-        themeDoc?.destroy()
-        themeDoc = null
-      }
-    }
+  const themeLoader = createThemeLoader({
+    getSynced: () => !!doc?.synced,
+    getThemeId: () => channelData?.themeOverrideId || doc?.themeId || null,
   })
 
   // Compute resolved theme
@@ -136,7 +126,7 @@
           backgroundColor: doc.backgroundColor,
           textColor: doc.textColor,
         },
-        themeDoc?.synced ? themeDoc : null,
+        themeLoader.current?.synced ? themeLoader.current : null,
       )
     : defaultTheme,
   )
@@ -181,7 +171,7 @@
 
   onDestroy(() => {
     lookupChannel?.leave()
-    themeDoc?.destroy()
+    themeLoader.destroy()
     presenterAwareness?.destroy()
     doc?.destroy()
     eventDoc?.destroy()

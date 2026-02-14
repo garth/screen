@@ -6,15 +6,14 @@
   import { auth } from '$lib/stores/auth.svelte'
   import {
     createPresentationDoc,
-    createThemeDoc,
     createPresenterAwarenessDoc,
-    type ThemeDocument,
   } from '$lib/stores/documents'
   import type { PresentationFormat } from '$lib/stores/documents/types'
   import PresentationViewer from '$lib/components/presentation/PresentationViewer.svelte'
   import OptionsPopup from '$lib/components/presentation/OptionsPopup.svelte'
   import { resolveTheme, defaultTheme, type ResolvedTheme } from '$lib/utils/theme-resolver'
   import { parseContentSegments, clampSegmentIndex, type ContentSegment } from '$lib/utils/segment-parser'
+  import { createThemeLoader } from '$lib/utils/theme-loader.svelte'
 
   const documentId = page.params.documentId!
 
@@ -30,17 +29,9 @@
   })
 
   // Theme document (loaded when themeId is available)
-  let themeDoc = $state<ThemeDocument | null>(null)
-
-  // Load theme when presentation syncs and has a themeId
-  $effect(() => {
-    if (doc.synced && doc.themeId) {
-      themeDoc?.destroy()
-      themeDoc = createThemeDoc({ documentId: doc.themeId })
-    } else if (doc.synced && !doc.themeId) {
-      themeDoc?.destroy()
-      themeDoc = null
-    }
+  const themeLoader = createThemeLoader({
+    getSynced: () => doc.synced,
+    getThemeId: () => doc.themeId,
   })
 
   // Compute resolved theme
@@ -52,7 +43,7 @@
           backgroundColor: doc.backgroundColor,
           textColor: doc.textColor,
         },
-        themeDoc?.synced ? themeDoc : null,
+        themeLoader.current?.synced ? themeLoader.current : null,
       )
     : defaultTheme,
   )
@@ -229,7 +220,7 @@
 
   onDestroy(() => {
     // DO NOT call clearPresenter() - let position persist for reconnection
-    themeDoc?.destroy()
+    themeLoader.destroy()
     presenterAwareness.destroy()
     doc.destroy()
   })

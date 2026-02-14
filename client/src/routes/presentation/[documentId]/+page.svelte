@@ -3,14 +3,13 @@
   import { page } from '$app/state'
   import {
     createPresentationDoc,
-    createThemeDoc,
     createPresenterAwarenessDoc,
-    type ThemeDocument,
     type PersistentPresenterState,
   } from '$lib/stores/documents'
   import PresentationViewer from '$lib/components/presentation/PresentationViewer.svelte'
   import { resolveTheme, defaultTheme, type ResolvedTheme } from '$lib/utils/theme-resolver'
   import { parseContentSegments, type ContentSegment } from '$lib/utils/segment-parser'
+  import { createThemeLoader } from '$lib/utils/theme-loader.svelte'
 
   const documentId = page.params.documentId!
 
@@ -26,17 +25,9 @@
   })
 
   // Theme document (loaded when themeId is available)
-  let themeDoc = $state<ThemeDocument | null>(null)
-
-  // Load theme when presentation syncs and has a themeId
-  $effect(() => {
-    if (doc.synced && doc.themeId) {
-      themeDoc?.destroy()
-      themeDoc = createThemeDoc({ documentId: doc.themeId })
-    } else if (doc.synced && !doc.themeId) {
-      themeDoc?.destroy()
-      themeDoc = null
-    }
+  const themeLoader = createThemeLoader({
+    getSynced: () => doc.synced,
+    getThemeId: () => doc.themeId,
   })
 
   // Compute resolved theme
@@ -48,7 +39,7 @@
           backgroundColor: doc.backgroundColor,
           textColor: doc.textColor,
         },
-        themeDoc?.synced ? themeDoc : null,
+        themeLoader.current?.synced ? themeLoader.current : null,
       )
     : defaultTheme,
   )
@@ -99,7 +90,7 @@
   const hasActiveState = $derived(currentSegmentId !== null)
 
   onDestroy(() => {
-    themeDoc?.destroy()
+    themeLoader.destroy()
     presenterAwareness.destroy()
     doc.destroy()
   })
