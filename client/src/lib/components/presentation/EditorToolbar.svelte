@@ -164,35 +164,47 @@
 </script>
 
 <div class="editor-toolbar flex flex-wrap items-center gap-1.5 border-b border-base-300 bg-base-200 p-2 sm:gap-1">
-  <!-- Undo/Redo -->
+  <!-- Headings -->
   <div class="join mr-1 border-r border-base-300 pr-2">
     <button
       type="button"
-      onclick={() => runCommand(undo)}
-      class="btn join-item btn-ghost btn-sm sm:btn-xs"
-      title="Undo (Ctrl+Z)"
-      aria-label="Undo">
-      <svg class="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-      </svg>
+      onclick={() => setHeading(1)}
+      class="btn join-item btn-sm sm:btn-xs {(
+        editorState && isBlockActive(editorState, presentationSchema.nodes.heading, { level: 1 })
+      ) ?
+        'btn-active'
+      : 'btn-ghost'}"
+      title="Heading 1 (Ctrl+1)">
+      H1
     </button>
     <button
       type="button"
-      onclick={() => runCommand(redo)}
+      onclick={() => setHeading(2)}
+      class="btn join-item btn-sm sm:btn-xs {(
+        editorState && isBlockActive(editorState, presentationSchema.nodes.heading, { level: 2 })
+      ) ?
+        'btn-active'
+      : 'btn-ghost'}"
+      title="Heading 2 (Ctrl+2)">
+      H2
+    </button>
+    <button
+      type="button"
+      onclick={() => setHeading(3)}
+      class="btn join-item btn-sm sm:btn-xs {(
+        editorState && isBlockActive(editorState, presentationSchema.nodes.heading, { level: 3 })
+      ) ?
+        'btn-active'
+      : 'btn-ghost'}"
+      title="Heading 3 (Ctrl+3)">
+      H3
+    </button>
+    <button
+      type="button"
+      onclick={setParagraph}
       class="btn join-item btn-ghost btn-sm sm:btn-xs"
-      title="Redo (Ctrl+Y)"
-      aria-label="Redo">
-      <svg class="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
-      </svg>
+      title="Paragraph (Ctrl+0)">
+      P
     </button>
   </div>
 
@@ -246,50 +258,6 @@
       : 'btn-ghost'}"
       title="Code (Ctrl+`)">
       <span class="font-mono text-xs">&lt;/&gt;</span>
-    </button>
-  </div>
-
-  <!-- Headings -->
-  <div class="join mr-1 border-r border-base-300 pr-2">
-    <button
-      type="button"
-      onclick={setParagraph}
-      class="btn join-item btn-ghost btn-sm sm:btn-xs"
-      title="Paragraph (Ctrl+0)">
-      P
-    </button>
-    <button
-      type="button"
-      onclick={() => setHeading(1)}
-      class="btn join-item btn-sm sm:btn-xs {(
-        editorState && isBlockActive(editorState, presentationSchema.nodes.heading, { level: 1 })
-      ) ?
-        'btn-active'
-      : 'btn-ghost'}"
-      title="Heading 1 (Ctrl+1)">
-      H1
-    </button>
-    <button
-      type="button"
-      onclick={() => setHeading(2)}
-      class="btn join-item btn-sm sm:btn-xs {(
-        editorState && isBlockActive(editorState, presentationSchema.nodes.heading, { level: 2 })
-      ) ?
-        'btn-active'
-      : 'btn-ghost'}"
-      title="Heading 2 (Ctrl+2)">
-      H2
-    </button>
-    <button
-      type="button"
-      onclick={() => setHeading(3)}
-      class="btn join-item btn-sm sm:btn-xs {(
-        editorState && isBlockActive(editorState, presentationSchema.nodes.heading, { level: 3 })
-      ) ?
-        'btn-active'
-      : 'btn-ghost'}"
-      title="Heading 3 (Ctrl+3)">
-      H3
     </button>
   </div>
 
@@ -369,7 +337,7 @@
   </div>
 
   <!-- Segment Merge -->
-  <div class="join">
+  <div class="join mr-1 border-r border-base-300 pr-2">
     <button
       type="button"
       onclick={handleMerge}
@@ -383,6 +351,38 @@
           stroke-linejoin="round"
           stroke-width="2"
           d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Undo/Redo -->
+  <div class="join">
+    <button
+      type="button"
+      onclick={() => runCommand(undo)}
+      class="btn join-item btn-ghost btn-sm sm:btn-xs"
+      title="Undo (Ctrl+Z)"
+      aria-label="Undo">
+      <svg class="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+      </svg>
+    </button>
+    <button
+      type="button"
+      onclick={() => runCommand(redo)}
+      class="btn join-item btn-ghost btn-sm sm:btn-xs"
+      title="Redo (Ctrl+Y)"
+      aria-label="Redo">
+      <svg class="h-4 w-4" aria-hidden="true" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M21 10h-10a8 8 0 00-8 8v2M21 10l-6 6m6-6l-6-6" />
       </svg>
     </button>
   </div>
