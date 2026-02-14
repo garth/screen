@@ -2,10 +2,10 @@
   import { onMount, onDestroy } from 'svelte'
   import type { PresentationDocument } from '$lib/stores/documents'
   import type { ResolvedTheme } from '$lib/utils/theme-resolver'
-  import { EditorState } from 'prosemirror-state'
+  import { EditorState, Plugin } from 'prosemirror-state'
   import { EditorView } from 'prosemirror-view'
   import { ySyncPlugin, yCursorPlugin, yUndoPlugin } from 'y-prosemirror'
-  import { presentationSchema, createEditorPlugins } from '$lib/editor/setup'
+  import { presentationSchema, createEditorPlugins, createSlideDividerView } from '$lib/editor/setup'
   import { createSegmentPlugin } from '$lib/editor/segment-plugin'
   import EditorToolbar from './EditorToolbar.svelte'
 
@@ -19,17 +19,30 @@
   // Use a unique ID for the editor container
   const editorId = `prosemirror-editor-${Math.random().toString(36).slice(2)}`
   let view: EditorView | null = $state(null)
+  let editorState: EditorState | null = $state(null)
 
   onMount(() => {
     // Query the element directly - it should exist by the time onMount runs
     const editorElement = document.getElementById(editorId)
     if (!editorElement) return
 
+    // Plugin to track editor state reactively for toolbar updates
+    const stateTrackerPlugin = new Plugin({
+      view() {
+        return {
+          update(v) {
+            editorState = v.state
+          },
+        }
+      },
+    })
+
     const plugins = [
       ySyncPlugin(doc.content),
       yUndoPlugin(),
       createSegmentPlugin(presentationSchema),
       ...createEditorPlugins(presentationSchema),
+      stateTrackerPlugin,
     ]
 
     // Add cursor plugin if awareness is available
@@ -43,7 +56,13 @@
       plugins,
     })
 
-    view = new EditorView(editorElement, { state })
+    view = new EditorView(editorElement, {
+      state,
+      nodeViews: {
+        slide_divider: createSlideDividerView,
+      },
+    })
+    editorState = view.state
 
     // Dispatch a no-op transaction to trigger segment ID assignment on initial load
     // This is needed because appendTransaction only runs when there are transactions
@@ -57,7 +76,7 @@
 
 <div class="presentation-editor flex min-h-0 flex-1 flex-col">
   <!-- Toolbar (fixed above scroll area) -->
-  <EditorToolbar {view} />
+  <EditorToolbar {view} {editorState} />
 
   <!-- Editor Content -->
   <div class="min-h-0 flex-1 overflow-y-auto bg-base-100">
@@ -205,25 +224,27 @@
     outline-offset: 2px;
   }
 
-  /* Slide divider */
-  .editor-content :global(.ProseMirror hr.slide-divider) {
-    border: none;
-    border-top: 3px dashed oklch(var(--p));
-    margin: 2rem 0;
-    position: relative;
+  /* Slide divider (rendered via NodeView as a <div>) */
+  .editor-content :global(.ProseMirror .slide-divider) {
+    margin: 2rem -2rem;
+    padding: 0.75rem 2rem;
+    background-color: var(--color-base-200);
+    border-top: 2px dashed color-mix(in srgb, var(--color-primary) 40%, transparent);
+    border-bottom: 2px dashed color-mix(in srgb, var(--color-primary) 40%, transparent);
+    text-align: center;
+    font-size: 0.75rem;
+    color: color-mix(in srgb, var(--color-primary) 70%, transparent);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    user-select: none;
+    cursor: default;
   }
 
-  .editor-content :global(.ProseMirror hr.slide-divider::after) {
-    content: 'New Slide';
-    position: absolute;
-    top: -0.75rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: oklch(var(--b2));
-    padding: 0 0.5rem;
-    font-size: 0.75rem;
-    color: oklch(var(--p));
-    font-weight: 500;
+  .editor-content :global(.ProseMirror .slide-divider.ProseMirror-selectednode) {
+    outline: none;
+    border-top-color: color-mix(in srgb, var(--color-primary) 70%, transparent);
+    border-bottom-color: color-mix(in srgb, var(--color-primary) 70%, transparent);
   }
 
   /* Blockquote */

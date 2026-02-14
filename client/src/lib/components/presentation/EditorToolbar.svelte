@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { EditorView } from 'prosemirror-view'
-  import type { EditorState, Transaction } from 'prosemirror-state'
+  import type { EditorState } from 'prosemirror-state'
   import { toggleMark, setBlockType } from 'prosemirror-commands'
   import { wrapInList, liftListItem } from 'prosemirror-schema-list'
   import { undo, redo } from 'prosemirror-history'
@@ -10,32 +10,12 @@
 
   interface Props {
     view: EditorView | null
+    editorState: EditorState | null
   }
 
-  let { view }: Props = $props()
+  let { view, editorState }: Props = $props()
 
   let fileInput: HTMLInputElement
-
-  // Reactive state to track editor state changes
-  let editorState = $state<EditorState | null>(null)
-
-  // Sync editorState when view changes or updates
-  $effect(() => {
-    if (!view) {
-      editorState = null
-      return
-    }
-
-    // Initial state
-    editorState = view.state
-
-    // Override updateState to track state changes
-    const originalUpdateState = view.updateState.bind(view)
-    view.updateState = (state: EditorState) => {
-      originalUpdateState(state)
-      editorState = state
-    }
-  })
 
   function isMarkActive(state: EditorState, markType: typeof presentationSchema.marks.strong) {
     const { from, to, empty } = state.selection
@@ -62,6 +42,16 @@
       }
     })
     return active
+  }
+
+  function isInBlockquote(state: EditorState) {
+    const resolvedPos = state.selection.$from
+    for (let depth = resolvedPos.depth; depth > 0; depth--) {
+      if (resolvedPos.node(depth).type === presentationSchema.nodes.blockquote) {
+        return true
+      }
+    }
+    return false
   }
 
   function isInList(state: EditorState, listType: typeof presentationSchema.nodes.bullet_list) {
@@ -102,6 +92,10 @@
     if (!view) return
     if (isInList(view.state, presentationSchema.nodes.bullet_list)) {
       liftListItem(presentationSchema.nodes.list_item)(view.state, view.dispatch)
+    } else if (isInList(view.state, presentationSchema.nodes.ordered_list)) {
+      // Switch from ordered to bullet: lift then wrap
+      liftListItem(presentationSchema.nodes.list_item)(view.state, view.dispatch)
+      wrapInList(presentationSchema.nodes.bullet_list)(view.state, view.dispatch)
     } else {
       wrapInList(presentationSchema.nodes.bullet_list)(view.state, view.dispatch)
     }
@@ -112,6 +106,10 @@
     if (!view) return
     if (isInList(view.state, presentationSchema.nodes.ordered_list)) {
       liftListItem(presentationSchema.nodes.list_item)(view.state, view.dispatch)
+    } else if (isInList(view.state, presentationSchema.nodes.bullet_list)) {
+      // Switch from bullet to ordered: lift then wrap
+      liftListItem(presentationSchema.nodes.list_item)(view.state, view.dispatch)
+      wrapInList(presentationSchema.nodes.ordered_list)(view.state, view.dispatch)
     } else {
       wrapInList(presentationSchema.nodes.ordered_list)(view.state, view.dispatch)
     }
@@ -172,7 +170,7 @@
       class="btn join-item btn-sm sm:btn-xs {(
         editorState && isBlockActive(editorState, presentationSchema.nodes.heading, { level: 1 })
       ) ?
-        'btn-active'
+        'btn-primary'
       : 'btn-ghost'}"
       title="Heading 1 (Ctrl+1)">
       H1
@@ -183,7 +181,7 @@
       class="btn join-item btn-sm sm:btn-xs {(
         editorState && isBlockActive(editorState, presentationSchema.nodes.heading, { level: 2 })
       ) ?
-        'btn-active'
+        'btn-primary'
       : 'btn-ghost'}"
       title="Heading 2 (Ctrl+2)">
       H2
@@ -194,7 +192,7 @@
       class="btn join-item btn-sm sm:btn-xs {(
         editorState && isBlockActive(editorState, presentationSchema.nodes.heading, { level: 3 })
       ) ?
-        'btn-active'
+        'btn-primary'
       : 'btn-ghost'}"
       title="Heading 3 (Ctrl+3)">
       H3
@@ -202,7 +200,12 @@
     <button
       type="button"
       onclick={setParagraph}
-      class="btn join-item btn-ghost btn-sm sm:btn-xs"
+      class="btn join-item btn-sm sm:btn-xs {(
+        editorState && isBlockActive(editorState, presentationSchema.nodes.paragraph) &&
+        !isBlockActive(editorState, presentationSchema.nodes.heading)
+      ) ?
+        'btn-primary'
+      : 'btn-ghost'}"
       title="Paragraph (Ctrl+0)">
       P
     </button>
@@ -214,7 +217,7 @@
       type="button"
       onclick={() => toggleFormat(presentationSchema.marks.strong)}
       class="btn join-item btn-sm sm:btn-xs {editorState && isMarkActive(editorState, presentationSchema.marks.strong) ?
-        'btn-active'
+        'btn-primary'
       : 'btn-ghost'}"
       title="Bold (Ctrl+B)">
       <span class="text-sm font-bold">B</span>
@@ -223,7 +226,7 @@
       type="button"
       onclick={() => toggleFormat(presentationSchema.marks.em)}
       class="btn join-item btn-sm sm:btn-xs {editorState && isMarkActive(editorState, presentationSchema.marks.em) ?
-        'btn-active'
+        'btn-primary'
       : 'btn-ghost'}"
       title="Italic (Ctrl+I)">
       <span class="text-sm italic">I</span>
@@ -234,7 +237,7 @@
       class="btn join-item btn-sm sm:btn-xs {(
         editorState && isMarkActive(editorState, presentationSchema.marks.underline)
       ) ?
-        'btn-active'
+        'btn-primary'
       : 'btn-ghost'}"
       title="Underline (Ctrl+U)">
       <span class="text-sm underline">U</span>
@@ -245,7 +248,7 @@
       class="btn join-item btn-sm sm:btn-xs {(
         editorState && isMarkActive(editorState, presentationSchema.marks.strikethrough)
       ) ?
-        'btn-active'
+        'btn-primary'
       : 'btn-ghost'}"
       title="Strikethrough (Ctrl+Shift+S)">
       <span class="text-sm line-through">S</span>
@@ -254,7 +257,7 @@
       type="button"
       onclick={() => toggleFormat(presentationSchema.marks.code)}
       class="btn join-item btn-sm sm:btn-xs {editorState && isMarkActive(editorState, presentationSchema.marks.code) ?
-        'btn-active'
+        'btn-primary'
       : 'btn-ghost'}"
       title="Code (Ctrl+`)">
       <span class="font-mono text-xs">&lt;/&gt;</span>
@@ -269,7 +272,7 @@
       class="btn join-item btn-sm sm:btn-xs {(
         editorState && isInList(editorState, presentationSchema.nodes.bullet_list)
       ) ?
-        'btn-active'
+        'btn-primary'
       : 'btn-ghost'}"
       title="Bullet List (Ctrl+Shift+8)"
       aria-label="Bullet list">
@@ -283,7 +286,7 @@
       class="btn join-item btn-sm sm:btn-xs {(
         editorState && isInList(editorState, presentationSchema.nodes.ordered_list)
       ) ?
-        'btn-active'
+        'btn-primary'
       : 'btn-ghost'}"
       title="Numbered List (Ctrl+Shift+9)"
       aria-label="Numbered list">
@@ -303,7 +306,7 @@
     <button
       type="button"
       onclick={insertBlockquote}
-      class="btn join-item btn-ghost btn-sm sm:btn-xs"
+      class="btn join-item btn-sm sm:btn-xs {editorState && isInBlockquote(editorState) ? 'btn-primary' : 'btn-ghost'}"
       title="Quote (Ctrl+Shift+.)"
       aria-label="Blockquote">
       <svg class="h-4 w-4" aria-hidden="true" fill="currentColor" viewBox="0 0 24 24">

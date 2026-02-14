@@ -1,14 +1,15 @@
 import { keymap } from 'prosemirror-keymap'
 import { history, undo, redo } from 'prosemirror-history'
-import { baseKeymap, toggleMark, setBlockType, chainCommands, exitCode } from 'prosemirror-commands'
+import { baseKeymap, toggleMark, setBlockType, chainCommands, exitCode, lift } from 'prosemirror-commands'
 import { wrapInList, splitListItem, liftListItem, sinkListItem } from 'prosemirror-schema-list'
 import { inputRules, wrappingInputRule, textblockTypeInputRule, InputRule } from 'prosemirror-inputrules'
 import { dropCursor } from 'prosemirror-dropcursor'
 import { gapCursor } from 'prosemirror-gapcursor'
 import { Plugin } from 'prosemirror-state'
 import type { Schema } from 'prosemirror-model'
-import type { EditorView } from 'prosemirror-view'
+import type { EditorView, NodeView } from 'prosemirror-view'
 import type { Command } from 'prosemirror-state'
+import type { Node as ProsemirrorNode } from 'prosemirror-model'
 
 import { presentationSchema } from './schema'
 import { mergeSegments, unmergeSegments } from './merge-commands'
@@ -46,20 +47,25 @@ export function insertImage(schema: Schema, src: string, alt?: string): Command 
 }
 
 /**
- * Wrap selection in a blockquote
+ * Toggle blockquote: wrap if not in one, lift (unwrap) if already in one
  */
 export function wrapInBlockquote(schema: Schema): Command {
   return (state, dispatch) => {
     const { $from, $to } = state.selection
-    const range = $from.blockRange($to)
+    const blockquote = schema.nodes.blockquote
 
+    // Check if already inside a blockquote
+    for (let depth = $from.depth; depth > 0; depth--) {
+      if ($from.node(depth).type === blockquote) {
+        return lift(state, dispatch)
+      }
+    }
+
+    // Not in a blockquote — wrap
+    const range = $from.blockRange($to)
     if (!range) return false
 
-    const wrapping = range && state.doc.resolve(range.start).blockRange(state.doc.resolve(range.end))
-    if (!wrapping) return false
-
     if (dispatch) {
-      const blockquote = schema.nodes.blockquote
       const tr = state.tr.wrap(range, [{ type: blockquote }])
       dispatch(tr.scrollIntoView())
     }
@@ -246,6 +252,27 @@ async function handleImageUpload(view: EditorView, file: File) {
   } catch (error) {
     console.error('Failed to upload image:', error)
   }
+}
+
+// ============================================================================
+// Node Views
+// ============================================================================
+
+/**
+ * NodeView for slide_divider — renders a visible band with "New Slide" label.
+ * Required because <hr> is a void element that can't display background or text.
+ */
+export function createSlideDividerView(
+  _node: ProsemirrorNode,
+  _view: EditorView,
+  _getPos: () => number | undefined,
+): NodeView {
+  const dom = document.createElement('div')
+  dom.className = 'slide-divider'
+  dom.setAttribute('data-slide-divider', 'true')
+  dom.contentEditable = 'false'
+  dom.textContent = 'New Slide'
+  return { dom, stopEvent: () => true }
 }
 
 // ============================================================================
