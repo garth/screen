@@ -104,7 +104,7 @@
               </a>
               {#if presentation.canWrite}
                 <a href={resolve(`/presentation/${presentation.id}/presenter`)} class="btn btn-ghost btn-xs">
-                  <span class="hero-play-mini size-4" aria-hidden="true"></span>
+                  <span class="hero-presentation-chart-bar-mini size-4" aria-hidden="true"></span>
                   Present
                 </a>
               {/if}

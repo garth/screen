@@ -107,8 +107,8 @@
     }
   }
 
-  // Sharing state
-  let isPublic = $state(false)
+  // Sharing state — derived from document list
+  const isPublic = $derived(auth.documents.find((d) => d.id === documentId)?.isPublic ?? false)
   let sharingLoading = $state(false)
 
   async function toggleSharing() {
@@ -116,7 +116,6 @@
     sharingLoading = true
     try {
       await auth.userChannel.updateDocument({ id: documentId, isPublic: !isPublic })
-      isPublic = !isPublic
     } catch {
       toast('error', 'Failed to update sharing')
     }
@@ -166,24 +165,6 @@
             onchange={toggleSharing} />
           <span class="text-sm">{isPublic ? 'Public' : 'Private'}</span>
         </label>
-        {#if isPublic}
-          <button
-            type="button"
-            class="btn btn-ghost btn-xs"
-            onclick={() => {
-              navigator.clipboard.writeText(`${window.location.origin}/presentation/${documentId}`)
-              toast('success', 'Link copied!')
-            }}
-            aria-label="Copy public link">
-            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-            </svg>
-          </button>
-        {/if}
       </div>
 
       <button
@@ -191,28 +172,22 @@
         onclick={() => (showOptionsPopup = true)}
         disabled={!doc.synced}
         class="btn hidden btn-ghost btn-sm sm:inline-flex">
+        <span class="hero-adjustments-horizontal-mini size-5" aria-hidden="true"></span>
         Options
       </button>
 
-      <a href={resolve(`/presentation/${documentId}/presenter`)} class="btn btn-sm btn-primary">Present</a>
+      <a href={resolve(`/presentation/${documentId}/presenter`)} class="btn btn-sm btn-primary">
+        <span class="hero-presentation-chart-bar-mini size-5" aria-hidden="true"></span>
+        Present
+      </a>
 
-      <button
-        type="button"
-        onclick={() => (showDeleteDialog = true)}
-        disabled={deleting}
-        class="btn hidden btn-outline btn-sm btn-error sm:inline-flex">
-        {deleting ? 'Deleting...' : 'Delete'}
-      </button>
-
-      <!-- Mobile overflow menu -->
-      <div class="dropdown dropdown-end sm:hidden">
+      <!-- Context menu -->
+      <div class="dropdown dropdown-end">
         <button type="button" class="btn btn-ghost btn-sm" aria-label="More actions" aria-haspopup="true">
-          <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01" />
-          </svg>
+          <span class="hero-ellipsis-vertical-mini size-5" aria-hidden="true"></span>
         </button>
-        <ul class="dropdown-content menu z-20 mt-1 w-52 rounded-box border border-base-300 bg-base-200 p-2 shadow-lg">
-          <li>
+        <ul class="dropdown-content menu z-20 mt-1 w-52 rounded-box border border-base-content/20 bg-base-200 p-2 shadow-lg">
+          <li class="sm:hidden">
             <label class="flex cursor-pointer items-center gap-2">
               <input
                 type="checkbox"
@@ -223,11 +198,15 @@
               <span>{isPublic ? 'Public' : 'Private'}</span>
             </label>
           </li>
-          <li>
-            <button type="button" onclick={() => (showOptionsPopup = true)} disabled={!doc.synced}>Options</button>
+          <li class="sm:hidden">
+            <button type="button" onclick={() => (showOptionsPopup = true)} disabled={!doc.synced}>
+              <span class="hero-cog-6-tooth-mini size-5" aria-hidden="true"></span>
+              Options
+            </button>
           </li>
           <li>
             <button type="button" onclick={() => (showDeleteDialog = true)} disabled={deleting} class="text-error">
+              <span class="hero-trash-mini size-5" aria-hidden="true"></span>
               {deleting ? 'Deleting...' : 'Delete'}
             </button>
           </li>

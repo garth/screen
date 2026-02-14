@@ -83,7 +83,10 @@
   <nav aria-label="Main navigation" class="navbar fixed top-0 z-30 border-b border-base-300 bg-base-200 px-4">
     <div class="flex w-full items-center justify-between">
       <div class="flex items-center gap-6">
-        <a href={resolve('/')} class="text-lg font-semibold">Chapel Screen</a>
+        <a href={resolve('/')} class="flex items-center gap-2 text-lg font-semibold">
+          <img src={resolve('/logo.svg')} alt="" class="size-6" />
+          Chapel Screen
+        </a>
         {#if auth.isAuthenticated}
           <div class="hidden gap-4 sm:flex">
             {#each navLinks as link (link.href)}
@@ -121,7 +124,7 @@
               <ul
                 bind:this={menuElement}
                 role="menu"
-                class="dropdown-content menu z-20 mt-1 w-48 rounded-box border border-base-300 bg-base-200 p-2 shadow-lg">
+                class="dropdown-content menu z-20 mt-1 w-48 rounded-box border border-base-content/20 bg-base-200 p-2 shadow-lg">
                 <li role="none">
                   <a role="menuitem" href={resolve('/preferences')} onclick={() => (userMenuOpen = false)}>
                     <span class="hero-cog-6-tooth-mini size-5" aria-hidden="true"></span>
