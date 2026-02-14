@@ -56,13 +56,13 @@
 </script>
 
 <div class="presentation-editor flex min-h-0 flex-1 flex-col">
-  <!-- Toolbar -->
+  <!-- Toolbar (fixed above scroll area) -->
   <EditorToolbar {view} />
 
   <!-- Editor Content -->
-  <div class="flex-1 overflow-auto bg-base-100">
-    <div class="prose-base-content prose h-full max-w-none p-8">
-      <div id={editorId} class="editor-content h-full"></div>
+  <div class="min-h-0 flex-1 overflow-y-auto bg-base-100">
+    <div class="prose-base-content prose min-h-full max-w-none px-8 py-4">
+      <div id={editorId} class="editor-content min-h-full"></div>
     </div>
   </div>
 </div>
@@ -74,7 +74,7 @@
 
   .editor-content :global(.ProseMirror) {
     outline: none;
-    min-height: 300px;
+    min-height: 100%;
   }
 
   /* Segment boundary indicators - left border */

@@ -137,23 +137,17 @@
   <title>Edit: {doc.synced ? doc.title || 'Untitled' : 'Loading...'} - Presentation</title>
 </svelte:head>
 
-<div class="flex h-screen flex-col">
+<div class="flex h-full flex-col">
   <h1 class="sr-only">Edit Presentation</h1>
   <!-- Header -->
-  <header class="navbar min-h-0 border-b border-base-300 bg-base-200 px-4 py-2">
+  <header class="navbar min-h-0 border-b border-base-300 bg-base-200 px-4 py-1">
     <div class="flex flex-1 items-center gap-2">
-      <a href={resolve('/presentations')} class="btn btn-ghost btn-sm">
-        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-        </svg>
-        Presentations
-      </a>
       <input
         type="text"
         bind:value={titleInput}
         oninput={handleTitleChange}
         placeholder="Untitled"
-        class="input w-auto input-ghost text-lg font-medium"
+        class="input input-sm w-auto input-ghost text-sm font-medium"
         disabled={!doc.synced || doc.readOnly} />
       {#if !doc.synced}
         <span class="text-xs text-base-content/50">Connecting...</span>
@@ -243,7 +237,7 @@
   </header>
 
   <!-- Editor -->
-  <main class="flex flex-1 flex-col overflow-hidden">
+  <main class="flex min-h-0 flex-1 flex-col">
     {#if doc.error}
       <div class="flex h-full flex-col items-center justify-center gap-4">
         <h2 class="text-2xl font-bold">Presentation not found</h2>

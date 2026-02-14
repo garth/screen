@@ -34,7 +34,7 @@
   const presentations = $derived(auth.documents.filter((d) => d.type === 'presentation'))
 </script>
 
-<div class="mx-auto max-w-4xl p-6">
+<div class="p-6">
   <div class="mb-6 flex items-center justify-between">
     <div class="flex items-center gap-3">
       <h1 class="text-2xl font-bold">Presentations</h1>
@@ -69,34 +69,42 @@
       </div>
     </div>
   {:else}
-    <div class="space-y-3">
+    <div class="flex flex-wrap gap-5">
       {#each presentations as presentation (presentation.id)}
-        <div class="card bg-base-200">
-          <div class="card-body flex-row items-center justify-between p-4">
-            <div class="min-w-0 flex-1">
-              <div class="flex items-center gap-2">
-                <h2 class="truncate text-lg font-medium">
+        <div class="w-full sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.875rem)] xl:w-[calc(25%-0.9375rem)]">
+          <a
+            href={resolve(presentation.canWrite ? `/presentation/${presentation.id}/edit` : `/presentation/${presentation.id}`)}
+            class="group block">
+            <div class="aspect-video rounded-lg border border-base-300 bg-base-200 transition-colors group-hover:border-primary">
+              <div class="flex h-full flex-col items-center justify-center p-4">
+                <h2 class="line-clamp-3 text-center text-lg font-medium">
                   {presentation.title || 'Untitled'}
                 </h2>
-                {#if presentation.isPublic}
-                  <span class="badge badge-sm badge-success">Public</span>
-                {:else}
-                  <span class="badge badge-ghost badge-sm">Private</span>
-                {/if}
-                {#if !presentation.isOwner}
-                  <span class="badge badge-sm badge-info">Shared</span>
-                {/if}
+                <div class="mt-2 flex items-center gap-1.5">
+                  {#if presentation.isPublic}
+                    <span class="badge badge-sm badge-success">Public</span>
+                  {:else}
+                    <span class="badge badge-ghost badge-sm">Private</span>
+                  {/if}
+                  {#if !presentation.isOwner}
+                    <span class="badge badge-sm badge-info">Shared</span>
+                  {/if}
+                </div>
               </div>
-              <p class="mt-1 text-sm text-base-content/50">
-                Updated {formatDate(presentation.updatedAt)}
-              </p>
             </div>
-
-            <div class="ml-4 flex items-center gap-2">
-              <a href={resolve(`/presentation/${presentation.id}`)} class="btn btn-ghost btn-sm">View</a>
+          </a>
+          <div class="mt-1.5 flex items-center justify-between">
+            <p class="truncate text-xs text-base-content/50">
+              Updated {formatDate(presentation.updatedAt)}
+            </p>
+            <div class="flex items-center gap-1">
+              <a href={resolve(`/presentation/${presentation.id}`)} class="btn btn-ghost btn-xs">
+                <span class="hero-eye-mini size-4" aria-hidden="true"></span>
+                View
+              </a>
               {#if presentation.canWrite}
-                <a href={resolve(`/presentation/${presentation.id}/edit`)} class="btn btn-ghost btn-sm">Edit</a>
-                <a href={resolve(`/presentation/${presentation.id}/presenter`)} class="btn btn-sm btn-primary">
+                <a href={resolve(`/presentation/${presentation.id}/presenter`)} class="btn btn-ghost btn-xs">
+                  <span class="hero-play-mini size-4" aria-hidden="true"></span>
                   Present
                 </a>
               {/if}

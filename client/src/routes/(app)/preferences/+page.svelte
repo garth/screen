@@ -6,10 +6,10 @@
   import { auth } from '$lib/stores/auth.svelte'
   import { focusTrap } from '$lib/actions/focus-trap'
 
-  const themeOptions: { value: ThemePreference; label: string }[] = [
-    { value: 'system', label: 'System' },
-    { value: 'light', label: 'Light' },
-    { value: 'dark', label: 'Dark' },
+  const themeOptions: { value: ThemePreference; label: string; icon: string }[] = [
+    { value: 'system', label: 'System', icon: 'hero-computer-desktop-mini' },
+    { value: 'light', label: 'Light', icon: 'hero-sun-mini' },
+    { value: 'dark', label: 'Dark', icon: 'hero-moon-mini' },
   ]
 
   // Profile form state
@@ -154,6 +154,7 @@
               onclick={() => theme.setPreference(option.value)}
               aria-pressed={theme.preference === option.value}
               class="btn join-item {theme.preference === option.value ? 'btn-primary' : 'btn-ghost'}">
+              <span class="{option.icon} size-5" aria-hidden="true"></span>
               {option.label}
             </button>
           {/each}
