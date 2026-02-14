@@ -27,6 +27,7 @@ vi.mock('y-phoenix-channel', () => {
           }
           this._channelListeners.get(event)!.push(callback)
         },
+        onError: vi.fn(),
         _emit: (event: string, payload: unknown) => {
           for (const cb of this._channelListeners.get(event) ?? []) cb(payload)
         },

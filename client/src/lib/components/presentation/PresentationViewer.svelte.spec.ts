@@ -141,6 +141,42 @@ describe('PresentationViewer', () => {
     return ids
   }
 
+  // Add a paragraph containing only an inline image (how y-prosemirror stores it)
+  function addImageParagraph(content: Y.XmlFragment, src: string, alt = 'Image'): string {
+    const p = new Y.XmlElement('paragraph')
+    const segmentId = generateSegmentId()
+    p.setAttribute('segmentId', segmentId)
+    const img = new Y.XmlElement('image')
+    img.setAttribute('src', src)
+    img.setAttribute('alt', alt)
+    p.insert(0, [img])
+    content.push([p])
+    return segmentId
+  }
+
+  // Add a paragraph with text before and after an inline image
+  function addParagraphWithInlineImage(
+    content: Y.XmlFragment,
+    textBefore: string,
+    src: string,
+    alt: string,
+    textAfter: string,
+  ): string {
+    const p = new Y.XmlElement('paragraph')
+    const segmentId = generateSegmentId()
+    p.setAttribute('segmentId', segmentId)
+    const t1 = new Y.XmlText()
+    t1.insert(0, textBefore)
+    const img = new Y.XmlElement('image')
+    img.setAttribute('src', src)
+    img.setAttribute('alt', alt)
+    const t2 = new Y.XmlText()
+    t2.insert(0, textAfter)
+    p.insert(0, [t1, img, t2])
+    content.push([p])
+    return segmentId
+  }
+
   describe('single mode in follow mode', () => {
     it('only renders the current segment', async () => {
       const content = createContent()
@@ -1544,6 +1580,236 @@ describe('PresentationViewer', () => {
       // Slide 1 should NOT show slide 2 content
       await expect.element(page.getByText('3rd Point')).not.toBeInTheDocument()
       await expect.element(page.getByText('4th Point')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('inline images within paragraphs', () => {
+    it('renders image-only paragraph in scrolling mode', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Text before image')
+      const id1 = addImageParagraph(content, 'https://example.com/photo.jpg', 'A photo')
+      const id2 = addParagraph(content, 'Text after image')
+
+      const segments = createSegments([id0, id1, id2])
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'scrolling',
+        segments,
+        currentSegmentId: id0,
+      })
+
+      // All segments should be visible in scrolling mode
+      await expect.element(page.getByText('Text before image')).toBeInTheDocument()
+      await expect.element(page.getByRole('img', { name: 'A photo' })).toBeInTheDocument()
+      await expect.element(page.getByText('Text after image')).toBeInTheDocument()
+    })
+
+    it('renders image paragraph in single mode when current', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Text paragraph')
+      const id1 = addImageParagraph(content, 'https://example.com/photo.jpg', 'A photo')
+      const id2 = addParagraph(content, 'Another text paragraph')
+
+      const segments = createSegments([id0, id1, id2])
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: id1,
+      })
+
+      // Only image paragraph should be visible
+      await expect.element(page.getByText('Text paragraph')).not.toBeInTheDocument()
+      await expect.element(page.getByRole('img', { name: 'A photo' })).toBeInTheDocument()
+      await expect.element(page.getByText('Another text paragraph')).not.toBeInTheDocument()
+    })
+
+    it('hides image paragraph in single mode when not current', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Current text')
+      const id1 = addImageParagraph(content, 'https://example.com/photo.jpg', 'Hidden photo')
+      const id2 = addParagraph(content, 'Other text')
+
+      const segments = createSegments([id0, id1, id2])
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: id0,
+      })
+
+      // Only current segment should be visible
+      await expect.element(page.getByText('Current text')).toBeInTheDocument()
+      await expect.element(page.getByRole('img', { name: 'Hidden photo' })).not.toBeInTheDocument()
+      await expect.element(page.getByText('Other text')).not.toBeInTheDocument()
+    })
+
+    it('renders image paragraph in minimal mode as part of current pair', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'First segment')
+      const id1 = addImageParagraph(content, 'https://example.com/photo.jpg', 'Paired photo')
+      const id2 = addParagraph(content, 'Third segment')
+      const id3 = addParagraph(content, 'Fourth segment')
+
+      const segments = createSegments([id0, id1, id2, id3])
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'minimal',
+        segments,
+        currentSegmentId: id0, // First pair: id0 + id1
+      })
+
+      // First pair should be visible
+      await expect.element(page.getByText('First segment')).toBeInTheDocument()
+      await expect.element(page.getByRole('img', { name: 'Paired photo' })).toBeInTheDocument()
+      // Second pair should not
+      await expect.element(page.getByText('Third segment')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Fourth segment')).not.toBeInTheDocument()
+    })
+
+    it('renders image paragraph in block mode within contiguous block', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Block 1 text')
+      const id1 = addImageParagraph(content, 'https://example.com/photo.jpg', 'Block 1 photo')
+      addEmptyParagraph(content) // Block boundary
+      const id2 = addParagraph(content, 'Block 2 text')
+
+      const segments = createSegments([id0, id1, id2])
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'block',
+        segments,
+        currentSegmentId: id0,
+      })
+
+      // Block 1 should be visible (both text and image)
+      await expect.element(page.getByText('Block 1 text')).toBeInTheDocument()
+      await expect.element(page.getByRole('img', { name: 'Block 1 photo' })).toBeInTheDocument()
+      // Block 2 should not
+      await expect.element(page.getByText('Block 2 text')).not.toBeInTheDocument()
+    })
+
+    it('renders image paragraph in maximal mode when current', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Segment A')
+      const id1 = addImageParagraph(content, 'https://example.com/photo.jpg', 'Maximal photo')
+      const id2 = addParagraph(content, 'Segment C')
+
+      const segments = createSegments([id0, id1, id2])
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'maximal',
+        segments,
+        currentSegmentId: id1,
+      })
+
+      // Only the image segment should be visible
+      await expect.element(page.getByText('Segment A')).not.toBeInTheDocument()
+      await expect.element(page.getByRole('img', { name: 'Maximal photo' })).toBeInTheDocument()
+      await expect.element(page.getByText('Segment C')).not.toBeInTheDocument()
+    })
+
+    it('does not misalign segments after image paragraph', async () => {
+      // KEY TEST: image paragraphs must not consume extra segments and shift
+      // all subsequent content out of alignment
+      const content = createContent()
+      const id0 = addParagraph(content, 'Before image')
+      const id1 = addImageParagraph(content, 'https://example.com/photo.jpg', 'Middle image')
+      const id2 = addParagraph(content, 'After image first')
+      const id3 = addParagraph(content, 'After image second')
+
+      const segments = createSegments([id0, id1, id2, id3])
+
+      // Navigate to a text paragraph AFTER the image — if segments are misaligned,
+      // the wrong content will appear
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: id2,
+      })
+
+      // Only the targeted paragraph should be visible
+      await expect.element(page.getByText('Before image')).not.toBeInTheDocument()
+      await expect.element(page.getByRole('img', { name: 'Middle image' })).not.toBeInTheDocument()
+      await expect.element(page.getByText('After image first')).toBeInTheDocument()
+      await expect.element(page.getByText('After image second')).not.toBeInTheDocument()
+    })
+
+    it('renders mixed text and image paragraph correctly', async () => {
+      const content = createContent()
+      const id0 = addParagraphWithInlineImage(
+        content,
+        'Look at this: ',
+        'https://example.com/inline.jpg',
+        'Inline pic',
+        ' pretty cool',
+      )
+      const id1 = addParagraph(content, 'Next paragraph')
+
+      const segments = createSegments([id0, id1])
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: id0,
+      })
+
+      // The mixed paragraph should render text and image together
+      await expect.element(page.getByText('Look at this:')).toBeInTheDocument()
+      await expect.element(page.getByRole('img', { name: 'Inline pic' })).toBeInTheDocument()
+      await expect.element(page.getByText('pretty cool')).toBeInTheDocument()
+      // Next paragraph hidden
+      await expect.element(page.getByText('Next paragraph')).not.toBeInTheDocument()
+    })
+
+    it('navigates correctly with multiple image paragraphs across formats', async () => {
+      const content = createContent()
+      const id0 = addImageParagraph(content, 'https://example.com/img1.jpg', 'Image one')
+      const id1 = addParagraph(content, 'Middle text')
+      const id2 = addImageParagraph(content, 'https://example.com/img2.jpg', 'Image two')
+      const id3 = addParagraph(content, 'End text')
+
+      const segments = createSegments([id0, id1, id2, id3])
+
+      // Navigate to the second image paragraph in single mode
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'single',
+        segments,
+        currentSegmentId: id2,
+      })
+
+      // Only the second image should be visible
+      await expect.element(page.getByRole('img', { name: 'Image one' })).not.toBeInTheDocument()
+      await expect.element(page.getByText('Middle text')).not.toBeInTheDocument()
+      await expect.element(page.getByRole('img', { name: 'Image two' })).toBeInTheDocument()
+      await expect.element(page.getByText('End text')).not.toBeInTheDocument()
     })
   })
 })

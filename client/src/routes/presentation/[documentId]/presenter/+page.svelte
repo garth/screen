@@ -4,6 +4,7 @@
   import { resolve } from '$app/paths'
   import { page } from '$app/state'
   import { auth } from '$lib/stores/auth.svelte'
+  import { toast } from '$lib/toast.svelte'
   import {
     createPresentationDoc,
     createPresenterAwarenessDoc,
@@ -242,6 +243,21 @@
       doc.setFormat(format)
     }
   }
+
+  // Sharing state — derived from document list
+  const isPublic = $derived(auth.documents.find((d) => d.id === documentId)?.isPublic ?? false)
+  let sharingLoading = $state(false)
+
+  async function toggleSharing() {
+    if (!auth.userChannel) return
+    sharingLoading = true
+    try {
+      await auth.userChannel.updateDocument({ id: documentId, isPublic: !isPublic })
+    } catch {
+      toast('error', 'Failed to update sharing')
+    }
+    sharingLoading = false
+  }
 </script>
 
 <svelte:head>
@@ -336,9 +352,12 @@
     {themes}
     currentThemeId={doc.themeId}
     currentFormat={doc.format}
+    {isPublic}
+    {sharingLoading}
     disabled={!doc.synced}
     onThemeChange={handleThemeChange}
     onFormatChange={handleFormatChange}
+    onToggleSharing={toggleSharing}
     onClose={() => (showOptionsPopup = false)} />
 {/if}
 

@@ -154,64 +154,28 @@
     </div>
 
     <div class="flex flex-none items-center gap-2 sm:gap-4">
-      <!-- Sharing Toggle (hidden on small screens, shown in overflow) -->
-      <div class="hidden items-center gap-2 sm:flex">
-        <label class="flex cursor-pointer items-center gap-1.5">
-          <input
-            type="checkbox"
-            class="toggle toggle-primary toggle-sm"
-            checked={isPublic}
-            disabled={sharingLoading || !doc.synced}
-            onchange={toggleSharing} />
-          <span class="text-sm">{isPublic ? 'Public' : 'Private'}</span>
-        </label>
-      </div>
-
       <button
         type="button"
         onclick={() => (showOptionsPopup = true)}
         disabled={!doc.synced}
-        class="btn hidden btn-ghost btn-sm sm:inline-flex">
+        class="btn btn-ghost btn-sm">
         <span class="hero-adjustments-horizontal-mini size-5" aria-hidden="true"></span>
-        Options
+        <span class="hidden sm:inline">Options</span>
       </button>
 
       <a href={resolve(`/presentation/${documentId}/presenter`)} class="btn btn-sm btn-primary">
         <span class="hero-presentation-chart-bar-mini size-5" aria-hidden="true"></span>
-        Present
+        <span class="hidden sm:inline">Present</span>
       </a>
 
-      <!-- Context menu -->
-      <div class="dropdown dropdown-end">
-        <button type="button" class="btn btn-ghost btn-sm" aria-label="More actions" aria-haspopup="true">
-          <span class="hero-ellipsis-vertical-mini size-5" aria-hidden="true"></span>
-        </button>
-        <ul class="dropdown-content menu z-20 mt-1 w-52 rounded-box border border-base-content/20 bg-base-200 p-2 shadow-lg">
-          <li class="sm:hidden">
-            <label class="flex cursor-pointer items-center gap-2">
-              <input
-                type="checkbox"
-                class="toggle toggle-primary toggle-sm"
-                checked={isPublic}
-                disabled={sharingLoading || !doc.synced}
-                onchange={toggleSharing} />
-              <span>{isPublic ? 'Public' : 'Private'}</span>
-            </label>
-          </li>
-          <li class="sm:hidden">
-            <button type="button" onclick={() => (showOptionsPopup = true)} disabled={!doc.synced}>
-              <span class="hero-cog-6-tooth-mini size-5" aria-hidden="true"></span>
-              Options
-            </button>
-          </li>
-          <li>
-            <button type="button" onclick={() => (showDeleteDialog = true)} disabled={deleting} class="text-error">
-              <span class="hero-trash-mini size-5" aria-hidden="true"></span>
-              {deleting ? 'Deleting...' : 'Delete'}
-            </button>
-          </li>
-        </ul>
-      </div>
+      <button
+        type="button"
+        onclick={() => (showDeleteDialog = true)}
+        disabled={deleting}
+        class="btn btn-ghost btn-sm text-error"
+        aria-label="Delete presentation">
+        <span class="hero-trash-mini size-5" aria-hidden="true"></span>
+      </button>
     </div>
   </header>
 
@@ -253,8 +217,11 @@
     {themes}
     currentThemeId={doc.themeId}
     currentFormat={doc.format}
+    {isPublic}
+    {sharingLoading}
     disabled={!doc.synced || doc.readOnly}
     onThemeChange={handleThemeChange}
     onFormatChange={handleFormatChange}
+    onToggleSharing={toggleSharing}
     onClose={() => (showOptionsPopup = false)} />
 {/if}

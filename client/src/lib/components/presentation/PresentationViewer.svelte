@@ -422,8 +422,10 @@
           const alt = node.getAttribute('alt') || ''
           const title = node.getAttribute('title') || ''
           const html = `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" title="${escapeHtml(title)}" />`
-          // Images always have segment IDs (they can't be empty)
-          return ctx ? wrapWithSegment(html, ctx) : html
+          // Images are inline within paragraphs — the paragraph's wrapWithSegment
+          // already handles segment wrapping. Don't consume a segment here or it
+          // misaligns all subsequent segments.
+          return html
         }
 
         case 'slide_divider':
