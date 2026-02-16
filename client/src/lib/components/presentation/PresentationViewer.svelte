@@ -427,7 +427,7 @@
         }
 
         case 'slide_divider':
-          if (ctx?.applyFormatEffects && ctx.format === 'scrolling') {
+          if (ctx?.applyFormatEffects) {
             return ''
           }
           return `<hr class="slide-divider" data-slide-divider="true" />`

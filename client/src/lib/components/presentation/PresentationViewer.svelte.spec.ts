@@ -877,7 +877,7 @@ describe('PresentationViewer', () => {
       await expect.element(page.getByText('Slide 2 content')).not.toBeInTheDocument()
     })
 
-    it('hides slide divider hr in follow+scrolling mode', async () => {
+    it('hides slide divider hr in follow mode', async () => {
       const content = createContent()
       const id0 = addParagraph(content, 'Before divider')
       addSlideDivider(content)
