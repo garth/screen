@@ -57,14 +57,16 @@ export function createPresenterAwarenessDoc(options: PresenterAwarenessDocOption
   const ydoc = new Y.Doc()
   const presenterMap = ydoc.getMap<PresenterState | null>('presenter')
 
-  // IndexedDB persistence
-  const indexeddb = new IndexeddbPersistence(`presenter-awareness-${documentId}`, ydoc)
-
   // Phoenix Channel provider for sync
+  // Created before IndexedDB so BroadcastChannel messages delivered during
+  // construction don't trigger writes to an unopened IndexedDB
   const socket = getSocket()
   const provider = new PhoenixChannelProvider(socket, `document:presenter-awareness-${documentId}`, ydoc, {
     params: {},
   })
+
+  // IndexedDB persistence
+  const indexeddb = new IndexeddbPersistence(`presenter-awareness-${documentId}`, ydoc)
 
   let synced = $state(false)
   let updateCount = 0
@@ -150,8 +152,10 @@ export function createPresenterAwarenessDoc(options: PresenterAwarenessDocOption
     },
 
     destroy() {
-      provider.destroy()
+      // Destroy IndexedDB before provider to remove ydoc observers before
+      // any queued BroadcastChannel messages can trigger writes to a closed DB
       indexeddb.destroy()
+      provider.destroy()
       ydoc.destroy()
     },
   }

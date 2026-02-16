@@ -65,14 +65,16 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
   const ydoc = new Y.Doc()
   const meta = ydoc.getMap('meta')
 
-  // IndexedDB persistence for offline support and faster initial loads (browser only)
-  const indexeddbProvider = browser ? new IndexeddbPersistence(`doc-${options.documentId}`, ydoc) : null
-
   const socket = getSocket()
 
+  // Provider created before IndexedDB so BroadcastChannel messages delivered
+  // during construction don't trigger writes to an unopened IndexedDB
   const provider = new PhoenixChannelProvider(socket, `document:${options.documentId}`, ydoc, {
     params: {},
   })
+
+  // IndexedDB persistence for offline support and faster initial loads (browser only)
+  const indexeddbProvider = browser ? new IndexeddbPersistence(`doc-${options.documentId}`, ydoc) : null
 
   // Listen for permissions pushed by the server after join
   // (y-phoenix-channel ignores the join reply payload, so the server sends a separate event)
@@ -249,10 +251,12 @@ export function createBaseDocument(options: BaseDocumentOptions): BaseDocument {
     destroy() {
       if (syncTimeout) clearTimeout(syncTimeout)
       if (metaObserverTimeout) clearTimeout(metaObserverTimeout)
+      // Destroy IndexedDB before providers to remove ydoc observers before
+      // any queued BroadcastChannel messages can trigger writes to a closed DB
+      indexeddbProvider?.destroy()
       baseProvider?.destroy()
       baseYdoc?.destroy()
       provider.destroy()
-      indexeddbProvider?.destroy()
       ydoc.destroy()
     },
   }
