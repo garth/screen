@@ -408,7 +408,9 @@
             return `<li${valueAttr}>${sentenceHtml}</li>`
           }
           // Use 'li' tag for segment wrapper to keep valid HTML inside <ol>/<ul>
-          return ctx && hasSegmentId ? wrapWithSegment(children, ctx, 'li', valueAttr) : `<li${valueAttr}>${children}</li>`
+          return ctx && hasSegmentId ?
+              wrapWithSegment(children, ctx, 'li', valueAttr)
+            : `<li${valueAttr}>${children}</li>`
         }
 
         case 'image': {

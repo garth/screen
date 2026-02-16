@@ -5,10 +5,7 @@
   import { page } from '$app/state'
   import { auth } from '$lib/stores/auth.svelte'
   import { toast } from '$lib/toast.svelte'
-  import {
-    createPresentationDoc,
-    createPresenterAwarenessDoc,
-  } from '$lib/stores/documents'
+  import { createPresentationDoc, createPresenterAwarenessDoc } from '$lib/stores/documents'
   import type { PresentationFormat } from '$lib/stores/documents/types'
   import PresentationViewer from '$lib/components/presentation/PresentationViewer.svelte'
   import OptionsPopup from '$lib/components/presentation/OptionsPopup.svelte'
@@ -162,12 +159,8 @@
   const currentSegmentIndex = $derived(segments.findIndex((s) => s.id === currentSegmentId))
 
   // Slide position indicator
-  const currentSlide = $derived(
-    currentSegmentIndex >= 0 ? (segments[currentSegmentIndex]?.slideIndex ?? 0) + 1 : 1,
-  )
-  const totalSlides = $derived(
-    segments.length > 0 ? Math.max(...segments.map((s) => s.slideIndex)) + 1 : 1,
-  )
+  const currentSlide = $derived(currentSegmentIndex >= 0 ? (segments[currentSegmentIndex]?.slideIndex ?? 0) + 1 : 1)
+  const totalSlides = $derived(segments.length > 0 ? Math.max(...segments.map((s) => s.slideIndex)) + 1 : 1)
 
   // Handle navigation by index (for keyboard/controls)
   function handleNavigateByIndex(index: number) {
@@ -274,7 +267,7 @@
 
 <div class="flex h-screen flex-col">
   <!-- Header -->
-  <header class="navbar min-h-0 border-b border-base-300 bg-base-200 px-4 py-2">
+  <header class="navbar border-b border-base-300 bg-base-200 px-4 py-2">
     <div class="flex-1">
       <h1 class="text-lg font-medium">
         {doc.synced && doc.title ? doc.title : 'Untitled'}

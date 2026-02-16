@@ -73,9 +73,12 @@
       {#each presentations as presentation (presentation.id)}
         <div class="w-full sm:w-[calc(50%-0.625rem)] lg:w-[calc(33.333%-0.875rem)] xl:w-[calc(25%-0.9375rem)]">
           <a
-            href={resolve(presentation.canWrite ? `/presentation/${presentation.id}/edit` : `/presentation/${presentation.id}`)}
+            href={resolve(
+              presentation.canWrite ? `/presentation/${presentation.id}/edit` : `/presentation/${presentation.id}`,
+            )}
             class="group block">
-            <div class="aspect-video rounded-lg border border-base-300 bg-base-200 transition-colors group-hover:border-primary">
+            <div
+              class="aspect-video rounded-lg border border-base-300 bg-base-200 transition-colors group-hover:border-primary">
               <div class="flex h-full flex-col items-center justify-center p-4">
                 <h2 class="line-clamp-3 text-center text-lg font-medium">
                   {presentation.title || 'Untitled'}

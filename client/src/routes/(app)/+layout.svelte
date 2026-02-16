@@ -79,76 +79,75 @@
 
 <svelte:window onclick={handleClickOutside} />
 
-<div class="flex h-dvh flex-col overflow-hidden">
-  <nav aria-label="Main navigation" class="navbar fixed top-0 z-30 border-b border-base-300 bg-base-200 px-4">
-    <div class="flex w-full items-center justify-between">
-      <div class="flex items-center gap-6">
-        <a href={resolve('/')} class="flex items-center gap-2 text-lg font-semibold">
-          <img src={resolve('/logo.svg')} alt="" class="size-6" />
-          Chapel Screen
-        </a>
-        {#if auth.isAuthenticated}
-          <div class="hidden gap-4 sm:flex">
-            {#each navLinks as link (link.href)}
-              {@const isActive = page.url.pathname === link.href}
-              <a
-                href={link.href}
-                class="link link-hover {isActive ? 'font-medium text-primary' : ''}"
-                aria-current={isActive ? 'page' : undefined}>
-                {link.label}
-              </a>
-            {/each}
-          </div>
-        {/if}
-      </div>
+<div class="flex min-h-dvh flex-col">
+  <div class="sticky top-0 z-50">
+    <nav aria-label="Main navigation" class="navbar border-b border-base-300 bg-base-200 px-4">
+      <div class="flex w-full items-center justify-between">
+        <div class="flex items-center gap-6">
+          <a href={resolve('/')} class="flex items-center gap-2 text-lg font-semibold">
+            <img src={resolve('/logo.svg')} alt="" class="size-6" />
+            Chapel Screen
+          </a>
+          {#if auth.isAuthenticated}
+            <div class="hidden gap-4 sm:flex">
+              {#each navLinks as link (link.href)}
+                {@const isActive = page.url.pathname === link.href}
+                <a
+                  href={link.href}
+                  class="link link-hover {isActive ? 'font-medium text-primary' : ''}"
+                  aria-current={isActive ? 'page' : undefined}>
+                  {link.label}
+                </a>
+              {/each}
+            </div>
+          {/if}
+        </div>
 
-      <div class="flex items-center gap-4">
-        {#if auth.user}
-          <!-- svelte-ignore a11y_no_static_element_interactions -->
-          <div class="dropdown dropdown-end" onkeydown={handleMenuKeydown}>
-            <button
-              onclick={() => (userMenuOpen = !userMenuOpen)}
-              class="btn gap-2 btn-ghost btn-sm"
-              aria-expanded={userMenuOpen}
-              aria-haspopup="true">
-              {#if gravatarUrl}
-                <img
-                  src={gravatarUrl}
-                  alt=""
-                  class="size-6 rounded-full" />
+        <div class="flex items-center gap-4">
+          {#if auth.user}
+            <!-- svelte-ignore a11y_no_static_element_interactions -->
+            <div class="dropdown dropdown-end" onkeydown={handleMenuKeydown}>
+              <button
+                onclick={() => (userMenuOpen = !userMenuOpen)}
+                class="btn gap-2 btn-ghost btn-sm"
+                aria-expanded={userMenuOpen}
+                aria-haspopup="true">
+                {#if gravatarUrl}
+                  <img src={gravatarUrl} alt="" class="size-6 rounded-full" />
+                {/if}
+                <span class="hero-chevron-down-micro size-4" aria-hidden="true"></span>
+              </button>
+
+              {#if userMenuOpen}
+                <ul
+                  bind:this={menuElement}
+                  role="menu"
+                  class="dropdown-content menu z-20 mt-1 w-48 rounded-box border border-base-content/20 bg-base-200 p-2 shadow-lg">
+                  <li role="none">
+                    <a role="menuitem" href={resolve('/preferences')} onclick={() => (userMenuOpen = false)}>
+                      <span class="hero-cog-6-tooth-mini size-5" aria-hidden="true"></span>
+                      Preferences
+                    </a>
+                  </li>
+                  <li role="none">
+                    <button role="menuitem" onclick={handleLogout} class="text-error">
+                      <span class="hero-arrow-left-start-on-rectangle-mini size-5" aria-hidden="true"></span>
+                      Log out
+                    </button>
+                  </li>
+                </ul>
               {/if}
-              <span class="hero-chevron-down-micro size-4" aria-hidden="true"></span>
-            </button>
-
-            {#if userMenuOpen}
-              <ul
-                bind:this={menuElement}
-                role="menu"
-                class="dropdown-content menu z-20 mt-1 w-48 rounded-box border border-base-content/20 bg-base-200 p-2 shadow-lg">
-                <li role="none">
-                  <a role="menuitem" href={resolve('/preferences')} onclick={() => (userMenuOpen = false)}>
-                    <span class="hero-cog-6-tooth-mini size-5" aria-hidden="true"></span>
-                    Preferences
-                  </a>
-                </li>
-                <li role="none">
-                  <button role="menuitem" onclick={handleLogout} class="text-error">
-                    <span class="hero-arrow-left-start-on-rectangle-mini size-5" aria-hidden="true"></span>
-                    Log out
-                  </button>
-                </li>
-              </ul>
-            {/if}
-          </div>
-        {:else}
-          <button onclick={() => auth.redirectToLogin()} class="btn btn-sm btn-ghost">Log in</button>
-          <button onclick={() => auth.redirectToRegister()} class="btn btn-sm btn-primary">Register</button>
-        {/if}
+            </div>
+          {:else}
+            <button onclick={() => auth.redirectToLogin()} class="btn btn-ghost btn-sm">Log in</button>
+            <button onclick={() => auth.redirectToRegister()} class="btn btn-sm btn-primary">Register</button>
+          {/if}
+        </div>
       </div>
-    </div>
-  </nav>
+    </nav>
+  </div>
 
-  <main class="min-h-0 flex-1 overflow-y-auto pt-16">
+  <main class="grow">
     {@render children()}
   </main>
 

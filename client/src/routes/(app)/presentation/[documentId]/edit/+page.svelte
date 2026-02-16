@@ -136,71 +136,65 @@
   <title>Edit: {doc.synced ? doc.title || 'Untitled' : 'Loading...'} - Presentation</title>
 </svelte:head>
 
-<div class="flex h-full flex-col">
-  <h1 class="sr-only">Edit Presentation</h1>
-  <!-- Header -->
-  <header class="navbar min-h-0 border-b border-base-300 bg-base-200 px-4 py-1">
-    <div class="flex flex-1 items-center gap-2">
-      <input
-        type="text"
-        bind:value={titleInput}
-        oninput={handleTitleChange}
-        placeholder="Untitled"
-        class="input input-sm w-auto input-ghost text-sm font-medium"
-        disabled={!doc.synced || doc.readOnly} />
-      {#if !doc.synced}
-        <span class="text-xs text-base-content/50">Connecting...</span>
-      {/if}
-    </div>
-
-    <div class="flex flex-none items-center gap-2 sm:gap-4">
-      <button
-        type="button"
-        onclick={() => (showOptionsPopup = true)}
-        disabled={!doc.synced}
-        class="btn btn-ghost btn-sm">
-        <span class="hero-adjustments-horizontal-mini size-5" aria-hidden="true"></span>
-        <span class="hidden sm:inline">Options</span>
-      </button>
-
-      <a href={resolve(`/presentation/${documentId}/presenter`)} class="btn btn-sm btn-primary">
-        <span class="hero-presentation-chart-bar-mini size-5" aria-hidden="true"></span>
-        <span class="hidden sm:inline">Present</span>
-      </a>
-
-      <button
-        type="button"
-        onclick={() => (showDeleteDialog = true)}
-        disabled={deleting}
-        class="btn btn-ghost btn-sm text-error"
-        aria-label="Delete presentation">
-        <span class="hero-trash-mini size-5" aria-hidden="true"></span>
-      </button>
-    </div>
-  </header>
-
-  <!-- Editor -->
-  <main class="flex min-h-0 flex-1 flex-col">
-    {#if doc.error}
-      <div class="flex h-full flex-col items-center justify-center gap-4">
-        <h2 class="text-2xl font-bold">Presentation not found</h2>
-        <p class="text-base-content/70">This presentation doesn't exist or you don't have access to it.</p>
-        <a href={resolve('/presentations')} class="btn btn-sm btn-primary">Back to presentations</a>
-      </div>
-    {:else if doc.synced}
-      <PresentationEditor {doc} theme={resolvedTheme} />
-    {:else if doc.syncTimedOut}
-      <div class="flex h-full flex-col items-center justify-center gap-4">
-        <p class="text-base-content/70">Failed to connect to the document.</p>
-        <button type="button" onclick={() => doc.retry()} class="btn btn-sm btn-primary">Retry</button>
-      </div>
-    {:else}
-      <div class="flex h-full items-center justify-center">
-        <span class="loading loading-lg loading-spinner" role="status" aria-label="Loading"></span>
-      </div>
+<h1 class="sr-only">Edit Presentation</h1>
+<!-- Header -->
+<header class="navbar border-b border-base-300 bg-base-200 px-4 py-1">
+  <div class="flex flex-1 items-center gap-2">
+    <input
+      type="text"
+      bind:value={titleInput}
+      oninput={handleTitleChange}
+      placeholder="Untitled"
+      class="input input-sm w-auto input-ghost text-sm font-medium"
+      disabled={!doc.synced || doc.readOnly} />
+    {#if !doc.synced}
+      <span class="text-xs text-base-content/50">Connecting...</span>
     {/if}
-  </main>
-</div>
+  </div>
+
+  <div class="flex flex-none items-center gap-2 sm:gap-4">
+    <button type="button" onclick={() => (showOptionsPopup = true)} disabled={!doc.synced} class="btn btn-ghost btn-sm">
+      <span class="hero-adjustments-horizontal-mini size-5" aria-hidden="true"></span>
+      <span class="hidden sm:inline">Options</span>
+    </button>
+
+    <a href={resolve(`/presentation/${documentId}/presenter`)} class="btn btn-sm btn-primary">
+      <span class="hero-presentation-chart-bar-mini size-5" aria-hidden="true"></span>
+      <span class="hidden sm:inline">Present</span>
+    </a>
+
+    <button
+      type="button"
+      onclick={() => (showDeleteDialog = true)}
+      disabled={deleting}
+      class="btn text-error btn-ghost btn-sm"
+      aria-label="Delete presentation">
+      <span class="hero-trash-mini size-5" aria-hidden="true"></span>
+    </button>
+  </div>
+</header>
+
+<!-- Editor -->
+<main class="flex flex-1 flex-col">
+  {#if doc.error}
+    <div class="flex h-full flex-col items-center justify-center gap-4">
+      <h2 class="text-2xl font-bold">Presentation not found</h2>
+      <p class="text-base-content/70">This presentation doesn't exist or you don't have access to it.</p>
+      <a href={resolve('/presentations')} class="btn btn-sm btn-primary">Back to presentations</a>
+    </div>
+  {:else if doc.synced}
+    <PresentationEditor {doc} theme={resolvedTheme} />
+  {:else if doc.syncTimedOut}
+    <div class="flex h-full flex-col items-center justify-center gap-4">
+      <p class="text-base-content/70">Failed to connect to the document.</p>
+      <button type="button" onclick={() => doc.retry()} class="btn btn-sm btn-primary">Retry</button>
+    </div>
+  {:else}
+    <div class="flex h-full items-center justify-center">
+      <span class="loading loading-lg loading-spinner" role="status" aria-label="Loading"></span>
+    </div>
+  {/if}
+</main>
 
 {#if showDeleteDialog}
   <ConfirmDialog

@@ -92,9 +92,7 @@ test.describe('Channel Public View', () => {
 
     // Should eventually show the presentation viewer (not an error)
     // The viewer renders presentation content or shows a loading state
-    await expect(
-      anonPage.getByText(/not found|failed to load|no presentation/i),
-    ).not.toBeVisible({ timeout: 20000 })
+    await expect(anonPage.getByText(/not found|failed to load|no presentation/i)).not.toBeVisible({ timeout: 20000 })
 
     // The page title should update to reflect the presentation
     await expect(anonPage).toHaveTitle(/Channel/, { timeout: 20000 })

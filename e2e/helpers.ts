@@ -8,8 +8,7 @@ import type { Page } from '@playwright/test'
 export async function waitForLiveView(page: Page) {
   await page.waitForFunction(
     () => {
-      const ls = (window as unknown as { liveSocket?: { socket?: { isConnected?: () => boolean } } })
-        .liveSocket
+      const ls = (window as unknown as { liveSocket?: { socket?: { isConnected?: () => boolean } } }).liveSocket
       return ls?.socket?.isConnected?.() === true
     },
     null,

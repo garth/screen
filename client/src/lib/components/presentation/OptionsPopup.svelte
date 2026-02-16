@@ -70,7 +70,7 @@
       <!-- Fixed header -->
       <div class="flex items-center justify-between border-b border-base-300 px-6 py-4">
         <h3 id="options-dialog-title" class="text-lg font-bold">Presentation Options</h3>
-        <button type="button" onclick={onClose} class="btn btn-ghost btn-sm btn-circle" aria-label="Close">
+        <button type="button" onclick={onClose} class="btn btn-circle btn-ghost btn-sm" aria-label="Close">
           <span class="hero-x-mark-mini size-5" aria-hidden="true"></span>
         </button>
       </div>
@@ -164,7 +164,6 @@
           </label>
         </div>
       </div>
-
     </div>
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <!-- svelte-ignore a11y_no_static_element_interactions -->

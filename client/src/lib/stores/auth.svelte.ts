@@ -1,6 +1,12 @@
 import { browser } from '$app/environment'
 import { getSocket, disconnectSocket } from '$lib/providers/phoenix-socket'
-import { createUserChannel, type UserChannel, type UserProfile, type ThemeListItem, type DocumentListItem } from '$lib/providers/user-channel'
+import {
+  createUserChannel,
+  type UserChannel,
+  type UserProfile,
+  type ThemeListItem,
+  type DocumentListItem,
+} from '$lib/providers/user-channel'
 
 interface AuthState {
   readonly isAuthenticated: boolean

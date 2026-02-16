@@ -170,7 +170,7 @@
 <div class="flex h-screen flex-col">
   <h1 class="sr-only">Edit Theme</h1>
   <!-- Header -->
-  <header class="navbar min-h-0 border-b border-base-300 bg-base-200 px-4 py-2">
+  <header class="navbar border-b border-base-300 bg-base-200 px-4 py-2">
     <div class="flex flex-1 items-center gap-2">
       <a href={resolve('/themes')} class="btn btn-ghost btn-sm">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

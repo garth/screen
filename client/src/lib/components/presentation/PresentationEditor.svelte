@@ -74,14 +74,14 @@
   })
 </script>
 
-<div class="presentation-editor flex min-h-0 flex-1 flex-col">
+<div class="presentation-editor flex flex-1 flex-col">
   <!-- Toolbar (fixed above scroll area) -->
   <EditorToolbar {view} {editorState} />
 
   <!-- Editor Content -->
-  <div class="min-h-0 flex-1 overflow-y-auto bg-base-100">
-    <div class="prose-base-content prose min-h-full max-w-none px-8 py-4">
-      <div id={editorId} class="editor-content min-h-full"></div>
+  <div class="flex-1 overflow-y-auto bg-base-100">
+    <div class="prose-base-content prose max-w-none px-8 py-4">
+      <div id={editorId} class="editor-content"></div>
     </div>
   </div>
 </div>

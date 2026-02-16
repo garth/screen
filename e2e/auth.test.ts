@@ -145,9 +145,7 @@ test.describe('Authentication', () => {
     await magicForm.getByRole('button', { name: 'Log in with email' }).click()
 
     // Should show confirmation message
-    await expect(
-      page.getByText('you will receive instructions for logging in shortly'),
-    ).toBeVisible({ timeout: 10000 })
+    await expect(page.getByText('you will receive instructions for logging in shortly')).toBeVisible({ timeout: 10000 })
   })
 
   test('logout', async ({ page }) => {

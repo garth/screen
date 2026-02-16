@@ -43,7 +43,12 @@
   function getStatus() {
     if (!currentDoc) return { status: 'idle', connected: false, synced: false }
     return {
-      status: currentDoc.connected ? (currentDoc.synced ? 'synced' : 'connected') : 'connecting',
+      status:
+        currentDoc.connected ?
+          currentDoc.synced ?
+            'synced'
+          : 'connected'
+        : 'connecting',
       connected: currentDoc.connected,
       synced: currentDoc.synced,
     }

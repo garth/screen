@@ -6,8 +6,7 @@ export default defineConfig({
     baseURL: 'http://localhost:4000',
   },
   webServer: {
-    command:
-      'pnpm -C client build && pnpm -C client build:css && cd server && mix assets.build && mix phx.server',
+    command: 'pnpm -C client build && pnpm -C client build:css && cd server && mix assets.build && mix phx.server',
     port: 4000,
     reuseExistingServer: !process.env.CI,
   },

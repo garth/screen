@@ -161,7 +161,8 @@
   }
 </script>
 
-<div class="editor-toolbar flex flex-wrap items-center gap-1.5 border-b border-base-300 bg-base-200 p-2 sm:gap-1">
+<div
+  class="editor-toolbar sticky top-14 flex flex-wrap items-center gap-1.5 border-b border-base-300 bg-base-200 p-2 sm:gap-1">
   <!-- Headings -->
   <div class="join mr-1 border-r border-base-300 pr-2">
     <button
@@ -201,7 +202,8 @@
       type="button"
       onclick={setParagraph}
       class="btn join-item btn-sm sm:btn-xs {(
-        editorState && isBlockActive(editorState, presentationSchema.nodes.paragraph) &&
+        editorState &&
+        isBlockActive(editorState, presentationSchema.nodes.paragraph) &&
         !isBlockActive(editorState, presentationSchema.nodes.heading)
       ) ?
         'btn-primary'
