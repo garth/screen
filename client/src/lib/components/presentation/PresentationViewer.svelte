@@ -85,6 +85,10 @@
     blockVisibleIds: Set<string>
     /** Set of segment IDs visible in maximal mode (current + merge group + sibling sentences) */
     maximalVisibleIds: Set<string>
+    /** Set of segment IDs visible in scrolling mode (same slideIndex as current) */
+    scrollingVisibleIds: Set<string>
+    /** Ordinal value for the current list item inside an ordered_list (1-based) */
+    orderedListItemValue: number | null
     /** Whether to apply format display effects (hiding/fading) - only true in follow mode */
     applyFormatEffects: boolean
     /** Track if we've rendered at least one visible segment */
@@ -111,8 +115,10 @@
     // All segments visible if not in follow mode
     if (!ctx.applyFormatEffects) return true
 
-    // Scrolling mode: all segments visible (just faded)
-    if (ctx.format === 'scrolling') return true
+    // Scrolling mode: only segments on the current slide are visible
+    if (ctx.format === 'scrolling') {
+      return ctx.scrollingVisibleIds.has(segment.id)
+    }
 
     // Single mode: only show current segment (and its merge group)
     if (ctx.format === 'single') {
@@ -138,9 +144,11 @@
   }
 
   /**
-   * Wrap content in a segment div if we're in presenter mode
+   * Wrap content in a segment element if we're in presenter mode.
+   * Uses the specified tag (default 'div') — use 'li' for list items
+   * to keep valid HTML inside <ol>/<ul>.
    */
-  function wrapWithSegment(html: string, ctx: SegmentContext): string {
+  function wrapWithSegment(html: string, ctx: SegmentContext, tag = 'div', extraAttrs = ''): string {
     if (!ctx.inPresenterMode || ctx.segments.length === 0) return html
 
     const segment = ctx.segments[ctx.segmentIndex]
@@ -174,7 +182,7 @@
     }
 
     const interactive = onSegmentClick ? ' tabindex="0" role="button"' : ''
-    return `<div class="${classes.join(' ')}" data-segment-index="${segment.index}" data-segment-id="${segment.id}"${interactive}>${html}</div>`
+    return `<${tag} class="${classes.join(' ')}" data-segment-index="${segment.index}" data-segment-id="${segment.id}"${interactive}${extraAttrs}>${html}</${tag}>`
   }
 
   /**
@@ -372,34 +380,23 @@
         }
 
         case 'ordered_list': {
-          // Calculate the correct start number when list items are hidden
-          let effectiveStart = node.getAttribute('order') || 1
-          if (typeof effectiveStart === 'string') effectiveStart = parseInt(effectiveStart, 10) || 1
+          let startOrder = node.getAttribute('order') || 1
+          if (typeof startOrder === 'string') startOrder = parseInt(startOrder, 10) || 1
 
-          if (ctx?.applyFormatEffects) {
-            // Count how many list items are skipped before the first visible one
-            let skippedCount = 0
-            let foundVisible = false
-            node.forEach((listItem) => {
-              if (foundVisible) return
-              if (listItem instanceof Y.XmlElement) {
-                const segmentId = listItem.getAttribute('segmentId')
-                if (segmentId) {
-                  // Check if this segment is visible based on format mode
-                  const segment = ctx.segments.find((s) => s.id === segmentId)
-                  if (segment && isSegmentVisible(segment, ctx)) {
-                    foundVisible = true
-                  } else {
-                    skippedCount++
-                  }
-                }
-              }
-            })
-            effectiveStart += skippedCount
-          }
-
-          const children = buildChildren(ctx)
-          return effectiveStart !== 1 ? `<ol start="${effectiveStart}">${children}</ol>` : `<ol>${children}</ol>`
+          // Build children manually so we can set orderedListItemValue on each
+          let olHtml = ''
+          let itemPosition = 0
+          node.forEach((child) => {
+            if (ctx && child instanceof Y.XmlElement && child.nodeName.toLowerCase() === 'list_item') {
+              ctx.orderedListItemValue = startOrder + itemPosition
+              olHtml += xmlToHtml(child, ctx)
+              ctx.orderedListItemValue = null
+              itemPosition++
+            } else {
+              olHtml += xmlToHtml(child as Y.XmlElement | Y.XmlText | string, ctx)
+            }
+          })
+          return `<ol>${olHtml}</ol>`
         }
 
         case 'list_item': {
@@ -409,12 +406,13 @@
 
           // Check if this list item should be split into sentence segments
           const listItemSegmentId = node.getAttribute('segmentId') as string | null
+          const valueAttr = ctx?.orderedListItemValue != null ? ` value="${ctx.orderedListItemValue}"` : ''
           if (ctx && hasSegmentId && shouldSplitIntoSentences(ctx, listItemSegmentId)) {
             const sentenceHtml = renderSentenceSegments(children, ctx)
-            return `<li>${sentenceHtml}</li>`
+            return `<li${valueAttr}>${sentenceHtml}</li>`
           }
-          const html = `<li>${children}</li>`
-          return ctx && hasSegmentId ? wrapWithSegment(html, ctx) : html
+          // Use 'li' tag for segment wrapper to keep valid HTML inside <ol>/<ul>
+          return ctx && hasSegmentId ? wrapWithSegment(children, ctx, 'li', valueAttr) : `<li${valueAttr}>${children}</li>`
         }
 
         case 'image': {
@@ -429,6 +427,9 @@
         }
 
         case 'slide_divider':
+          if (ctx?.applyFormatEffects && ctx.format === 'scrolling') {
+            return ''
+          }
           return `<hr class="slide-divider" data-slide-divider="true" />`
 
         case 'blockquote': {
@@ -695,6 +696,17 @@
         }
       }
 
+      // Compute scrolling visible IDs (all segments on the same slide as current)
+      const scrollingIds = new Set<string>()
+      if (_format === 'scrolling') {
+        const currentSlideIndex = currentSegment?.slideIndex ?? 0
+        for (const seg of _segments) {
+          if (seg.slideIndex === currentSlideIndex) {
+            scrollingIds.add(seg.id)
+          }
+        }
+      }
+
       // Compute maximal visible IDs (current segment + merge group + sibling sentences)
       const maximalIds = new Set<string>()
       if (_format === 'maximal') {
@@ -728,6 +740,8 @@
         minimalVisibleIds: minimalIds,
         blockVisibleIds: blockIds,
         maximalVisibleIds: maximalIds,
+        scrollingVisibleIds: scrollingIds,
+        orderedListItemValue: null,
         applyFormatEffects: _mode === 'follow',
         hasRenderedVisible: false,
         hasFinishedVisible: false,
@@ -820,6 +834,11 @@
   /* Faded segments (scrolling mode - segments above current) */
   .presentation-viewer :global(.segment-faded) {
     opacity: 0.4;
+  }
+
+  /* List item segments (keep list layout intact) */
+  .presentation-viewer :global(li.segment) {
+    margin: 0;
   }
 
   /* Sentence segments (inline spans) */

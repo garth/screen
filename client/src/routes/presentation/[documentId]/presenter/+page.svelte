@@ -161,6 +161,14 @@
   // Derive current index from ID (for display)
   const currentSegmentIndex = $derived(segments.findIndex((s) => s.id === currentSegmentId))
 
+  // Slide position indicator
+  const currentSlide = $derived(
+    currentSegmentIndex >= 0 ? (segments[currentSegmentIndex]?.slideIndex ?? 0) + 1 : 1,
+  )
+  const totalSlides = $derived(
+    segments.length > 0 ? Math.max(...segments.map((s) => s.slideIndex)) + 1 : 1,
+  )
+
   // Handle navigation by index (for keyboard/controls)
   function handleNavigateByIndex(index: number) {
     const clampedIndex = clampSegmentIndex(index, segments.length)
@@ -320,6 +328,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
           </svg>
         </button>
+        <span class="slide-indicator">{currentSlide} / {totalSlides}</span>
         <button
           type="button"
           onclick={() => handleNavigateByIndex(currentSegmentIndex + 1)}
@@ -368,7 +377,22 @@
     left: 50%;
     transform: translateX(-50%);
     display: flex;
+    align-items: center;
     gap: 1rem;
     z-index: 50;
+  }
+
+  .slide-indicator {
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.375rem 0.75rem;
+    border-radius: 9999px;
+    background-color: oklch(var(--b1) / 0.8);
+    border: 1px solid oklch(var(--bc) / 0.2);
+    backdrop-filter: blur(8px);
+    box-shadow:
+      0 10px 15px -3px rgb(0 0 0 / 0.1),
+      0 4px 6px -4px rgb(0 0 0 / 0.1);
+    white-space: nowrap;
   }
 </style>

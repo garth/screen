@@ -515,7 +515,7 @@ describe('PresentationViewer', () => {
       expect(olElement).toBeTruthy()
     })
 
-    it('adjusts start number when list items are hidden in single mode', async () => {
+    it('sets correct value on visible list item in single mode', async () => {
       const content = createContent()
       const listIds = addOrderedList(content, ['Item 1', 'Item 2', 'Item 3', 'Item 4'])
 
@@ -541,12 +541,12 @@ describe('PresentationViewer', () => {
       await expect.element(page.getByText('Item 2')).not.toBeInTheDocument()
       await expect.element(page.getByText('Item 4')).not.toBeInTheDocument()
 
-      // The ol should start at 3 (since items 1 and 2 are hidden)
-      const olElement = document.querySelector('ol')
-      expect(olElement?.getAttribute('start')).toBe('3')
+      // The visible li should have value="3"
+      const liElement = document.querySelector(`[data-segment-id="${listIds[2]}"]`)
+      expect(liElement?.getAttribute('value')).toBe('3')
     })
 
-    it('adjusts start number when list items are hidden in minimal mode', async () => {
+    it('sets correct values on visible list items in minimal mode', async () => {
       const content = createContent()
       const listIds = addOrderedList(content, ['Item 1', 'Item 2', 'Item 3', 'Item 4'])
 
@@ -572,12 +572,14 @@ describe('PresentationViewer', () => {
       await expect.element(page.getByText('Item 1')).not.toBeInTheDocument()
       await expect.element(page.getByText('Item 2')).not.toBeInTheDocument()
 
-      // The ol should start at 3 (since items 1 and 2 are hidden)
-      const olElement = document.querySelector('ol')
-      expect(olElement?.getAttribute('start')).toBe('3')
+      // Each visible li should have its correct value
+      const li3 = document.querySelector(`[data-segment-id="${listIds[2]}"]`)
+      const li4 = document.querySelector(`[data-segment-id="${listIds[3]}"]`)
+      expect(li3?.getAttribute('value')).toBe('3')
+      expect(li4?.getAttribute('value')).toBe('4')
     })
 
-    it('preserves custom start order when items are hidden', async () => {
+    it('preserves custom start order on list item values', async () => {
       const content = createContent()
       // List starting at 5
       const listIds = addOrderedList(content, ['Item A', 'Item B', 'Item C'], 5)
@@ -602,9 +604,9 @@ describe('PresentationViewer', () => {
       await expect.element(page.getByText('Item A')).not.toBeInTheDocument()
       await expect.element(page.getByText('Item C')).not.toBeInTheDocument()
 
-      // The ol should start at 6 (base 5 + 1 skipped item)
-      const olElement = document.querySelector('ol')
-      expect(olElement?.getAttribute('start')).toBe('6')
+      // The li should have value="6" (base 5 + 1 position offset)
+      const liElement = document.querySelector(`[data-segment-id="${listIds[1]}"]`)
+      expect(liElement?.getAttribute('value')).toBe('6')
     })
   })
 
@@ -722,7 +724,7 @@ describe('PresentationViewer', () => {
   })
 
   describe('scrolling mode in follow mode', () => {
-    it('renders all segments', async () => {
+    it('renders all segments when no slide dividers exist', async () => {
       const content = createContent()
       const id0 = addParagraph(content, 'Segment 0')
       const id1 = addParagraph(content, 'Segment 1')
@@ -739,7 +741,7 @@ describe('PresentationViewer', () => {
         currentSegmentId: id1,
       })
 
-      // All segments should be rendered in scrolling mode
+      // All segments should be rendered in scrolling mode (all on slide 0)
       await expect.element(page.getByText('Segment 0')).toBeInTheDocument()
       await expect.element(page.getByText('Segment 1')).toBeInTheDocument()
       await expect.element(page.getByText('Segment 2')).toBeInTheDocument()
@@ -770,6 +772,134 @@ describe('PresentationViewer', () => {
       expect(seg0?.classList.contains('segment-faded')).toBe(true)
       expect(seg1?.classList.contains('segment-faded')).toBe(true)
       expect(seg2?.classList.contains('segment-faded')).toBe(false)
+    })
+
+    it('only shows segments from the current slide when slide dividers exist', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Slide 1 Para A')
+      const id1 = addParagraph(content, 'Slide 1 Para B')
+      addSlideDivider(content)
+      const id2 = addParagraph(content, 'Slide 2 Para C')
+      const id3 = addParagraph(content, 'Slide 2 Para D')
+
+      const segments: ContentSegment[] = [
+        { id: id0, index: 0, label: 'Slide 1 Para A', type: 'paragraph', slideIndex: 0 },
+        { id: id1, index: 1, label: 'Slide 1 Para B', type: 'paragraph', slideIndex: 0 },
+        { id: id2, index: 2, label: 'Slide 2 Para C', type: 'paragraph', slideIndex: 1 },
+        { id: id3, index: 3, label: 'Slide 2 Para D', type: 'paragraph', slideIndex: 1 },
+      ]
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'scrolling',
+        segments,
+        currentSegmentId: id0, // Current is on slide 0
+      })
+
+      // Slide 1 content should be visible
+      await expect.element(page.getByText('Slide 1 Para A')).toBeInTheDocument()
+      await expect.element(page.getByText('Slide 1 Para B')).toBeInTheDocument()
+      // Slide 2 content should NOT be visible
+      await expect.element(page.getByText('Slide 2 Para C')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Slide 2 Para D')).not.toBeInTheDocument()
+    })
+
+    it('shows slide 2 segments when navigating to a segment on slide 2', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Slide 1 content')
+      addSlideDivider(content)
+      const id1 = addParagraph(content, 'Slide 2 content')
+      const id2 = addParagraph(content, 'Slide 2 more')
+
+      const segments: ContentSegment[] = [
+        { id: id0, index: 0, label: 'Slide 1 content', type: 'paragraph', slideIndex: 0 },
+        { id: id1, index: 1, label: 'Slide 2 content', type: 'paragraph', slideIndex: 1 },
+        { id: id2, index: 2, label: 'Slide 2 more', type: 'paragraph', slideIndex: 1 },
+      ]
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'scrolling',
+        segments,
+        currentSegmentId: id1, // Navigate to slide 2
+      })
+
+      // Slide 1 should be hidden
+      await expect.element(page.getByText('Slide 1 content')).not.toBeInTheDocument()
+      // Slide 2 should be visible
+      await expect.element(page.getByText('Slide 2 content')).toBeInTheDocument()
+      await expect.element(page.getByText('Slide 2 more')).toBeInTheDocument()
+    })
+
+    it('applies fading to past segments within the visible slide', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Slide 1 first')
+      const id1 = addParagraph(content, 'Slide 1 second')
+      const id2 = addParagraph(content, 'Slide 1 third')
+      addSlideDivider(content)
+      const id3 = addParagraph(content, 'Slide 2 content')
+
+      const segments: ContentSegment[] = [
+        { id: id0, index: 0, label: 'Slide 1 first', type: 'paragraph', slideIndex: 0 },
+        { id: id1, index: 1, label: 'Slide 1 second', type: 'paragraph', slideIndex: 0 },
+        { id: id2, index: 2, label: 'Slide 1 third', type: 'paragraph', slideIndex: 0 },
+        { id: id3, index: 3, label: 'Slide 2 content', type: 'paragraph', slideIndex: 1 },
+      ]
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'scrolling',
+        segments,
+        currentSegmentId: id2, // Last segment on slide 1
+      })
+
+      // All slide 1 segments visible
+      await expect.element(page.getByText('Slide 1 first')).toBeInTheDocument()
+      await expect.element(page.getByText('Slide 1 second')).toBeInTheDocument()
+      await expect.element(page.getByText('Slide 1 third')).toBeInTheDocument()
+
+      // Past segments on the same slide should be faded
+      const seg0 = page.getByText('Slide 1 first').element().parentElement
+      const seg1 = page.getByText('Slide 1 second').element().parentElement
+      const seg2 = page.getByText('Slide 1 third').element().parentElement
+
+      expect(seg0?.classList.contains('segment-faded')).toBe(true)
+      expect(seg1?.classList.contains('segment-faded')).toBe(true)
+      expect(seg2?.classList.contains('segment-faded')).toBe(false)
+
+      // Slide 2 content should not be visible
+      await expect.element(page.getByText('Slide 2 content')).not.toBeInTheDocument()
+    })
+
+    it('hides slide divider hr in follow+scrolling mode', async () => {
+      const content = createContent()
+      const id0 = addParagraph(content, 'Before divider')
+      addSlideDivider(content)
+      const id1 = addParagraph(content, 'After divider')
+
+      const segments: ContentSegment[] = [
+        { id: id0, index: 0, label: 'Before divider', type: 'paragraph', slideIndex: 0 },
+        { id: id1, index: 1, label: 'After divider', type: 'paragraph', slideIndex: 1 },
+      ]
+
+      render(PresentationViewer, {
+        content,
+        theme: defaultTheme,
+        mode: 'follow',
+        format: 'scrolling',
+        segments,
+        currentSegmentId: id0,
+      })
+
+      // The slide divider hr should not be rendered
+      const dividers = document.querySelectorAll('hr.slide-divider')
+      expect(dividers.length).toBe(0)
     })
   })
 
