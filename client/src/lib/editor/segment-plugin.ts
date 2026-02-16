@@ -6,6 +6,24 @@ import type { ContentSegment } from '$lib/utils/segment-parser'
 
 export const segmentPluginKey = new PluginKey<SegmentPluginState>('segments')
 
+/**
+ * Check if a node has meaningful content (text or image children).
+ * Image nodes always have content. Paragraphs containing images are not empty.
+ */
+function hasContent(node: Node): boolean {
+  if (node.type.name === 'image') return true
+  if (node.textContent.trim()) return true
+  // Check for image children (e.g. paragraph containing only an image)
+  let hasImage = false
+  node.descendants((child) => {
+    if (child.type.name === 'image') {
+      hasImage = true
+      return false
+    }
+  })
+  return hasImage
+}
+
 interface SegmentPluginState {
   segments: ContentSegment[]
   decorations: DecorationSet
@@ -30,12 +48,15 @@ export function createSegmentPlugin(schema: Schema): Plugin {
       let tr = newState.tr
       let modified = false
 
-      // Check if any nodes need segment IDs (handles both docChanged and initial load)
+      // Check if any nodes need segment IDs or image cleanup (handles both docChanged and initial load)
       let needsSegmentIds = false
+      let needsImageCleanup = false
       newState.doc.descendants((node) => {
-        if (isSegmentNode(node) && !node.attrs.segmentId) {
+        if (isSegmentNode(node) && node.type.name !== 'image' && !node.attrs.segmentId) {
           needsSegmentIds = true
-          return false // Stop iteration
+        }
+        if (node.type.name === 'image' && node.attrs.segmentId) {
+          needsImageCleanup = true
         }
       })
 
@@ -82,13 +103,33 @@ export function createSegmentPlugin(schema: Schema): Plugin {
         // Remove segment IDs from nodes that have become empty
         const emptySegmentNodes: { pos: number; node: Node }[] = []
         newState.doc.descendants((node, pos) => {
-          if (isSegmentNode(node) && node.attrs.segmentId && node.type.name !== 'image' && !node.textContent.trim()) {
+          if (isSegmentNode(node) && node.attrs.segmentId && !hasContent(node)) {
             emptySegmentNodes.push({ pos, node })
           }
         })
 
         // Clear segment IDs in reverse order
         for (const { pos, node } of emptySegmentNodes.reverse()) {
+          tr = tr.setNodeMarkup(pos, null, {
+            ...node.attrs,
+            segmentId: null,
+            mergeGroupId: null,
+          })
+          modified = true
+        }
+      }
+
+      // Strip segment IDs from images (runs on initial load and docChanged)
+      // Images are inline — the paragraph handles segmentation
+      if (needsImageCleanup) {
+        const docToClean = modified ? tr.doc : newState.doc
+        const imagesToClean: { pos: number; node: Node }[] = []
+        docToClean.descendants((node, pos) => {
+          if (node.type.name === 'image' && node.attrs.segmentId) {
+            imagesToClean.push({ pos, node })
+          }
+        })
+        for (const { pos, node } of imagesToClean.reverse()) {
           tr = tr.setNodeMarkup(pos, null, {
             ...node.attrs,
             segmentId: null,
@@ -119,8 +160,13 @@ export function createSegmentPlugin(schema: Schema): Plugin {
         }
 
         if (isSegmentNode(node) && !node.attrs.segmentId) {
-          // Skip empty nodes (except images which have no text content)
-          if (node.type.name !== 'image' && !node.textContent.trim()) {
+          // Skip images - they're inline within paragraphs which handle segmentation
+          if (node.type.name === 'image') {
+            return
+          }
+
+          // Skip empty nodes (but keep paragraphs containing images)
+          if (!hasContent(node)) {
             return
           }
 

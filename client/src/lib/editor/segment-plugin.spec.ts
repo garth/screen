@@ -192,14 +192,15 @@ describe('createSegmentPlugin', () => {
       expect(attrs?.mergeGroupId).toBeNull()
     })
 
-    it('does not remove segment ID from empty images', () => {
-      // Images have no text content but should still be segments
+    it('strips segment ID from images (paragraphs handle segmentation)', () => {
+      // Images are inline — the parent paragraph is the segment unit
       const image = presentationSchema.nodes.image.create({
         segmentId: 'seg-image',
         src: 'test.jpg',
         alt: '',
       })
-      const doc = presentationSchema.nodes.doc.create(null, image)
+      const para = presentationSchema.nodes.paragraph.create(null, image)
+      const doc = presentationSchema.nodes.doc.create(null, para)
       const plugin = createSegmentPlugin(presentationSchema)
       const state = EditorState.create({
         doc,
@@ -210,14 +211,49 @@ describe('createSegmentPlugin', () => {
       // Apply a transaction to trigger the plugin
       const newState = state.apply(state.tr)
 
-      let segmentId: string | null = null
+      let imageSegmentId: string | null = null
+      let paraSegmentId: string | null = null
       newState.doc.descendants((node) => {
         if (node.type.name === 'image') {
-          segmentId = node.attrs.segmentId
+          imageSegmentId = node.attrs.segmentId
+        }
+        if (node.type.name === 'paragraph') {
+          paraSegmentId = node.attrs.segmentId
         }
       })
 
-      expect(segmentId).toBe('seg-image')
+      // Image should have its segment ID stripped
+      expect(imageSegmentId).toBeNull()
+      // Paragraph should have a segment ID (it has image content)
+      expect(paraSegmentId).not.toBeNull()
+    })
+
+    it('assigns segment ID to paragraph containing only an image', () => {
+      const image = presentationSchema.nodes.image.create({
+        src: 'photo.jpg',
+        alt: 'A photo',
+      })
+      const para = presentationSchema.nodes.paragraph.create(null, image)
+      const doc = presentationSchema.nodes.doc.create(null, para)
+      const plugin = createSegmentPlugin(presentationSchema)
+      const state = EditorState.create({
+        doc,
+        schema: presentationSchema,
+        plugins: [plugin],
+      })
+
+      // Apply a transaction to trigger the plugin
+      const newState = state.apply(state.tr)
+
+      let paraSegmentId: string | null = null
+      newState.doc.descendants((node) => {
+        if (node.type.name === 'paragraph') {
+          paraSegmentId = node.attrs.segmentId
+        }
+      })
+
+      expect(paraSegmentId).not.toBeNull()
+      expect(paraSegmentId).toMatch(/^seg-/)
     })
 
     it('assigns segment ID when empty paragraph gets content', () => {

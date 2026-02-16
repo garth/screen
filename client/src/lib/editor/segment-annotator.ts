@@ -76,7 +76,17 @@ function getNodeLabel(node: Node): string {
   if (node.type.name === 'image') {
     return node.attrs.alt || 'Image'
   }
-  return node.textContent
+  const text = node.textContent
+  if (text) return text
+  // For paragraphs containing only images, use the image alt text
+  let imageAlt = ''
+  node.descendants((child) => {
+    if (!imageAlt && child.type.name === 'image') {
+      imageAlt = child.attrs.alt || 'Image'
+      return false
+    }
+  })
+  return imageAlt || text
 }
 
 /**

@@ -136,7 +136,16 @@ export function parseContentSegments(content: Y.XmlFragment | null, _version?: n
     const segmentId = element.getAttribute('segmentId')
     if (segmentId && isSegmentNode(element)) {
       const type = mapNodeTypeToSegmentType(tagName)
-      const text = tagName === 'image' ? String(element.getAttribute('alt') || 'Image') : extractText(element)
+      let text: string
+      if (tagName === 'image') {
+        text = String(element.getAttribute('alt') || 'Image')
+      } else {
+        text = extractText(element)
+        // For paragraphs containing only images, use the image alt text
+        if (!text && tagName === 'paragraph') {
+          text = extractImageAlt(element) ?? 'Image'
+        }
+      }
       const level = tagName === 'heading' ? parseInt(String(element.getAttribute('level') || '1'), 10) : undefined
       const mergeGroupId = element.getAttribute('mergeGroupId')
 
@@ -212,6 +221,20 @@ export function parseContentSegments(content: Y.XmlFragment | null, _version?: n
   }
 
   return segments
+}
+
+/**
+ * Extract alt text from the first image child of an element.
+ * Returns null if no image children found.
+ */
+function extractImageAlt(element: Y.XmlElement): string | null {
+  let alt: string | null = null
+  element.forEach((child) => {
+    if (alt === null && child instanceof Y.XmlElement && child.nodeName.toLowerCase() === 'image') {
+      alt = String(child.getAttribute('alt') || 'Image')
+    }
+  })
+  return alt
 }
 
 /**

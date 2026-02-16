@@ -66,14 +66,17 @@ describe('parseContentSegments', () => {
   }
 
   function addImage(content: Y.XmlFragment, alt?: string, withSegmentId = true) {
-    const img = new Y.XmlElement('image')
+    // Images are inline — they're always inside paragraphs (how y-prosemirror stores them)
+    const p = new Y.XmlElement('paragraph')
     if (withSegmentId) {
-      img.setAttribute('segmentId', generateSegmentId())
+      p.setAttribute('segmentId', generateSegmentId())
     }
+    const img = new Y.XmlElement('image')
     img.setAttribute('src', 'data:image/png;base64,abc')
     if (alt) img.setAttribute('alt', alt)
-    content.push([img])
-    return img
+    p.insert(0, [img])
+    content.push([p])
+    return p
   }
 
   function addSlideDivider(content: Y.XmlFragment) {
@@ -188,14 +191,14 @@ describe('parseContentSegments', () => {
   })
 
   describe('image segmentation', () => {
-    it('creates segment for image with alt text', () => {
+    it('creates segment for paragraph containing image with alt text', () => {
       const content = createContent()
       addImage(content, 'A beautiful sunset')
 
       const segments = parseContentSegments(content)
 
       expect(segments).toHaveLength(1)
-      expect(segments[0].type).toBe('image')
+      expect(segments[0].type).toBe('paragraph')
       expect(segments[0].label).toBe('A beautiful sunset')
     })
 
@@ -206,7 +209,7 @@ describe('parseContentSegments', () => {
       const segments = parseContentSegments(content)
 
       expect(segments).toHaveLength(1)
-      expect(segments[0].type).toBe('image')
+      expect(segments[0].type).toBe('paragraph')
       expect(segments[0].label).toBe('Image')
     })
   })
@@ -486,7 +489,7 @@ describe('parseContentSegments', () => {
 
       // Second slide (index 1)
       expect(segments[4]).toMatchObject({ type: 'heading', slideIndex: 1 })
-      expect(segments[5]).toMatchObject({ type: 'image', slideIndex: 1 })
+      expect(segments[5]).toMatchObject({ type: 'paragraph', slideIndex: 1 })
       expect(segments[6]).toMatchObject({ type: 'blockquote', slideIndex: 1 })
     })
   })
