@@ -40,14 +40,10 @@
       const offsetTop = elementRect.top - containerRect.top + viewerElement.scrollTop
       const targetScroll = offsetTop - containerRect.height * 0.2
       viewerElement.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' })
-    } else if (format === 'maximal' || format === 'single') {
-      // Maximal/Single mode: center the current segment
-      segmentEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
-    } else if (format === 'block') {
-      // Block mode: center the current segment within the block
+    } else {
+      // All other modes: center the current segment
       segmentEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
-    // Minimal mode: no scrolling needed, we hide other segments
   })
 
   /**
@@ -83,7 +79,7 @@
     minimalVisibleIds: Set<string>
     /** Set of segment IDs visible in block mode (contiguous content block) */
     blockVisibleIds: Set<string>
-    /** Set of segment IDs visible in maximal mode (current + merge group + sibling sentences) */
+    /** Set of segment IDs visible in maximal mode (all segments on current slide) */
     maximalVisibleIds: Set<string>
     /** Set of segment IDs visible in scrolling mode (same slideIndex as current) */
     scrollingVisibleIds: Set<string>
@@ -135,7 +131,7 @@
       return ctx.blockVisibleIds.has(segment.id)
     }
 
-    // Maximal mode: only show active segment (and its merge group + sibling sentences)
+    // Maximal mode: show all segments on the current slide
     if (ctx.format === 'maximal') {
       return ctx.maximalVisibleIds.has(segment.id)
     }
@@ -707,22 +703,13 @@
         }
       }
 
-      // Compute maximal visible IDs (current segment + merge group + sibling sentences)
+      // Compute maximal visible IDs (all segments on the current slide)
       const maximalIds = new Set<string>()
       if (_format === 'maximal') {
-        if (currentSegment) {
-          maximalIds.add(currentSegment.id)
-          // Add sibling sentences from same paragraph
-          for (const id of getSiblingSentenceIds(currentSegment)) {
-            maximalIds.add(id)
-          }
-          // Add all segments in the same merge group
-          if (activeMergeGroupId) {
-            for (const seg of _segments) {
-              if (seg.mergeGroupId === activeMergeGroupId) {
-                maximalIds.add(seg.id)
-              }
-            }
+        const currentSlideIndex = currentSegment?.slideIndex ?? 0
+        for (const seg of _segments) {
+          if (seg.slideIndex === currentSlideIndex) {
+            maximalIds.add(seg.id)
           }
         }
       }

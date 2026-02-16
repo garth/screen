@@ -118,7 +118,7 @@ The presentation feature uses a rich text editor with real-time collaboration:
   - `single`: shows only 1 logical segment per slide
   - `minimal`: Shows only 2 logical segments at a time (current pair)
   - `block`: Shows a single block of contiguous content per slide
-  - `maximal`: Shows only the current segment (and its merge group)
+  - `maximal`: Shows all segments on the current slide
   - `scrolling`: Shows all segments with fading effect on past segments
   - Format stored in document metadata via `doc.format`
 - **Logical Segments**: For slide grouping purposes, segments are counted as "logical units":

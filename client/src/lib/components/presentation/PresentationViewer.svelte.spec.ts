@@ -667,7 +667,7 @@ describe('PresentationViewer', () => {
   })
 
   describe('maximal mode in follow mode', () => {
-    it('only renders the current segment', async () => {
+    it('renders all segments on the current slide', async () => {
       const content = createContent()
       const id0 = addParagraph(content, 'Segment 0')
       const id1 = addParagraph(content, 'Segment 1')
@@ -681,27 +681,27 @@ describe('PresentationViewer', () => {
         mode: 'follow',
         format: 'maximal',
         segments,
-        currentSegmentId: id1, // Second segment is current
+        currentSegmentId: id1,
       })
 
-      // Only current segment should be rendered
-      await expect.element(page.getByText('Segment 0')).not.toBeInTheDocument()
+      // All segments are on the same slide, so all should be visible
+      await expect.element(page.getByText('Segment 0')).toBeInTheDocument()
       await expect.element(page.getByText('Segment 1')).toBeInTheDocument()
-      await expect.element(page.getByText('Segment 2')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Segment 2')).toBeInTheDocument()
     })
 
-    it('renders all segments in the same merge group as current', async () => {
+    it('only renders segments from the current slide', async () => {
       const content = createContent()
-      const id0 = addParagraph(content, 'Segment 0')
-      const id1 = addParagraph(content, 'Segment 1')
-      const id2 = addParagraph(content, 'Segment 2')
-      const id3 = addParagraph(content, 'Segment 3')
+      const id0 = addParagraph(content, 'Slide 1 content')
+      const id1 = addParagraph(content, 'Slide 2 first')
+      const id2 = addParagraph(content, 'Slide 2 second')
+      const id3 = addParagraph(content, 'Slide 3 content')
 
       const segments: ContentSegment[] = [
-        { id: id0, index: 0, label: 'Segment 0', type: 'paragraph', slideIndex: 0 },
-        { id: id1, index: 1, label: 'Segment 1', type: 'paragraph', slideIndex: 0, mergeGroupId: 'merge-1' },
-        { id: id2, index: 2, label: 'Segment 2', type: 'paragraph', slideIndex: 0, mergeGroupId: 'merge-1' },
-        { id: id3, index: 3, label: 'Segment 3', type: 'paragraph', slideIndex: 0 },
+        { id: id0, index: 0, label: 'Slide 1 content', type: 'paragraph', slideIndex: 0 },
+        { id: id1, index: 1, label: 'Slide 2 first', type: 'paragraph', slideIndex: 1 },
+        { id: id2, index: 2, label: 'Slide 2 second', type: 'paragraph', slideIndex: 1 },
+        { id: id3, index: 3, label: 'Slide 3 content', type: 'paragraph', slideIndex: 2 },
       ]
 
       render(PresentationViewer, {
@@ -710,16 +710,16 @@ describe('PresentationViewer', () => {
         mode: 'follow',
         format: 'maximal',
         segments,
-        currentSegmentId: id1, // First segment in merge group
+        currentSegmentId: id1, // On slide 2
       })
 
-      // Segment not in merge group should NOT be rendered
-      await expect.element(page.getByText('Segment 0')).not.toBeInTheDocument()
-      // Both segments in merge group should be rendered
-      await expect.element(page.getByText('Segment 1')).toBeInTheDocument()
-      await expect.element(page.getByText('Segment 2')).toBeInTheDocument()
-      // Segment not in merge group should NOT be rendered
-      await expect.element(page.getByText('Segment 3')).not.toBeInTheDocument()
+      // Slide 1 content should NOT be rendered
+      await expect.element(page.getByText('Slide 1 content')).not.toBeInTheDocument()
+      // Both slide 2 segments should be rendered
+      await expect.element(page.getByText('Slide 2 first')).toBeInTheDocument()
+      await expect.element(page.getByText('Slide 2 second')).toBeInTheDocument()
+      // Slide 3 content should NOT be rendered
+      await expect.element(page.getByText('Slide 3 content')).not.toBeInTheDocument()
     })
   })
 
@@ -1075,16 +1075,21 @@ describe('PresentationViewer', () => {
       await expect.element(page.getByText('Sixth segment')).not.toBeInTheDocument()
     })
 
-    it('renders exactly 1 segment on first render in maximal mode', async () => {
+    it('renders all slide segments on first render in maximal mode', async () => {
       const content = createContent()
       const id0 = addParagraph(content, 'First segment')
       const id1 = addParagraph(content, 'Second segment')
       const id2 = addParagraph(content, 'Third segment')
       const id3 = addParagraph(content, 'Fourth segment')
 
-      const segments = createSegments([id0, id1, id2, id3])
+      const segments: ContentSegment[] = [
+        { id: id0, index: 0, label: 'First segment', type: 'paragraph', slideIndex: 0 },
+        { id: id1, index: 1, label: 'Second segment', type: 'paragraph', slideIndex: 0 },
+        { id: id2, index: 2, label: 'Third segment', type: 'paragraph', slideIndex: 1 },
+        { id: id3, index: 3, label: 'Fourth segment', type: 'paragraph', slideIndex: 1 },
+      ]
 
-      // First render with maximal mode and position at segment 2
+      // First render with maximal mode and position at segment 2 (slide 1)
       render(PresentationViewer, {
         content,
         theme: defaultTheme,
@@ -1094,15 +1099,11 @@ describe('PresentationViewer', () => {
         currentSegmentId: id2,
       })
 
-      // Count visible segment elements
-      const segmentElements = document.querySelectorAll('[data-segment-id]')
-      expect(segmentElements.length).toBe(1)
-
-      // Verify it's the correct segment
+      // Only slide 1 segments should be visible
       await expect.element(page.getByText('First segment')).not.toBeInTheDocument()
       await expect.element(page.getByText('Second segment')).not.toBeInTheDocument()
       await expect.element(page.getByText('Third segment')).toBeInTheDocument()
-      await expect.element(page.getByText('Fourth segment')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Fourth segment')).toBeInTheDocument()
     })
 
     it('applies minimal mode correctly on first render with middle position', async () => {
@@ -1263,14 +1264,12 @@ describe('PresentationViewer', () => {
         currentSegmentId: `${longParaId}:s2`, // Navigate to third sentence
       })
 
-      // All sentences in the paragraph should be visible
+      // All segments on the same slide should be visible (maximal shows entire slide)
       await expect.element(page.getByText('First part.')).toBeInTheDocument()
       await expect.element(page.getByText('Second part.')).toBeInTheDocument()
       await expect.element(page.getByText('Third part.')).toBeInTheDocument()
-
-      // Other paragraphs should NOT be visible
-      await expect.element(page.getByText('Before paragraph')).not.toBeInTheDocument()
-      await expect.element(page.getByText('After paragraph')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Before paragraph')).toBeInTheDocument()
+      await expect.element(page.getByText('After paragraph')).toBeInTheDocument()
     })
 
     it('shows all sentences in a paragraph when sentence is part of minimal pair', async () => {
@@ -1834,7 +1833,7 @@ describe('PresentationViewer', () => {
       await expect.element(page.getByText('Block 2 text')).not.toBeInTheDocument()
     })
 
-    it('renders image paragraph in maximal mode when current', async () => {
+    it('renders image paragraph in maximal mode when on current slide', async () => {
       const content = createContent()
       const id0 = addParagraph(content, 'Segment A')
       const id1 = addImageParagraph(content, 'https://example.com/photo.jpg', 'Maximal photo')
@@ -1851,10 +1850,10 @@ describe('PresentationViewer', () => {
         currentSegmentId: id1,
       })
 
-      // Only the image segment should be visible
-      await expect.element(page.getByText('Segment A')).not.toBeInTheDocument()
+      // All segments on the same slide should be visible
+      await expect.element(page.getByText('Segment A')).toBeInTheDocument()
       await expect.element(page.getByRole('img', { name: 'Maximal photo' })).toBeInTheDocument()
-      await expect.element(page.getByText('Segment C')).not.toBeInTheDocument()
+      await expect.element(page.getByText('Segment C')).toBeInTheDocument()
     })
 
     it('does not misalign segments after image paragraph', async () => {
