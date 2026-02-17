@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { EditorView } from 'prosemirror-view'
-  import type { EditorState } from 'prosemirror-state'
+  import type { EditorState, Transaction } from 'prosemirror-state'
   import { toggleMark, setBlockType } from 'prosemirror-commands'
   import { wrapInList, liftListItem } from 'prosemirror-schema-list'
   import { undo, redo } from 'prosemirror-history'

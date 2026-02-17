@@ -85,7 +85,7 @@
       <div class="flex w-full items-center justify-between">
         <div class="flex items-center gap-6">
           <a href={resolve('/')} class="flex items-center gap-2 text-lg font-semibold">
-            <img src={resolve('/logo.svg')} alt="" class="size-6" />
+            <img src={resolve('/logo.svg' as '/')} alt="" class="size-6" />
             Chapel Screen
           </a>
           {#if auth.isAuthenticated}
@@ -93,7 +93,7 @@
               {#each navLinks as link (link.href)}
                 {@const isActive = page.url.pathname === link.href}
                 <a
-                  href={link.href}
+                  href={resolve(link.href as '/')}
                   class="link link-hover {isActive ? 'font-medium text-primary' : ''}"
                   aria-current={isActive ? 'page' : undefined}>
                   {link.label}

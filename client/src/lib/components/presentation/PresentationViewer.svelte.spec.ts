@@ -75,7 +75,7 @@ describe('PresentationViewer', () => {
     const h = new Y.XmlElement('heading')
     const segmentId = generateSegmentId()
     h.setAttribute('segmentId', segmentId)
-    h.setAttribute('level', level)
+    h.setAttribute('level', String(level))
     const t = new Y.XmlText()
     t.insert(0, text)
     h.insert(0, [t])
@@ -122,7 +122,7 @@ describe('PresentationViewer', () => {
   function addOrderedList(content: Y.XmlFragment, items: string[], startOrder = 1): string[] {
     const ol = new Y.XmlElement('ordered_list')
     if (startOrder !== 1) {
-      ol.setAttribute('order', startOrder)
+      ol.setAttribute('order', String(startOrder))
     }
     const ids: string[] = []
     for (const text of items) {
@@ -1572,7 +1572,7 @@ describe('PresentationViewer', () => {
       // Test that a paragraph is skipped when its segment is missing from the array
       // This can happen if content was edited and segments weren't updated
       const content = createContent()
-      const orphanParaId = addParagraph(content, 'Orphan paragraph without segment')
+      const _orphanParaId = addParagraph(content, 'Orphan paragraph without segment')
       const id1 = addParagraph(content, 'Regular paragraph')
 
       // Segments array is missing the first paragraph's segment

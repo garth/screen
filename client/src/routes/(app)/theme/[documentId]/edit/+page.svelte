@@ -298,7 +298,7 @@
             onchange={handleFontChange}
             disabled={!isEditable}>
             <option value="">Default (sans-serif)</option>
-            {#each fontOptions as fontOption}
+            {#each fontOptions as fontOption (fontOption)}
               <option value={fontOption} style="font-family: {fontOption}">{fontOption}</option>
             {/each}
           </select>

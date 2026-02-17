@@ -37,7 +37,7 @@ interface SegmentPluginState {
  * 1. Assigns segment IDs to new nodes
  * 2. Adds visual decorations for segment boundaries
  */
-export function createSegmentPlugin(schema: Schema): Plugin {
+export function createSegmentPlugin(_schema: Schema): Plugin {
   return new Plugin({
     key: segmentPluginKey,
 

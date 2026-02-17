@@ -498,6 +498,7 @@
    * create boundaries between blocks.
    */
   function computeBlockBoundaries(content: Y.XmlFragment, segments: ContentSegment[]): Map<string, number> {
+    // eslint-disable-next-line svelte/prefer-svelte-reactivity -- function-local, not reactive state
     const segmentToBlock = new Map<string, number>()
     let currentBlockIndex = 0
     let lastWasEmpty = true // Start as true to handle leading empty blocks
@@ -595,7 +596,7 @@
       }
 
       // Use effectiveSegIdx for pair calculation
-      const pairIdx = Math.floor(Math.max(0, effectiveSegIdx) / 2)
+      const _pairIdx = Math.floor(Math.max(0, effectiveSegIdx) / 2)
 
       // Helper: get all sibling sentence IDs from the same paragraph
       function getSiblingSentenceIds(segment: ContentSegment): string[] {
@@ -605,6 +606,7 @@
       }
 
       // Compute single visible IDs (current segment + merge group members + sibling sentences)
+      // eslint-disable-next-line svelte/prefer-svelte-reactivity -- function-local, not reactive state
       const singleIds = new Set<string>()
       if (_format === 'single') {
         if (currentSegment) {
@@ -627,10 +629,12 @@
       // Compute minimal visible IDs using "logical segments" where sentence-split
       // paragraphs count as one unit. This ensures a paragraph with multiple sentences
       // doesn't span across slides.
+      // eslint-disable-next-line svelte/prefer-svelte-reactivity -- function-local, not reactive state
       const minimalIds = new Set<string>()
       if (_format === 'minimal') {
         // Build list of logical segments (first sentence of each paragraph, or regular segments)
         const logicalSegments: ContentSegment[] = []
+        // eslint-disable-next-line svelte/prefer-svelte-reactivity -- function-local, not reactive state
         const seenParentIds = new Set<string>()
         for (const segment of _segments) {
           if (segment.parentSegmentId) {
@@ -681,6 +685,7 @@
       }
 
       // Compute block visible IDs (all segments in current contiguous block)
+      // eslint-disable-next-line svelte/prefer-svelte-reactivity -- function-local, not reactive state
       const blockIds = new Set<string>()
       if (_format === 'block') {
         const blockBoundaries = computeBlockBoundaries(_content, _segments)
@@ -695,6 +700,7 @@
       }
 
       // Compute scrolling visible IDs (all segments on the same slide as current)
+      // eslint-disable-next-line svelte/prefer-svelte-reactivity -- function-local, not reactive state
       const scrollingIds = new Set<string>()
       if (_format === 'scrolling') {
         const currentSlideIndex = currentSegment?.slideIndex ?? 0
@@ -706,6 +712,7 @@
       }
 
       // Compute maximal visible IDs (all segments on the current slide)
+      // eslint-disable-next-line svelte/prefer-svelte-reactivity -- function-local, not reactive state
       const maximalIds = new Set<string>()
       if (_format === 'maximal') {
         const currentSlideIndex = currentSegment?.slideIndex ?? 0

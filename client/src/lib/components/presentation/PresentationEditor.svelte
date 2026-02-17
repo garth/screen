@@ -14,7 +14,7 @@
     theme: ResolvedTheme
   }
 
-  let { doc, theme }: Props = $props()
+  let { doc, theme: _theme }: Props = $props()
 
   // Use a unique ID for the editor container
   const editorId = `prosemirror-editor-${Math.random().toString(36).slice(2)}`

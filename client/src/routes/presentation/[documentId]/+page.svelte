@@ -84,7 +84,7 @@
   })
 
   // Derived: are we actively following someone?
-  const isFollowing = $derived(followMode && activePresenter !== null)
+  const _isFollowing = $derived(followMode && activePresenter !== null)
 
   // Track if we have an active presentation state (either following or had a presenter)
   const hasActiveState = $derived(currentSegmentId !== null)

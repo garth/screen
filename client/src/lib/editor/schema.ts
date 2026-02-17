@@ -1,4 +1,4 @@
-import { Schema } from 'prosemirror-model'
+import { Schema, type NodeSpec, type MarkSpec, type Node, type Mark } from 'prosemirror-model'
 
 /**
  * Custom ProseMirror schema for presentations with:
@@ -27,15 +27,15 @@ const nodes: Record<string, NodeSpec> = {
     parseDOM: [
       {
         tag: 'p',
-        getAttrs(dom) {
+        getAttrs(dom: HTMLElement) {
           return {
-            segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
-            mergeGroupId: (dom as HTMLElement).getAttribute('data-merge-group-id'),
+            segmentId: dom.getAttribute('data-segment-id'),
+            mergeGroupId: dom.getAttribute('data-merge-group-id'),
           }
         },
       },
     ],
-    toDOM(node) {
+    toDOM(node: Node) {
       const attrs: Record<string, string> = {}
       if (node.attrs.segmentId) {
         attrs['data-segment-id'] = node.attrs.segmentId
@@ -60,15 +60,15 @@ const nodes: Record<string, NodeSpec> = {
     parseDOM: [
       {
         tag: 'span[data-sentence]',
-        getAttrs(dom) {
+        getAttrs(dom: HTMLElement) {
           return {
-            segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
-            mergeGroupId: (dom as HTMLElement).getAttribute('data-merge-group-id'),
+            segmentId: dom.getAttribute('data-segment-id'),
+            mergeGroupId: dom.getAttribute('data-merge-group-id'),
           }
         },
       },
     ],
-    toDOM(node) {
+    toDOM(node: Node) {
       const attrs: Record<string, string> = { 'data-sentence': 'true' }
       if (node.attrs.segmentId) {
         attrs['data-segment-id'] = node.attrs.segmentId
@@ -93,36 +93,36 @@ const nodes: Record<string, NodeSpec> = {
     parseDOM: [
       {
         tag: 'h1',
-        getAttrs(dom) {
+        getAttrs(dom: HTMLElement) {
           return {
             level: 1,
-            segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
-            mergeGroupId: (dom as HTMLElement).getAttribute('data-merge-group-id'),
+            segmentId: dom.getAttribute('data-segment-id'),
+            mergeGroupId: dom.getAttribute('data-merge-group-id'),
           }
         },
       },
       {
         tag: 'h2',
-        getAttrs(dom) {
+        getAttrs(dom: HTMLElement) {
           return {
             level: 2,
-            segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
-            mergeGroupId: (dom as HTMLElement).getAttribute('data-merge-group-id'),
+            segmentId: dom.getAttribute('data-segment-id'),
+            mergeGroupId: dom.getAttribute('data-merge-group-id'),
           }
         },
       },
       {
         tag: 'h3',
-        getAttrs(dom) {
+        getAttrs(dom: HTMLElement) {
           return {
             level: 3,
-            segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
-            mergeGroupId: (dom as HTMLElement).getAttribute('data-merge-group-id'),
+            segmentId: dom.getAttribute('data-segment-id'),
+            mergeGroupId: dom.getAttribute('data-merge-group-id'),
           }
         },
       },
     ],
-    toDOM(node) {
+    toDOM(node: Node) {
       const attrs: Record<string, string> = {}
       if (node.attrs.segmentId) {
         attrs['data-segment-id'] = node.attrs.segmentId
@@ -152,13 +152,12 @@ const nodes: Record<string, NodeSpec> = {
     parseDOM: [
       {
         tag: 'ol',
-        getAttrs(dom) {
-          const element = dom as HTMLElement
-          return { order: element.hasAttribute('start') ? +element.getAttribute('start')! : 1 }
+        getAttrs(dom: HTMLElement) {
+          return { order: dom.hasAttribute('start') ? +dom.getAttribute('start')! : 1 }
         },
       },
     ],
-    toDOM(node) {
+    toDOM(node: Node) {
       return node.attrs.order === 1 ? ['ol', 0] : ['ol', { start: node.attrs.order }, 0]
     },
   },
@@ -173,15 +172,15 @@ const nodes: Record<string, NodeSpec> = {
     parseDOM: [
       {
         tag: 'li',
-        getAttrs(dom) {
+        getAttrs(dom: HTMLElement) {
           return {
-            segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
-            mergeGroupId: (dom as HTMLElement).getAttribute('data-merge-group-id'),
+            segmentId: dom.getAttribute('data-segment-id'),
+            mergeGroupId: dom.getAttribute('data-merge-group-id'),
           }
         },
       },
     ],
-    toDOM(node) {
+    toDOM(node: Node) {
       const attrs: Record<string, string> = {}
       if (node.attrs.segmentId) {
         attrs['data-segment-id'] = node.attrs.segmentId
@@ -209,19 +208,18 @@ const nodes: Record<string, NodeSpec> = {
     parseDOM: [
       {
         tag: 'img[src]',
-        getAttrs(dom) {
-          const element = dom as HTMLImageElement
+        getAttrs(dom: HTMLElement) {
           return {
-            src: element.getAttribute('src'),
-            alt: element.getAttribute('alt'),
-            title: element.getAttribute('title'),
-            segmentId: element.getAttribute('data-segment-id'),
-            mergeGroupId: element.getAttribute('data-merge-group-id'),
+            src: dom.getAttribute('src'),
+            alt: dom.getAttribute('alt'),
+            title: dom.getAttribute('title'),
+            segmentId: dom.getAttribute('data-segment-id'),
+            mergeGroupId: dom.getAttribute('data-merge-group-id'),
           }
         },
       },
     ],
-    toDOM(node) {
+    toDOM(node: Node) {
       const { src, alt, title, segmentId, mergeGroupId } = node.attrs
       const attrs: Record<string, string | null> = { src, alt, title }
       if (segmentId) {
@@ -255,15 +253,15 @@ const nodes: Record<string, NodeSpec> = {
     parseDOM: [
       {
         tag: 'blockquote',
-        getAttrs(dom) {
+        getAttrs(dom: HTMLElement) {
           return {
-            segmentId: (dom as HTMLElement).getAttribute('data-segment-id'),
-            mergeGroupId: (dom as HTMLElement).getAttribute('data-merge-group-id'),
+            segmentId: dom.getAttribute('data-segment-id'),
+            mergeGroupId: dom.getAttribute('data-merge-group-id'),
           }
         },
       },
     ],
-    toDOM(node) {
+    toDOM(node: Node) {
       const attrs: Record<string, string> = {}
       if (node.attrs.segmentId) {
         attrs['data-segment-id'] = node.attrs.segmentId
@@ -306,10 +304,10 @@ const marks: Record<string, MarkSpec> = {
   strong: {
     parseDOM: [
       { tag: 'strong' },
-      { tag: 'b', getAttrs: (node) => (node as HTMLElement).style.fontWeight !== 'normal' && null },
+      { tag: 'b', getAttrs: (node: HTMLElement) => node.style.fontWeight !== 'normal' && null },
       {
         style: 'font-weight',
-        getAttrs: (value) => /^(bold(er)?|[5-9]\d{2,})$/.test(value as string) && null,
+        getAttrs: (value: string) => /^(bold(er)?|[5-9]\d{2,})$/.test(value) && null,
       },
     ],
     toDOM() {
@@ -359,13 +357,12 @@ const marks: Record<string, MarkSpec> = {
     parseDOM: [
       {
         tag: 'a[href]',
-        getAttrs(dom) {
-          const element = dom as HTMLAnchorElement
-          return { href: element.getAttribute('href'), title: element.getAttribute('title') }
+        getAttrs(dom: HTMLElement) {
+          return { href: dom.getAttribute('href'), title: dom.getAttribute('title') }
         },
       },
     ],
-    toDOM(node) {
+    toDOM(node: Mark) {
       const { href, title } = node.attrs
       return ['a', { href, title }, 0]
     },

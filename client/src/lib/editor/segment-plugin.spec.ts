@@ -188,8 +188,8 @@ describe('createSegmentPlugin', () => {
         }
       })
 
-      expect(attrs?.segmentId).toBeNull()
-      expect(attrs?.mergeGroupId).toBeNull()
+      expect(attrs!.segmentId).toBeNull()
+      expect(attrs!.mergeGroupId).toBeNull()
     })
 
     it('strips segment ID from images (paragraphs handle segmentation)', () => {

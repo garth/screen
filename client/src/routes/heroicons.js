@@ -1,3 +1,5 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
 import plugin from 'tailwindcss/plugin'
 import fs from 'fs'
 import path from 'path'

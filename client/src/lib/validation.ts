@@ -79,7 +79,7 @@ export const changePasswordFormSchema = v.object({
 /**
  * Validate data against a schema and return result
  */
-export function validate<T>(schema: v.GenericSchema<T>, data: unknown): v.SafeParseResult<T> {
+export function validate<T extends v.GenericSchema>(schema: T, data: unknown): v.SafeParseResult<T> {
   return v.safeParse(schema, data)
 }
 
@@ -93,7 +93,7 @@ export function passwordsMatch(newPassword: string, confirmPassword: string): bo
 /**
  * Get first validation error message for a field
  */
-export function getFieldError(result: v.SafeParseResult<unknown>, fieldName: string): string | undefined {
+export function getFieldError(result: v.SafeParseResult<v.GenericSchema>, fieldName: string): string | undefined {
   if (result.success) return undefined
   const issue = result.issues.find((i) => i.path && i.path.length > 0 && i.path[0].key === fieldName)
   return issue?.message
@@ -102,7 +102,7 @@ export function getFieldError(result: v.SafeParseResult<unknown>, fieldName: str
 /**
  * Get all validation errors as a record
  */
-export function getAllErrors(result: v.SafeParseResult<unknown>): Record<string, string> {
+export function getAllErrors(result: v.SafeParseResult<v.GenericSchema>): Record<string, string> {
   if (result.success) return {}
   const errors: Record<string, string> = {}
   for (const issue of result.issues) {

@@ -9,6 +9,7 @@ function createMockThemeDocument(overrides: Partial<ThemeDocument> = {}): ThemeD
     synced: true,
     syncTimedOut: false,
     readOnly: false,
+    error: null,
     isSystemTheme: false,
     font: 'Arial',
     backgroundColor: '#f0f0f0',

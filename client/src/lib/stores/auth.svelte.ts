@@ -1,5 +1,5 @@
 import { browser } from '$app/environment'
-import { getSocket, disconnectSocket } from '$lib/providers/phoenix-socket'
+import { disconnectSocket } from '$lib/providers/phoenix-socket'
 import {
   createUserChannel,
   type UserChannel,

@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy } from 'svelte'
   import { page } from '$app/state'
+  import { resolve } from '$app/paths'
   import {
     createPresentationDoc,
     createEventDoc,
@@ -136,14 +137,14 @@
 
   // Follow mode state
   let followMode = $state(true)
-  let activePresenter = $state<PersistentPresenterState | null>(null)
+  let _activePresenter = $state<PersistentPresenterState | null>(null)
   let currentSegmentId = $state<string | null>(null)
 
   // Subscribe to presenter changes
   $effect(() => {
     if (presenterAwareness?.synced) {
       const unsubscribe = presenterAwareness.onPresenterChange((presenter) => {
-        activePresenter = presenter
+        _activePresenter = presenter
         if (followMode && presenter?.segmentId) {
           currentSegmentId = presenter.segmentId
         }
@@ -191,7 +192,7 @@
     <div class="flex h-full items-center justify-center">
       <div class="text-center">
         <p class="mb-2 text-lg text-error">{errorMessage}</p>
-        <a href="/" class="link link-primary">Go home</a>
+        <a href={resolve('/')} class="link link-primary">Go home</a>
       </div>
     </div>
   {:else if doc?.synced}

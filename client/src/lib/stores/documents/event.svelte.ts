@@ -14,7 +14,8 @@ export function createEventDoc(options: DocumentOptions): EventDocument {
   let channels = $state<EventChannel[]>([])
 
   // Track observers for cleanup
-  const observedMaps: Array<{ target: Y.Map<unknown> | Y.Array<unknown>; handler: () => void }> = []
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const observedMaps: Array<{ target: Y.Map<any> | Y.Array<any>; handler: () => void }> = []
 
   // Helper to convert Y.Map to EventChannel
   function mapToChannel(ymap: Y.Map<unknown>): EventChannel {
